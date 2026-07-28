@@ -1,0 +1,181 @@
+{
+  "nav": {
+    "dashboard": "Panel Principal",
+    "myTeam": "Mi Equipo",
+    "planning": "Planificación",
+    "matches": "Partidos",
+    "tracking": "Seguimiento",
+    "reports": "Informes",
+    "settings": "Configuración"
+  },
+  "dashboard": {
+    "welcome": "Bienvenido al Dashboard",
+    "summary": "Aquí tienes el resumen de tu equipo para hoy.",
+    "newSession": "Nueva Sesión",
+    "nextMatch": "Próximo Partido",
+    "availablePlayers": "Jugadores Disponibles",
+    "injured": "Lesionados",
+    "trainingLoad": "Carga de Entrenamiento",
+    "tacticalSession": "Sesión Táctica",
+    "daysToComp": "Días para Competición",
+    "days": "Días",
+    "matchday": "Jornada",
+    "latestEvals": "Últimas Evaluaciones",
+    "noEvals": "No hay evaluaciones recientes.",
+    "medicalAlerts": "Alertas Médicas",
+    "noMedical": "No hay reportes de lesiones nuevos.",
+    "high": "Alta"
+  },
+  "auth": {
+    "login": "Iniciar Sesión",
+    "logout": "Cerrar Sesión",
+    "email": "Correo Electrónico",
+    "password": "Contraseña"
+  },
+  "players": {
+    "title": "Plantilla",
+    "subtitle": "Gestión de jugadores y perfiles",
+    "newPlayer": "Nuevo Jugador",
+    "filters": "Filtros",
+    "search": "Buscar jugador...",
+    "status": {
+      "Available": "Disponible",
+      "Injured": "Lesionado",
+      "Doubtful": "Duda"
+    },
+    "viewProfile": "Ver Perfil",
+    "personalInfo": "Información Personal",
+    "medicalStatus": "Estado Médico",
+    "evolution": "Evolución Reciente",
+    "latestMeetings": "Últimas Reuniones",
+    "scheduleMeeting": "Agendar Reunión",
+    "age": "años",
+    "height": "Altura",
+    "weight": "Peso",
+    "foot": "Pierna",
+    "nationality": "Nacionalidad",
+    "contract": "Contrato",
+    "cleared": "Alta médica",
+    "notCleared": "Baja médica",
+    "score": "Puntuación",
+    "goals": "Goles",
+    "assists": "Asistencias",
+    "minutes": "Minutos Jugados"
+  },
+  "meetings": {
+    "newMeeting": "Nueva Reunión",
+    "schedule": "Agendar",
+    "cancel": "Cancelar",
+    "date": "Fecha",
+    "time": "Hora",
+    "type": "Tipo",
+    "notes": "Notas"
+  },
+  "planning": {
+    "calendar": "Calendario Semanal",
+    "library": "Biblioteca de Tareas",
+    "newTraining": "Nuevo Entrenamiento",
+    "newTask": "Nueva Tarea",
+    "objectives": "Objetivos",
+    "location": "Lugar",
+    "tasks": "Tareas",
+    "startSession": "Iniciar Sesión",
+    "duration": "Duración",
+    "load": "Carga",
+    "intensity": "Intensidad",
+    "category": "Categoría",
+    "players": "Jugadores"
+  },
+  "matches": {
+    "title": "Partidos",
+    "subtitle": "Gestión de partidos y seguimiento en directo",
+    "newMatch": "Nuevo Partido",
+    "status": {
+      "Upcoming": "Próximamente",
+      "Live": "En Directo",
+      "Finished": "Finalizado"
+    },
+    "competition": "Competición",
+    "season": "Temporada",
+    "stadium": "Estadio",
+    "callup": "Convocatoria",
+    "lineup": "Alineación Titular",
+    "bench": "Banquillo",
+    "enterLive": "Modo Directo",
+    "liveTracker": "Seguimiento en Vivo",
+    "endMatch": "Finalizar Partido",
+    "events": {
+      "goal": "Gol",
+      "shot": "Tiro",
+      "pass": "Pase Correcto",
+      "badPass": "Pase Fallado",
+      "recovery": "Recuperación",
+      "loss": "Pérdida",
+      "foul": "Falta",
+      "card": "Tarjeta"
+    }
+  },
+  "reports": {
+    "title": "Análisis e Informes",
+    "subtitle": "Estadísticas globales, evolución y exportación PDF",
+    "filters": "Filtros",
+    "exportPdf": "Exportar a PDF",
+    "season": "Temporada",
+    "team": "Equipo",
+    "dateRange": "Rango de Fechas",
+    "tabs": {
+      "timeline": "Historial Global",
+      "players": "Jugadores",
+      "training": "Entrenamientos",
+      "matches": "Partidos"
+    },
+    "timeline": {
+      "title": "Actividad Reciente",
+      "loadMore": "Cargar más historial"
+    },
+    "players": {
+      "topScores": "Rendimiento Global por Jugador",
+      "evolution": "Evolución Media del Equipo"
+    },
+    "training": {
+      "load": "Carga Semanal (Unidades Arbitrarias)",
+      "categories": "Distribución de Tareas por Categoría",
+      "mostUsed": "Tareas Más Utilizadas"
+    },
+    "matches": {
+      "heatmap": "Mapa de Zonas (Recuperaciones vs Pérdidas)",
+      "seasonSummary": "Resumen de Temporada",
+      "offensive": "Métricas Ofensivas"
+    }
+  },
+  "settings": {
+    "title": "Configuración y Administración",
+    "subtitle": "Gestiona los permisos, plantillas y estructura de la base de datos.",
+    "tabs": {
+      "forms": "Constructor de Formularios",
+      "general": "General",
+      "roles": "Roles y Accesos"
+    },
+    "formBuilder": {
+      "entity": "Entidad a configurar",
+      "fieldsOf": "Campos de",
+      "description": "Estos campos aparecerán dinámicamente en los formularios.",
+      "newField": "Nuevo Campo",
+      "noFields": "No hay campos personalizados configurados.",
+      "createFirst": "Crear el primer campo"
+    },
+    "dynamicForm": {
+      "title": "Campos Personalizados del Club",
+      "select": "Selecciona...",
+      "yes": "Sí",
+      "no": "No"
+    }
+  },
+  "common": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "back": "Volver"
+  }
+}

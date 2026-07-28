@@ -1,0 +1,181 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "myTeam": "My Team",
+    "planning": "Planning",
+    "matches": "Matches",
+    "tracking": "Tracking",
+    "reports": "Reports",
+    "settings": "Settings"
+  },
+  "dashboard": {
+    "welcome": "Welcome to the Dashboard",
+    "summary": "Here is your team's summary for today.",
+    "newSession": "New Session",
+    "nextMatch": "Next Match",
+    "availablePlayers": "Available Players",
+    "injured": "Injured",
+    "trainingLoad": "Training Load",
+    "tacticalSession": "Tactical Session",
+    "daysToComp": "Days to Competition",
+    "days": "Days",
+    "matchday": "Matchday",
+    "latestEvals": "Latest Evaluations",
+    "noEvals": "No recent evaluations.",
+    "medicalAlerts": "Medical Alerts",
+    "noMedical": "No new injury reports.",
+    "high": "High"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "email": "Email",
+    "password": "Password"
+  },
+  "players": {
+    "title": "Squad",
+    "subtitle": "Player management and profiles",
+    "newPlayer": "New Player",
+    "filters": "Filters",
+    "search": "Search player...",
+    "status": {
+      "Available": "Available",
+      "Injured": "Injured",
+      "Doubtful": "Doubtful"
+    },
+    "viewProfile": "View Profile",
+    "personalInfo": "Personal Info",
+    "medicalStatus": "Medical Status",
+    "evolution": "Recent Evolution",
+    "latestMeetings": "Latest Meetings",
+    "scheduleMeeting": "Schedule Meeting",
+    "age": "years old",
+    "height": "Height",
+    "weight": "Weight",
+    "foot": "Foot",
+    "nationality": "Nationality",
+    "contract": "Contract",
+    "cleared": "Medically Cleared",
+    "notCleared": "Not Cleared",
+    "score": "Score",
+    "goals": "Goals",
+    "assists": "Assists",
+    "minutes": "Minutes Played"
+  },
+  "meetings": {
+    "newMeeting": "New Meeting",
+    "schedule": "Schedule",
+    "cancel": "Cancel",
+    "date": "Date",
+    "time": "Time",
+    "type": "Type",
+    "notes": "Notes"
+  },
+  "planning": {
+    "calendar": "Weekly Calendar",
+    "library": "Task Library",
+    "newTraining": "New Training",
+    "newTask": "New Task",
+    "objectives": "Objectives",
+    "location": "Location",
+    "tasks": "Tasks",
+    "startSession": "Start Session",
+    "duration": "Duration",
+    "load": "Load",
+    "intensity": "Intensity",
+    "category": "Category",
+    "players": "Players"
+  },
+  "matches": {
+    "title": "Matches",
+    "subtitle": "Match management and live tracking",
+    "newMatch": "New Match",
+    "status": {
+      "Upcoming": "Upcoming",
+      "Live": "Live",
+      "Finished": "Finished"
+    },
+    "competition": "Competition",
+    "season": "Season",
+    "stadium": "Stadium",
+    "callup": "Call-up",
+    "lineup": "Starting Lineup",
+    "bench": "Bench",
+    "enterLive": "Live Mode",
+    "liveTracker": "Live Tracker",
+    "endMatch": "End Match",
+    "events": {
+      "goal": "Goal",
+      "shot": "Shot",
+      "pass": "Successful Pass",
+      "badPass": "Failed Pass",
+      "recovery": "Recovery",
+      "loss": "Loss",
+      "foul": "Foul",
+      "card": "Card"
+    }
+  },
+  "reports": {
+    "title": "Analytics & Reports",
+    "subtitle": "Global statistics, evolution and PDF export",
+    "filters": "Filters",
+    "exportPdf": "Export to PDF",
+    "season": "Season",
+    "team": "Team",
+    "dateRange": "Date Range",
+    "tabs": {
+      "timeline": "Global Timeline",
+      "players": "Players",
+      "training": "Training",
+      "matches": "Matches"
+    },
+    "timeline": {
+      "title": "Recent Activity",
+      "loadMore": "Load more history"
+    },
+    "players": {
+      "topScores": "Global Performance per Player",
+      "evolution": "Team Average Evolution"
+    },
+    "training": {
+      "load": "Weekly Load (Arbitrary Units)",
+      "categories": "Task Distribution by Category",
+      "mostUsed": "Most Used Tasks"
+    },
+    "matches": {
+      "heatmap": "Zone Map (Recoveries vs Losses)",
+      "seasonSummary": "Season Summary",
+      "offensive": "Offensive Metrics"
+    }
+  },
+  "settings": {
+    "title": "Settings & Administration",
+    "subtitle": "Manage permissions, templates and database structure.",
+    "tabs": {
+      "forms": "Form Builder",
+      "general": "General",
+      "roles": "Roles & Access"
+    },
+    "formBuilder": {
+      "entity": "Entity to configure",
+      "fieldsOf": "Fields of",
+      "description": "These fields will appear dynamically in the forms.",
+      "newField": "New Field",
+      "noFields": "No custom fields configured.",
+      "createFirst": "Create first field"
+    },
+    "dynamicForm": {
+      "title": "Club Custom Fields",
+      "select": "Select...",
+      "yes": "Yes",
+      "no": "No"
+    }
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "back": "Back"
+  }
+}

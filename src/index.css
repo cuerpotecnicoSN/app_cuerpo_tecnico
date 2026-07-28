@@ -1,54 +1,63 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;700;900&display=swap');
+@import "tailwindcss";
+
 :root {
-  --font-family-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-display: 'Outfit', system-ui, sans-serif;
   
-  /* Color Palette - Light Mode */
-  --color-primary: #2563eb;       /* Blue 600 */
-  --color-primary-hover: #1d4ed8; /* Blue 700 */
-  --color-secondary: #10b981;     /* Emerald 500 */
-  --color-accent: #f59e0b;        /* Amber 500 */
+  /* HIGH PERFORMANCE LIGHT THEME (AC MILAN EDITION) */
+  --color-bg-base: #ffffff;       /* Pure White */
+  --color-bg-surface: #f9fafb;    /* Light Gray (cards) */
+  --color-bg-hover: #f3f4f6;      /* Hover Gray */
   
-  --color-bg-base: #f8fafc;       /* Slate 50 */
-  --color-bg-surface: #ffffff;
-  --color-bg-hover: #f1f5f9;      /* Slate 100 */
+  --color-border: #e5e7eb;        /* Soft Border */
+  --color-border-focus: #d1d5db;  /* Stronger Border */
   
-  --color-text-primary: #0f172a;  /* Slate 900 */
-  --color-text-secondary: #64748b;/* Slate 500 */
-  --color-text-muted: #94a3b8;    /* Slate 400 */
+  --color-text-primary: #111827;  /* Near Black */
+  --color-text-secondary: #4b5563;/* Gray */
+  --color-text-muted: #6b7280;    /* Muted Gray */
   
-  --color-border: #e2e8f0;        /* Slate 200 */
-  --color-danger: #ef4444;        /* Red 500 */
-  --color-success: #10b981;       /* Emerald 500 */
+  /* AC Milan Colors */
+  --color-primary: #db0030;       /* Milan Red */
+  --color-primary-hover: #b00026; /* Darker Red */
+  --color-primary-glow: rgba(219, 0, 48, 0.2);
+
+  --color-secondary: #000000;     /* Milan Black */
+  --color-secondary-glow: rgba(0, 0, 0, 0.15);
+
+  --color-accent: #db0030;        /* Red */
+  
+  --color-danger: #db0030;        /* Red (Milan Red) */
+  --color-danger-glow: rgba(219, 0, 48, 0.2);
+
+  /* Milan Stripes Gradient (Secondary/Accent) */
+  --milan-stripes: repeating-linear-gradient(
+    45deg,
+    var(--color-primary),
+    var(--color-primary) 10px,
+    var(--color-secondary) 10px,
+    var(--color-secondary) 20px
+  );
+
+  /* Glassmorphism for Light Theme */
+  --glass-bg: rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(0, 0, 0, 0.05);
 
   /* Shadows */
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  --shadow-glow: 0 0 15px var(--color-primary-glow);
   
   /* Radii */
-  --radius-sm: 0.25rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1.25rem;
   --radius-full: 9999px;
 
   /* Transitions */
   --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-[data-theme='dark'] {
-  /* Color Palette - Dark Mode */
-  --color-primary: #3b82f6;       /* Blue 500 */
-  --color-primary-hover: #60a5fa; /* Blue 400 */
-  
-  --color-bg-base: #0f172a;       /* Slate 900 */
-  --color-bg-surface: #1e293b;    /* Slate 800 */
-  --color-bg-hover: #334155;      /* Slate 700 */
-  
-  --color-text-primary: #f8fafc;  /* Slate 50 */
-  --color-text-secondary: #cbd5e1;/* Slate 300 */
-  --color-text-muted: #64748b;    /* Slate 500 */
-  
-  --color-border: #334155;        /* Slate 700 */
 }
 
 /* Reset & Base Styles */
@@ -59,17 +68,19 @@
 }
 
 html {
-  font-family: var(--font-family-sans);
+  font-family: var(--font-sans);
   background-color: var(--color-bg-base);
   color: var(--color-text-primary);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  overflow-x: hidden;
 }
 
 a {
@@ -77,41 +88,43 @@ a {
   text-decoration: none;
   transition: color var(--transition-fast);
 }
-
-a:hover {
-  color: var(--color-primary-hover);
-}
+a:hover { color: var(--color-primary-hover); }
 
 button {
   font-family: inherit;
   cursor: pointer;
   border: none;
   background: none;
+  color: inherit;
 }
 
 input, textarea, select {
   font-family: inherit;
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: 0.5rem 0.75rem;
-  background-color: var(--color-bg-surface);
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 1rem;
+  background-color: var(--color-bg-base);
   color: var(--color-text-primary);
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  transition: all var(--transition-fast);
 }
 
 input:focus, textarea:focus, select:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+  box-shadow: 0 0 0 2px var(--color-primary-glow);
 }
 
 /* Typography Utilities */
-.h1 { font-size: 2.25rem; font-weight: 700; line-height: 1.2; letter-spacing: -0.02em; }
-.h2 { font-size: 1.875rem; font-weight: 600; line-height: 1.2; letter-spacing: -0.01em; }
-.h3 { font-size: 1.5rem; font-weight: 600; line-height: 1.3; }
+h1, h2, h3, h4, .font-display {
+  font-family: var(--font-display);
+}
+.h1 { font-size: 2.5rem; font-weight: 900; line-height: 1.1; letter-spacing: -0.03em; text-transform: uppercase; }
+.h2 { font-size: 1.75rem; font-weight: 800; line-height: 1.2; letter-spacing: -0.02em; text-transform: uppercase;}
+.h3 { font-size: 1.25rem; font-weight: 700; line-height: 1.3; }
 .text-sm { font-size: 0.875rem; }
 .text-xs { font-size: 0.75rem; }
 .text-muted { color: var(--color-text-muted); }
+.text-secondary { color: var(--color-text-secondary); }
 
 /* Layout Utilities */
 .flex { display: flex; }
@@ -121,61 +134,197 @@ input:focus, textarea:focus, select:focus {
 .justify-between { justify-content: space-between; }
 .gap-1 { gap: 0.25rem; }
 .gap-2 { gap: 0.5rem; }
+.gap-3 { gap: 0.75rem; }
 .gap-4 { gap: 1rem; }
 .gap-6 { gap: 1.5rem; }
+.w-full { width: 100%; }
+.h-full { height: 100%; }
 
 .p-4 { padding: 1rem; }
 .p-6 { padding: 1.5rem; }
-.m-auto { margin: auto; }
 
-/* Components */
+/* Grid System */
+.grid-2 { display: grid; grid-template-columns: repeat(1, 1fr); gap: 1.5rem; }
+.grid-3 { display: grid; grid-template-columns: repeat(1, 1fr); gap: 1.5rem; }
+.grid-4 { display: grid; grid-template-columns: repeat(1, 1fr); gap: 1.5rem; }
+
+@media (min-width: 768px) {
+  .grid-2 { grid-template-columns: repeat(2, 1fr); }
+  .grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .grid-4 { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 1024px) {
+  .grid-4 { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* Glass Card */
 .card {
   background-color: var(--color-bg-surface);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--color-border);
   padding: 1.5rem;
-  transition: box-shadow var(--transition-normal);
+  transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Red/Black Stripe accent on cards */
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--milan-stripes);
+  opacity: 0;
+  transition: opacity var(--transition-normal);
 }
 
 .card:hover {
   box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+  border-color: var(--color-border-focus);
+}
+.card:hover::before { opacity: 1; }
+
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
 }
 
+/* Milan Striped Accent Element */
+.bg-stripes {
+  background: var(--milan-stripes);
+}
+
+/* Buttons */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  border-radius: var(--radius-md);
-  font-weight: 500;
+  padding: 0.6rem 1.2rem;
+  border-radius: var(--radius-sm);
+  font-weight: 800;
+  font-family: var(--font-display);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  font-size: 0.75rem;
   transition: all var(--transition-fast);
+  cursor: pointer;
 }
 
 .btn-primary {
   background-color: var(--color-primary);
   color: white;
+  box-shadow: 0 4px 10px rgba(219, 0, 48, 0.2);
 }
 .btn-primary:hover {
   background-color: var(--color-primary-hover);
+  box-shadow: 0 6px 15px rgba(219, 0, 48, 0.3);
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background-color: var(--color-secondary);
+  color: white;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+.btn-secondary:hover {
+  background-color: #222;
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
 }
 
 .btn-outline {
-  border: 1px solid var(--color-border);
+  background-color: var(--color-bg-base);
   color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
 }
 .btn-outline:hover {
   background-color: var(--color-bg-hover);
   border-color: var(--color-text-muted);
 }
 
+.btn-danger {
+  background-color: rgba(219, 0, 48, 0.1);
+  color: var(--color-primary);
+  border: 1px solid rgba(219, 0, 48, 0.2);
+}
+.btn-danger:hover {
+  background-color: var(--color-primary);
+  color: white;
+}
+
+/* Tags/Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--radius-full);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.badge-success { background-color: rgba(16,185,129,0.15); color: #059669; border: 1px solid rgba(16,185,129,0.3); }
+.badge-warning { background-color: rgba(245,158,11,0.15); color: #d97706; border: 1px solid rgba(245,158,11,0.3); }
+.badge-danger { background-color: rgba(219,0,48,0.15); color: var(--color-primary); border: 1px solid rgba(219,0,48,0.3); }
+.badge-neutral { background-color: var(--color-bg-hover); color: var(--color-text-secondary); border: 1px solid var(--color-border); }
+
 /* Animations */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(15px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
 .animate-fade-in {
-  animation: fadeIn var(--transition-normal) ease-out forwards;
+  animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--color-bg-hover); }
+::-webkit-scrollbar-thumb { background: var(--color-border-focus); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-text-muted); }
+
+/* =======================================================================
+   PRINT STYLES FOR REPORTS
+   ======================================================================= */
+@media print {
+  /* Forzar que se impriman los colores de fondo y las imágenes */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+  
+  /* Ocultar el scrollbar en impresión */
+  ::-webkit-scrollbar { display: none; }
+
+  /* Por defecto apaisado y sin márgenes para las presentaciones */
+  @page {
+    size: landscape;
+    margin: 0;
+  }
+
+  /* Ocultamos toda la interfaz de la app general por defecto */
+  body > #root > div.layout-wrapper {
+    display: none !important;
+  }
+
+  /* Mostramos el wrapper de impresión (que se inyecta fuera o encima del layout principal) */
+  #print-root {
+    display: block !important;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: white;
+    z-index: 999999;
+  }
+}
+

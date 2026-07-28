@@ -1,0 +1,181 @@
+{
+  "nav": {
+    "dashboard": "Pannello Principale",
+    "myTeam": "La mia Squadra",
+    "planning": "Pianificazione",
+    "matches": "Partite",
+    "tracking": "Monitoraggio",
+    "reports": "Rapporti",
+    "settings": "Impostazioni"
+  },
+  "dashboard": {
+    "welcome": "Benvenuto nella Dashboard",
+    "summary": "Ecco il riepilogo della tua squadra per oggi.",
+    "newSession": "Nuova Sessione",
+    "nextMatch": "Prossima Partita",
+    "availablePlayers": "Giocatori Disponibili",
+    "injured": "Infortunati",
+    "trainingLoad": "Carico di Allenamento",
+    "tacticalSession": "Sessione Tattica",
+    "daysToComp": "Giorni alla Competizione",
+    "days": "Giorni",
+    "matchday": "Giornata",
+    "latestEvals": "Ultime Valutazioni",
+    "noEvals": "Nessuna valutazione recente.",
+    "medicalAlerts": "Allarmi Medici",
+    "noMedical": "Nessun nuovo rapporto su infortuni.",
+    "high": "Alto"
+  },
+  "auth": {
+    "login": "Accedi",
+    "logout": "Disconnetti",
+    "email": "Email",
+    "password": "Password"
+  },
+  "players": {
+    "title": "Rosa",
+    "subtitle": "Gestione giocatori e profili",
+    "newPlayer": "Nuovo Giocatore",
+    "filters": "Filtri",
+    "search": "Cerca giocatore...",
+    "status": {
+      "Available": "Disponibile",
+      "Injured": "Infortunato",
+      "Doubtful": "In Dubbio"
+    },
+    "viewProfile": "Vedi Profilo",
+    "personalInfo": "Informazioni Personali",
+    "medicalStatus": "Stato Medico",
+    "evolution": "Evoluzione Recente",
+    "latestMeetings": "Ultime Riunioni",
+    "scheduleMeeting": "Fissa Riunione",
+    "age": "anni",
+    "height": "Altezza",
+    "weight": "Peso",
+    "foot": "Piede",
+    "nationality": "Nazionalità",
+    "contract": "Contratto",
+    "cleared": "Idoneo",
+    "notCleared": "Non Idoneo",
+    "score": "Punteggio",
+    "goals": "Gol",
+    "assists": "Assist",
+    "minutes": "Minuti Giocati"
+  },
+  "meetings": {
+    "newMeeting": "Nuova Riunione",
+    "schedule": "Fissa",
+    "cancel": "Annulla",
+    "date": "Data",
+    "time": "Ora",
+    "type": "Tipo",
+    "notes": "Note"
+  },
+  "planning": {
+    "calendar": "Calendario Settimanale",
+    "library": "Libreria Esercizi",
+    "newTraining": "Nuovo Allenamento",
+    "newTask": "Nuovo Esercizio",
+    "objectives": "Obiettivi",
+    "location": "Luogo",
+    "tasks": "Esercizi",
+    "startSession": "Inizia Sessione",
+    "duration": "Durata",
+    "load": "Carico",
+    "intensity": "Intensità",
+    "category": "Categoria",
+    "players": "Giocatori"
+  },
+  "matches": {
+    "title": "Partite",
+    "subtitle": "Gestione partite e monitoraggio live",
+    "newMatch": "Nuova Partita",
+    "status": {
+      "Upcoming": "Prossimamente",
+      "Live": "In Diretta",
+      "Finished": "Terminata"
+    },
+    "competition": "Competizione",
+    "season": "Stagione",
+    "stadium": "Stadio",
+    "callup": "Convocazioni",
+    "lineup": "Formazione Titolare",
+    "bench": "Panchina",
+    "enterLive": "Modalità Live",
+    "liveTracker": "Monitoraggio Live",
+    "endMatch": "Termina Partita",
+    "events": {
+      "goal": "Gol",
+      "shot": "Tiro",
+      "pass": "Passaggio Riuscito",
+      "badPass": "Passaggio Sbagliato",
+      "recovery": "Recupero",
+      "loss": "Palla Persa",
+      "foul": "Fallo",
+      "card": "Cartellino"
+    }
+  },
+  "reports": {
+    "title": "Analisi e Rapporti",
+    "subtitle": "Statistiche globali, evoluzione e esportazione PDF",
+    "filters": "Filtri",
+    "exportPdf": "Esporta in PDF",
+    "season": "Stagione",
+    "team": "Squadra",
+    "dateRange": "Intervallo Date",
+    "tabs": {
+      "timeline": "Cronologia Globale",
+      "players": "Giocatori",
+      "training": "Allenamenti",
+      "matches": "Partite"
+    },
+    "timeline": {
+      "title": "Attività Recente",
+      "loadMore": "Carica altra cronologia"
+    },
+    "players": {
+      "topScores": "Rendimento Globale per Giocatore",
+      "evolution": "Evoluzione Media Squadra"
+    },
+    "training": {
+      "load": "Carico Settimanale (Unità Arbitrarie)",
+      "categories": "Distribuzione Esercizi per Categoria",
+      "mostUsed": "Esercizi Più Utilizzati"
+    },
+    "matches": {
+      "heatmap": "Mappa Zone (Recuperi vs Palle Perse)",
+      "seasonSummary": "Riepilogo Stagione",
+      "offensive": "Metriche Offensive"
+    }
+  },
+  "settings": {
+    "title": "Impostazioni e Amministrazione",
+    "subtitle": "Gestisci permessi, modelli e struttura del database.",
+    "tabs": {
+      "forms": "Costruttore Moduli",
+      "general": "Generale",
+      "roles": "Ruoli e Accessi"
+    },
+    "formBuilder": {
+      "entity": "Entità da configurare",
+      "fieldsOf": "Campi di",
+      "description": "Questi campi appariranno dinamicamente nei moduli.",
+      "newField": "Nuovo Campo",
+      "noFields": "Nessun campo personalizzato configurato.",
+      "createFirst": "Crea il primo campo"
+    },
+    "dynamicForm": {
+      "title": "Campi Personalizzati Club",
+      "select": "Seleziona...",
+      "yes": "Sì",
+      "no": "No"
+    }
+  },
+  "common": {
+    "save": "Salva",
+    "cancel": "Annulla",
+    "edit": "Modifica",
+    "delete": "Elimina",
+    "back": "Indietro"
+  }
+}
