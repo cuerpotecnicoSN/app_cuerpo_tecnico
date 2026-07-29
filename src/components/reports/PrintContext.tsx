@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface PrintContextType {
   printReport: (content: ReactNode) => void;
@@ -13,6 +14,7 @@ export const usePrint = () => {
 };
 
 export const PrintProvider = ({ children }: { children: ReactNode }) => {
+  const { t } = useTranslation();
   const [printContent, setPrintContent] = useState<ReactNode | null>(null);
 
   const printReport = (content: ReactNode) => {
@@ -32,8 +34,8 @@ export const PrintProvider = ({ children }: { children: ReactNode }) => {
       {printContent && (
         <div id="print-root" className="print-only">
           <div className="absolute top-4 right-4 print:hidden flex gap-2">
-            <button onClick={() => window.print()} className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg font-bold">Imprimir (Ctrl+P)</button>
-            <button onClick={clearPrint} className="bg-slate-700 text-white px-4 py-2 rounded-lg shadow-lg font-bold">Cerrar Informe</button>
+            <button onClick={() => window.print()} className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg font-bold">{t('reports.print.printButton')}</button>
+            <button onClick={clearPrint} className="bg-slate-700 text-white px-4 py-2 rounded-lg shadow-lg font-bold">{t('reports.print.closeReport')}</button>
           </div>
           {printContent}
         </div>

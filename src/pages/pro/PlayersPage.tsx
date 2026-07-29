@@ -2,16 +2,23 @@ import React, { useState, useMemo } from 'react';
 import type { Player, DevTask, MedicalRecord, SportsStats } from '../../components/types';
 import PlayersManagementView from '../../components/pro/PlayersManagementView';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useSupabaseData } from '../../hooks/useSupabaseData';
 import PlayerImportModal from '../../components/pro/PlayerImportModal';
-import { Plus, Users as UsersIcon } from 'lucide-react';
+import { Plus, Users as UsersIcon, Grid, List, Filter, Globe, Search } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import '../staff/staff.css';
 
 export default function PlayersPage() {
   const navigate = useNavigate();
   const [showImportModal, setShowImportModal] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [positionFilter, setPositionFilter] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [ageRange, setAgeRange] = useState<[number, number]>([15, 45]);
   const { data: dbPlayers, loading } = useSupabaseData<any>('players');
+
+  const thumbStyles = 'age-range-thumb';
 
   // Mapeamos los datos de la base de datos al formato que espera el frontend
   const players = useMemo<Player[]>(() => {
@@ -33,6 +40,46 @@ export default function PlayersPage() {
       avatar: p.photo_url || 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=200'
     }));
   }, [dbPlayers]);
+
+  const filteredPlayers = useMemo(() => {
+    return players.filter(p => {
+      // Filtro por nombre
+      if (searchQuery && !p.name.toLowerCase().includes(searchQuery.toLowerCase())) {
+        return false;
+      }
+      
+      // Filtro por posición
+      if (positionFilter) {
+        const pos = (p.position || '').toLowerCase();
+        if (positionFilter === 'Portero' && !pos.includes('portero') && !pos.includes('arquero')) return false;
+        if (positionFilter === 'Defensa' && !pos.includes('defensa') && !pos.includes('lateral') && !pos.includes('central') && !pos.includes('carrilero')) return false;
+        if (positionFilter === 'Centrocampista' && !pos.includes('centrocampista') && !pos.includes('medio') && !pos.includes('pivote') && !pos.includes('mediapunta') && !pos.includes('volante')) return false;
+        if (positionFilter === 'Delantero' && !pos.includes('delantero') && !pos.includes('extremo') && !pos.includes('punta') && !pos.includes('atacante')) return false;
+      }
+
+      // Filtro por edad
+      if (p.age > 0) {
+        if (p.age < ageRange[0] || p.age > ageRange[1]) return false;
+      }
+
+      return true;
+    });
+  }, [players, positionFilter, ageRange, searchQuery]);
+
+  const summaryStats = useMemo(() => {
+    const totalPlayers = players.length;
+    const nationalities = new Set(players.filter(p => p.nationality).map(p => p.nationality.toLowerCase().trim())).size;
+    const positions = players.reduce((acc, p) => {
+       const pos = (p.position || 'Sin definir').toLowerCase();
+       if (pos.includes('portero') || pos.includes('arquero')) acc.porteros = (acc.porteros || 0) + 1;
+       else if (pos.includes('defensa') || pos.includes('lateral') || pos.includes('central') || pos.includes('carrilero')) acc.defensas = (acc.defensas || 0) + 1;
+       else if (pos.includes('centro') || pos.includes('medio') || pos.includes('pivote') || pos.includes('mediapunta') || pos.includes('volante')) acc.medios = (acc.medios || 0) + 1;
+       else if (pos.includes('delantero') || pos.includes('extremo') || pos.includes('punta') || pos.includes('atacante')) acc.delanteros = (acc.delanteros || 0) + 1;
+       return acc;
+    }, { porteros: 0, defensas: 0, medios: 0, delanteros: 0 });
+
+    return { totalPlayers, nationalities, positions };
+  }, [players]);
 
   const [medicals, setMedicals] = useState<Record<string, MedicalRecord>>({});
   const [stats, setStats] = useState<Record<string, SportsStats>>({});
@@ -78,12 +125,22 @@ export default function PlayersPage() {
         </div>
         <div className="staff-actions">
           {players.length > 0 && (
-            <button
-              onClick={() => navigate(`/players/${players[0].id}`)}
-              className="btn btn-outline"
-            >
-              Ver primera ficha
-            </button>
+            <div className="flex bg-gray-100 p-1 rounded-lg border border-gray-200 mr-2">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`p-1.5 rounded-md flex items-center justify-center transition-all ${viewMode === 'grid' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'}`}
+                title="Vista de cuadrícula"
+              >
+                <Grid size={18} />
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`p-1.5 rounded-md flex items-center justify-center transition-all ${viewMode === 'list' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'}`}
+                title="Vista de lista"
+              >
+                <List size={18} />
+              </button>
+            </div>
           )}
           <button onClick={() => setShowImportModal(true)} className="btn btn-primary">
             <Plus size={16} />
@@ -91,6 +148,156 @@ export default function PlayersPage() {
           </button>
         </div>
       </div>
+
+      {players.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
+            <div className="p-3 bg-blue-50 text-blue-600 rounded-lg">
+              <UsersIcon size={24} />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500 font-medium">Total Jugadores</p>
+              <p className="text-2xl font-bold">{summaryStats.totalPlayers}</p>
+            </div>
+          </div>
+          
+          <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
+            <div className="p-3 bg-indigo-50 text-indigo-600 rounded-lg">
+              <Globe size={24} />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500 font-medium">Nacionalidades</p>
+              <p className="text-2xl font-bold">{summaryStats.nationalities}</p>
+            </div>
+          </div>
+
+          <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-center">
+             <p className="text-sm text-gray-500 font-medium mb-2">Desglose por Posición</p>
+             <div className="flex justify-between items-center text-sm font-medium text-gray-700">
+                <span className="flex items-center gap-1.5" title="Porteros"><span className="w-2 h-2 rounded-full bg-amber-400"></span> POR: {summaryStats.positions.porteros}</span>
+                <span className="flex items-center gap-1.5" title="Defensas"><span className="w-2 h-2 rounded-full bg-blue-400"></span> DEF: {summaryStats.positions.defensas}</span>
+                <span className="flex items-center gap-1.5" title="Centrocampistas"><span className="w-2 h-2 rounded-full bg-emerald-400"></span> MED: {summaryStats.positions.medios}</span>
+                <span className="flex items-center gap-1.5" title="Delanteros"><span className="w-2 h-2 rounded-full bg-rose-400"></span> DEL: {summaryStats.positions.delanteros}</span>
+             </div>
+          </div>
+        </div>
+      )}
+
+      {players.length > 0 && (
+        <div className="flex flex-wrap items-center gap-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm mt-4">
+          <div className="flex items-center gap-2 text-gray-500">
+            <Filter size={18} />
+            <span className="font-medium text-sm">Filtros:</span>
+          </div>
+          
+          <select 
+            value={positionFilter} 
+            onChange={(e) => setPositionFilter(e.target.value)}
+            className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm bg-gray-50 hover:bg-white transition-colors focus:ring-2 focus:ring-blue-500/20 outline-none"
+          >
+            <option value="">Todas las demarcaciones</option>
+            <option value="Portero">Porteros</option>
+            <option value="Defensa">Defensas</option>
+            <option value="Centrocampista">Centrocampistas</option>
+            <option value="Delantero">Delanteros</option>
+          </select>
+
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+            <input
+              type="text"
+              placeholder="Buscar jugador..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 pr-4 py-1.5 text-sm border border-gray-300 rounded-lg bg-gray-50 hover:bg-white focus:bg-white transition-colors focus:ring-2 focus:ring-blue-500/20 outline-none w-48"
+            />
+          </div>
+
+          <div className="flex items-center gap-3 bg-gradient-to-br from-[#1e1e24] to-[#16161b] px-4 py-2.5 rounded-xl text-white shadow-[inset_0_1px_2px_rgba(0,0,0,0.4),0_1px_0_rgba(255,255,255,0.03)] border border-white/5">
+            <span className="text-xs font-semibold uppercase tracking-wide text-white/50">Edad</span>
+
+            <span className="text-sm font-bold min-w-[26px] text-right bg-red-500/20 text-red-200 rounded-md px-1.5 py-0.5">{ageRange[0]}</span>
+
+            <div className="relative w-48 h-6 flex items-center mx-1">
+              {/* Track background */}
+              <div className="absolute w-full h-1.5 bg-[#2a2c3a] rounded-full pointer-events-none"></div>
+              {/* Active track */}
+              <div
+                className="absolute h-1.5 bg-gradient-to-r from-red-600 to-red-400 rounded-full shadow-[0_0_8px_rgba(220,38,38,0.6)] pointer-events-none"
+                style={{
+                  left: `${((ageRange[0] - 15) / (45 - 15)) * 100}%`,
+                  right: `${100 - ((ageRange[1] - 15) / (45 - 15)) * 100}%`
+                }}
+              ></div>
+              {/* Min thumb */}
+              <input
+                type="range"
+                min={15}
+                max={45}
+                value={ageRange[0]}
+                onChange={(e) => setAgeRange([Math.min(parseInt(e.target.value), ageRange[1] - 1), ageRange[1]])}
+                className={`absolute w-full appearance-none bg-transparent pointer-events-none cursor-pointer m-0 ${thumbStyles}`}
+                style={{ zIndex: ageRange[0] >= ageRange[1] - 1 ? 30 : 20 }}
+              />
+              {/* Max thumb */}
+              <input
+                type="range"
+                min={15}
+                max={45}
+                value={ageRange[1]}
+                onChange={(e) => setAgeRange([ageRange[0], Math.max(parseInt(e.target.value), ageRange[0] + 1)])}
+                className={`absolute w-full appearance-none bg-transparent pointer-events-none cursor-pointer m-0 ${thumbStyles}`}
+                style={{ zIndex: 25 }}
+              />
+            </div>
+
+            <span className="text-sm font-bold min-w-[26px] bg-red-500/20 text-red-200 rounded-md px-1.5 py-0.5">{ageRange[1]}</span>
+          </div>
+
+          <style>{`
+            .age-range-thumb::-webkit-slider-thumb {
+              pointer-events: auto;
+              -webkit-appearance: none;
+              appearance: none;
+              width: 18px;
+              height: 18px;
+              background: #ffffff;
+              border: 3px solid #f87171;
+              border-radius: 9999px;
+              box-shadow: 0 0 0 4px rgba(248,113,113,0.25), 0 2px 6px rgba(0,0,0,0.5);
+              cursor: pointer;
+              transition: transform 0.15s ease;
+              margin-top: 0;
+            }
+            .age-range-thumb::-webkit-slider-thumb:hover { transform: scale(1.15); }
+            .age-range-thumb::-webkit-slider-thumb:active { transform: scale(1.3); }
+            .age-range-thumb::-moz-range-thumb {
+              pointer-events: auto;
+              width: 18px;
+              height: 18px;
+              background: #ffffff;
+              border: 3px solid #f87171;
+              border-radius: 9999px;
+              box-shadow: 0 0 0 4px rgba(248,113,113,0.25), 0 2px 6px rgba(0,0,0,0.5);
+              cursor: pointer;
+            }
+            .age-range-thumb::-moz-range-track {
+              appearance: none;
+              background: transparent;
+              border: none;
+            }
+          `}</style>
+
+          {(positionFilter || ageRange[0] > 15 || ageRange[1] < 45) && (
+            <button 
+              onClick={() => { setPositionFilter(''); setAgeRange([15, 45]); }}
+              className="text-sm text-gray-500 hover:text-red-600 transition-colors ml-auto flex-shrink-0"
+            >
+              Limpiar filtros
+            </button>
+          )}
+        </div>
+      )}
 
       {!loading && players.length === 0 && (
         <div className="card staff-empty">
@@ -118,23 +325,39 @@ export default function PlayersPage() {
       )}
 
       {players.length > 0 && (
-        <PlayersManagementView 
-          players={players}
-          onAddPlayer={handleAddPlayer}
-          onUpdatePlayer={handleEditPlayer}
-          onDeletePlayer={handleDeletePlayer}
-          tasks={tasks}
-          onAddTask={(task: DevTask) => setTasks([...tasks, task])}
-          onUpdateTaskProgress={() => {}}
-          onAddTaskComment={() => {}}
-          onUpdateTask={(task: DevTask) => setTasks(tasks.map(t => t.id === task.id ? task : t))}
-          medicals={medicals}
-          onUpdateMedical={(medical: MedicalRecord) => setMedicals({...medicals, [medical.playerId]: medical})}
-          stats={stats}
-          onUpdateStats={(playerId: string, updatedStats: SportsStats) => setStats({...stats, [playerId]: updatedStats})}
-          activeRole="Entrenador"
-          language="es"
-        />
+        <>
+          {filteredPlayers.length === 0 ? (
+            <div className="card staff-empty mt-6">
+              <UsersIcon size={32} className="text-muted" />
+              <p className="h3 mt-4">No hay jugadores que coincidan con los filtros</p>
+              <button 
+                onClick={() => { setPositionFilter(''); setAgeRange([15, 45]); }}
+                className="btn btn-outline mt-4"
+              >
+                Limpiar filtros
+              </button>
+            </div>
+          ) : (
+            <PlayersManagementView 
+              players={filteredPlayers}
+              viewMode={viewMode}
+              onAddPlayer={handleAddPlayer}
+              onUpdatePlayer={handleEditPlayer}
+              onDeletePlayer={handleDeletePlayer}
+              tasks={tasks}
+              onAddTask={(task: DevTask) => setTasks([...tasks, task])}
+              onUpdateTaskProgress={() => {}}
+              onAddTaskComment={() => {}}
+              onUpdateTask={(task: DevTask) => setTasks(tasks.map(t => t.id === task.id ? task : t))}
+              medicals={medicals}
+              onUpdateMedical={(medical: MedicalRecord) => setMedicals({...medicals, [medical.playerId]: medical})}
+              stats={stats}
+              onUpdateStats={(playerId: string, updatedStats: SportsStats) => setStats({...stats, [playerId]: updatedStats})}
+              activeRole="Entrenador"
+              language="es"
+            />
+          )}
+        </>
       )}
     </div>
   );

@@ -1,5 +1,6 @@
 import { useForm } from 'react-hook-form';
 import { X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { Task } from '../../types/training';
 
 interface TaskFormModalProps {
@@ -9,6 +10,16 @@ interface TaskFormModalProps {
 }
 
 const TaskFormModal = ({ isOpen, onClose, taskToEdit }: TaskFormModalProps) => {
+  const { t } = useTranslation();
+  const categoryOptions = [
+    t('planning.taskFormModal.categories.warmup'),
+    t('planning.taskFormModal.categories.technical'),
+    t('planning.taskFormModal.categories.tactical'),
+    t('planning.taskFormModal.categories.physical'),
+    t('planning.taskFormModal.categories.match'),
+    t('planning.taskFormModal.categories.setPieces'),
+    t('planning.taskFormModal.categories.recovery'),
+  ];
   const { register, handleSubmit } = useForm<Task>({
     defaultValues: taskToEdit || {
       category: 'Técnica',
@@ -21,7 +32,7 @@ const TaskFormModal = ({ isOpen, onClose, taskToEdit }: TaskFormModalProps) => {
 
   const onSubmit = (data: Task) => {
     console.log('Tarea guardada:', data);
-    alert('Tarea guardada en la biblioteca (Mock)');
+    alert(t('planning.taskFormModal.savedAlert'));
     onClose();
   };
 
@@ -35,92 +46,88 @@ const TaskFormModal = ({ isOpen, onClose, taskToEdit }: TaskFormModalProps) => {
           <X size={24} />
         </button>
         
-        <h2 className="h2" style={{ marginBottom: '1.5rem' }}>{taskToEdit ? 'Editar Tarea' : 'Nueva Tarea'}</h2>
+        <h2 className="h2" style={{ marginBottom: '1.5rem' }}>{taskToEdit ? t('planning.taskFormModal.editTitle') : t('planning.newTask')}</h2>
         
         <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           
           <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1rem' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <label className="text-sm font-medium">Nombre de la Tarea</label>
+              <label className="text-sm font-medium">{t('planning.taskFormModal.taskName')}</label>
               <input type="text" {...register('name', { required: true })} />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <label className="text-sm font-medium">Categoría</label>
+              <label className="text-sm font-medium">{t('planning.category')}</label>
               <select {...register('category', { required: true })}>
-                <option value="Calentamiento">Calentamiento</option>
-                <option value="Técnica">Técnica</option>
-                <option value="Táctica">Táctica</option>
-                <option value="Física">Física</option>
-                <option value="Partido">Partido</option>
-                <option value="Estrategia (ABP)">Estrategia (ABP)</option>
-                <option value="Recuperación">Recuperación</option>
+                {categoryOptions.map(opt => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
               </select>
             </div>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <label className="text-sm font-medium">Objetivo Principal</label>
+            <label className="text-sm font-medium">{t('planning.taskFormModal.mainObjective')}</label>
             <input type="text" {...register('objective', { required: true })} />
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <label className="text-sm font-medium">Descripción y Reglas</label>
+            <label className="text-sm font-medium">{t('planning.taskFormModal.descriptionAndRules')}</label>
             <textarea rows={3} {...register('description')} />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <label className="text-sm font-medium">Nº Jugadores</label>
-              <input type="text" placeholder="Ej. 4v4+2" {...register('playersCount')} />
+              <label className="text-sm font-medium">{t('planning.taskFormModal.playersCount')}</label>
+              <input type="text" placeholder={t('planning.taskFormModal.playersCountPlaceholder')} {...register('playersCount')} />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <label className="text-sm font-medium">Espacio</label>
-              <input type="text" placeholder="Ej. 40x30m" {...register('space')} />
+              <label className="text-sm font-medium">{t('planning.taskFormModal.space')}</label>
+              <input type="text" placeholder={t('planning.taskFormModal.spacePlaceholder')} {...register('space')} />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <label className="text-sm font-medium">Duración (min)</label>
+              <label className="text-sm font-medium">{t('planning.taskFormModal.durationMin')}</label>
               <input type="number" {...register('duration')} />
             </div>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <label className="text-sm font-medium">Series/Reps</label>
+              <label className="text-sm font-medium">{t('planning.taskFormModal.seriesReps')}</label>
               <input type="number" {...register('reps')} />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <label className="text-sm font-medium">Recuperación</label>
-              <input type="text" placeholder="Ej. 1 min" {...register('recoveryTime')} />
+              <label className="text-sm font-medium">{t('planning.taskFormModal.recovery')}</label>
+              <input type="text" placeholder={t('planning.taskFormModal.recoveryPlaceholder')} {...register('recoveryTime')} />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <label className="text-sm font-medium">Carga</label>
-              <input type="text" placeholder="Alta/Media/Baja" {...register('load')} />
+              <label className="text-sm font-medium">{t('planning.load')}</label>
+              <input type="text" placeholder={t('planning.taskFormModal.loadPlaceholder')} {...register('load')} />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <label className="text-sm font-medium">Intensidad</label>
-              <input type="text" placeholder="1-10" {...register('intensity')} />
+              <label className="text-sm font-medium">{t('planning.intensity')}</label>
+              <input type="text" placeholder={t('planning.taskFormModal.intensityPlaceholder')} {...register('intensity')} />
             </div>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-               <label className="text-sm font-medium">Consignas (Entrenador)</label>
+               <label className="text-sm font-medium">{t('planning.taskFormModal.coachInstructions')}</label>
                <textarea rows={2} {...register('instructions')} />
              </div>
              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-               <label className="text-sm font-medium">Variantes</label>
+               <label className="text-sm font-medium">{t('planning.taskFormModal.variants')}</label>
                <textarea rows={2} {...register('variants')} />
              </div>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <label className="text-sm font-medium">URL de Imagen / Diagrama (Opcional)</label>
+            <label className="text-sm font-medium">{t('planning.taskFormModal.mediaUrl')}</label>
             <input type="url" placeholder="https://..." {...register('mediaUrl')} />
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem' }}>
-            <button type="button" className="btn btn-outline" onClick={onClose}>Cancelar</button>
-            <button type="submit" className="btn btn-primary">Guardar Tarea</button>
+            <button type="button" className="btn btn-outline" onClick={onClose}>{t('common.cancel')}</button>
+            <button type="submit" className="btn btn-primary">{t('planning.taskFormModal.saveTask')}</button>
           </div>
 
         </form>

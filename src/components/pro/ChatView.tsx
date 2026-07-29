@@ -1,11 +1,13 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 export default function ChatView(props: any) {
+  const { t } = useTranslation();
   return (
     <div className="p-8 text-center text-red-400 bg-red-900/20 border border-red-500/50 rounded-xl my-4">
-        <h2 className="text-xl font-bold mb-2">Módulo Incompleto</h2>
-        <p>El módulo <strong>ChatView</strong> se corrompió al pegarlo en el chat.</p>
-        <p>Por favor, copia el archivo completo en la carpeta del proyecto.</p>
+        <h2 className="text-xl font-bold mb-2">{t('pro.moduleIncomplete.title')}</h2>
+        <p dangerouslySetInnerHTML={{ __html: t('pro.moduleIncomplete.message', { moduleName: 'ChatView' }) }} />
+        <p>{t('pro.moduleIncomplete.instruction')}</p>
     </div>
   );
 }

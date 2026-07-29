@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Search, Check, AlertCircle, ImagePlus, Eraser, Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabase';
 import { ensureContext } from '../../lib/dataService';
 import ReactCrop, { type Crop } from 'react-image-crop';
@@ -13,6 +14,7 @@ interface PlayerImportModalProps {
 }
 
 export default function PlayerImportModal({ onClose, onSuccess, playerToEdit }: PlayerImportModalProps) {
+  const { t } = useTranslation();
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [isRemovingBg, setIsRemovingBg] = useState(false);
@@ -48,7 +50,7 @@ export default function PlayerImportModal({ onClose, onSuccess, playerToEdit }: 
 
   const scrapeExternalData = async () => {
     if (!url.includes('besoccer.es/jugador/') && !url.includes('transfermarkt.')) {
-      setError('Por favor, introduce un enlace válido de BeSoccer o Transfermarkt');
+      setError(t('pro.playerImport.errors.invalidUrl'));
       return;
     }
 
@@ -67,13 +69,13 @@ export default function PlayerImportModal({ onClose, onSuccess, playerToEdit }: 
           if (!textHtml.includes('data-header__headline-wrapper')) throw new Error('blocked-content');
         } catch {
           const proxyResponse = await fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`);
-          if (!proxyResponse.ok) throw new Error('Transfermarkt bloqueó la petición (protección anti-bots). Prueba de nuevo en unos segundos.');
+          if (!proxyResponse.ok) throw new Error(t('pro.playerImport.errors.transfermarktBlocked'));
           textHtml = await proxyResponse.text();
         }
       } else {
         const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
         const response = await fetch(proxyUrl);
-        if (!response.ok) throw new Error('Error al conectar con BeSoccer');
+        if (!response.ok) throw new Error(t('pro.playerImport.errors.besoccerConnectError'));
         textHtml = await response.text();
       }
       
@@ -101,7 +103,7 @@ export default function PlayerImportModal({ onClose, onSuccess, playerToEdit }: 
       if (isTransfermarkt) {
         let fullName = doc.querySelector('h1.data-header__headline-wrapper')?.textContent?.replace(/[\n\t]/g, '')?.trim() || '';
         fullName = fullName.replace(/\s{2,}/g, ' '); 
-        if (!fullName) throw new Error('No se pudo leer la página de Transfermarkt. (Protección anti-bots o URL inválida)');
+        if (!fullName) throw new Error(t('pro.playerImport.errors.transfermarktParseError'));
         
         const parts = fullName.split(' ');
         if (parts.length > 0) {
@@ -150,6 +152,13 @@ export default function PlayerImportModal({ onClose, onSuccess, playerToEdit }: 
              clone.querySelectorAll('img').forEach(img => img.remove());
              birthPlace = (clone.textContent || '').replace(/&nbsp;/g, ' ').replace(/\s{2,}/g, ' ').trim();
           }
+          if (label.includes('posición') && value) {
+             let parsedPos = value;
+             if (parsedPos.includes('-')) {
+                parsedPos = parsedPos.split('-')[1].trim();
+             }
+             position = parsedPos.charAt(0).toUpperCase() + parsedPos.slice(1);
+          }
         });
 
         if (!nationality) {
@@ -158,14 +167,13 @@ export default function PlayerImportModal({ onClose, onSuccess, playerToEdit }: 
         }
 
         const posTitle = Array.from(doc.querySelectorAll('.detail-position__title')).find(el => el.textContent?.toLowerCase().includes('principal'));
-        if (posTitle && posTitle.nextElementSibling) {
+        if (posTitle && posTitle.nextElementSibling && (position === 'Sin definir' || position === '')) {
             const posValue = posTitle.nextElementSibling.textContent?.trim() || '';
-            const posLow = posValue.toLowerCase();
-            if (posLow.includes('delantero') || posLow.includes('extremo')) position = 'Delantero';
-            else if (posLow.includes('medio') || posLow.includes('interior') || posLow.includes('pivote')) position = 'Centrocampista';
-            else if (posLow.includes('defensa') || posLow.includes('lateral')) position = 'Defensa';
-            else if (posLow.includes('portero')) position = 'Portero';
-            else position = posValue;
+            let parsedPos = posValue;
+            if (parsedPos.includes('-')) {
+                parsedPos = parsedPos.split('-')[1].trim();
+            }
+            position = parsedPos.charAt(0).toUpperCase() + parsedPos.slice(1);
         }
 
         const marketEl = doc.querySelector('.data-header__market-value-wrapper');
@@ -279,7 +287,7 @@ export default function PlayerImportModal({ onClose, onSuccess, playerToEdit }: 
       } else {
         const titleEl = doc.querySelector('.panel-title');
         if (!titleEl) {
-          throw new Error('BeSoccer ha bloqueado la extracción automática (protección anti-bots).');
+          throw new Error(t('pro.playerImport.errors.besoccerBlocked'));
         }
         const subtitleEl = doc.querySelector('.panel-subtitle');
         firstName = titleEl?.textContent?.trim() || '';
@@ -354,7 +362,7 @@ export default function PlayerImportModal({ onClose, onSuccess, playerToEdit }: 
       });
 
     } catch (err: any) {
-      setError(err.message || 'Error analizando la web');
+      setError(err.message || t('pro.playerImport.errors.scrapeGenericError'));
     } finally {
       setLoading(false);
     }
@@ -367,7 +375,7 @@ export default function PlayerImportModal({ onClose, onSuccess, playerToEdit }: 
       if (typeof imageSource === 'string') {
         const proxyUrl = imageSource.startsWith('data:') ? imageSource : `https://corsproxy.io/?${encodeURIComponent(imageSource)}`;
         const response = await fetch(proxyUrl);
-        if (!response.ok) throw new Error('No se pudo descargar la imagen original');
+        if (!response.ok) throw new Error(t('pro.playerImport.errors.imageDownloadError'));
         const blob = await response.blob();
         setCropImageSrc(URL.createObjectURL(blob));
       } else {
@@ -375,7 +383,7 @@ export default function PlayerImportModal({ onClose, onSuccess, playerToEdit }: 
       }
     } catch (err: any) {
       console.error(err);
-      setError('Error al cargar imagen para recortar: ' + (err.message || 'Desconocido'));
+      setError(t('pro.playerImport.errors.imageLoadError') + ': ' + (err.message || t('pro.playerImport.errors.unknown')));
     } finally {
       setIsRemovingBg(false);
     }

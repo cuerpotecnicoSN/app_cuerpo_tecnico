@@ -119,11 +119,21 @@ const MainLayout: React.FC = () => {
 
           <div className="header-right">
             <div className="lang-selector">
-              <select value={i18n.language} onChange={(e) => changeLanguage(e.target.value)}>
-                <option value="es">ES</option>
-                <option value="en">EN</option>
-                <option value="it">IT</option>
-              </select>
+              {[
+                { code: 'es', flag: '🇪🇸', label: 'Español' },
+                { code: 'en', flag: '🇬🇧', label: 'English' },
+                { code: 'it', flag: '🇮🇹', label: 'Italiano' }
+              ].map((lang) => (
+                <button
+                  key={lang.code}
+                  type="button"
+                  title={lang.label}
+                  className={`lang-flag-btn ${i18n.language === lang.code ? 'active' : ''}`}
+                  onClick={() => changeLanguage(lang.code)}
+                >
+                  <span>{lang.flag}</span>
+                </button>
+              ))}
             </div>
 
             <div className="user-profile">

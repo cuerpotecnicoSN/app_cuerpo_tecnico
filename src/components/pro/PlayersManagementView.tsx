@@ -19,6 +19,7 @@ export interface PlayersManagementViewProps {
   onUpdateStats?: (playerId: string, stats: SportsStats) => void;
   activeRole?: string;
   language?: string;
+  viewMode?: 'grid' | 'list';
 }
 
 const getFlagEmoji = (countryName?: string) => {
@@ -44,7 +45,7 @@ const getFlagEmoji = (countryName?: string) => {
     'costa de marfil': '🇨🇮',
     'mali': '🇲🇱', 'malí': '🇲🇱',
     'estados unidos': '🇺🇸', 'usa': '🇺🇸',
-    'paises bajos': '🇳🇱', 'holanda': '🇳🇱', 'netherlands': '🇳🇱',
+    'paises bajos': '🇳🇱', 'países bajos': '🇳🇱', 'holanda': '🇳🇱', 'netherlands': '🇳🇱',
     'bélgica': '🇧🇪', 'belgica': '🇧🇪',
     'suecia': '🇸🇪', 'sweden': '🇸🇪',
     'suiza': '🇨🇭', 'switzerland': '🇨🇭',
@@ -70,20 +71,123 @@ const getFlagEmoji = (countryName?: string) => {
     'paraguay': '🇵🇾',
     'venezuela': '🇻🇪',
     'bolivia': '🇧🇴',
+    'surinam': '🇸🇷', 'suriname': '🇸🇷',
+    'bulgaria': '🇧🇬',
+    'eslovenia': '🇸🇮', 'slovenia': '🇸🇮',
   };
   return flags[name] || '';
 };
 
-export default function PlayersManagementView({ players, onUpdatePlayer, onDeletePlayer }: PlayersManagementViewProps) {
+export const getPositionColor = (position?: string) => {
+  if (!position || position === 'Sin definir') return 'bg-gray-100 text-gray-700 border-gray-200';
+  const pos = position.toLowerCase();
+  if (pos.includes('portero') || pos.includes('arquero')) return 'bg-amber-100 text-amber-800 border-amber-200';
+  if (pos.includes('defensa') || pos.includes('lateral') || pos.includes('central') || pos.includes('carrilero')) return 'bg-blue-100 text-blue-800 border-blue-200';
+  if (pos.includes('centrocampista') || pos.includes('medio') || pos.includes('pivote') || pos.includes('mediapunta') || pos.includes('volante')) return 'bg-emerald-100 text-emerald-800 border-emerald-200';
+  if (pos.includes('delantero') || pos.includes('extremo') || pos.includes('punta') || pos.includes('atacante')) return 'bg-rose-100 text-rose-800 border-rose-200';
+  
+  return 'bg-gray-100 text-gray-700 border-gray-200';
+};
+
+export default function PlayersManagementView({ players, onUpdatePlayer, onDeletePlayer, viewMode = 'grid' }: PlayersManagementViewProps) {
   const navigate = useNavigate();
 
+  if (viewMode === 'list') {
+    return (
+      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm mt-6 animate-fade-in">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm text-gray-500">
+            <thead className="bg-gray-50 text-xs text-gray-700 uppercase">
+              <tr>
+                <th className="px-6 py-3 font-semibold">Jugador</th>
+                <th className="px-6 py-3 font-semibold">Posición</th>
+                <th className="px-6 py-3 font-semibold">Edad</th>
+                <th className="px-6 py-3 font-semibold">Pie Dominante</th>
+                <th className="px-6 py-3 font-semibold text-right">Acciones</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {players.map(player => (
+                <tr 
+                  key={player.id} 
+                  className="hover:bg-gray-50 cursor-pointer transition-colors group"
+                  onClick={() => navigate(`/players/${player.id}`)}
+                >
+                  <td className="px-6 py-3 whitespace-nowrap">
+                    <div className="flex items-center gap-3">
+                      <img 
+                        src={player.avatar} 
+                        alt={player.name}
+                        className="w-10 h-10 rounded-full object-cover bg-gray-100 border border-gray-200"
+                        onError={(e) => {
+                          e.currentTarget.src = 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=100';
+                        }}
+                      />
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-gray-900 flex items-center gap-1.5">
+                          {player.name}
+                          {player.nationality && (
+                            <span title={player.nationality} className="text-base leading-none">
+                              {getFlagEmoji(player.nationality)}
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-3 whitespace-nowrap text-gray-600">
+                    <span className={`px-2.5 py-1 text-xs rounded-lg font-medium border ${getPositionColor(player.position)}`}>
+                      {player.position}
+                    </span>
+                  </td>
+                  <td className="px-6 py-3 whitespace-nowrap text-gray-600">
+                    {player.age ? `${player.age} años` : '-'}
+                  </td>
+                  <td className="px-6 py-3 whitespace-nowrap">
+                    {player.dominantFoot ? (
+                      <span className="px-2.5 py-1 bg-gray-100 text-gray-600 text-xs rounded-full font-medium">
+                        {player.dominantFoot}
+                      </span>
+                    ) : '-'}
+                  </td>
+                  <td className="px-6 py-3 whitespace-nowrap text-right">
+                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {onUpdatePlayer && (
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); onUpdatePlayer(player); }}
+                          className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                          title="Editar jugador"
+                        >
+                          <Edit2 size={16} />
+                        </button>
+                      )}
+                      {onDeletePlayer && (
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); onDeletePlayer(player.id); }}
+                          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                          title="Eliminar jugador"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-fade-in mt-6">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 animate-fade-in mt-6">
       {players.map(player => (
         <div 
           key={player.id} 
           onClick={() => navigate(`/players/${player.id}`)}
-          className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-lg hover:border-red-500/30 hover:-translate-y-1 transition-all duration-300 cursor-pointer group flex flex-col relative"
+          className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md hover:border-red-500/30 hover:-translate-y-1 transition-all duration-300 cursor-pointer group flex flex-col relative"
         >
           {/* Foto */}
           <div className="w-full aspect-square relative bg-gray-50 flex items-center justify-center overflow-hidden">
@@ -96,14 +200,14 @@ export default function PlayersManagementView({ players, onUpdatePlayer, onDelet
               }}
             />
             
-            <div className="absolute top-3 right-3 flex gap-2">
+            <div className="absolute top-2 right-2 flex gap-1.5">
               {onUpdatePlayer && (
                 <button 
                   onClick={(e) => { e.stopPropagation(); onUpdatePlayer(player); }}
                   className="p-1.5 bg-white/90 hover:bg-white text-gray-700 hover:text-blue-600 rounded-md backdrop-blur-md transition-colors shadow-sm"
                   title="Editar jugador"
                 >
-                  <Edit2 size={16} />
+                  <Edit2 size={14} />
                 </button>
               )}
               {onDeletePlayer && (
@@ -112,27 +216,32 @@ export default function PlayersManagementView({ players, onUpdatePlayer, onDelet
                   className="p-1.5 bg-white/90 hover:bg-white text-gray-700 hover:text-red-600 rounded-md backdrop-blur-md transition-colors shadow-sm"
                   title="Eliminar jugador"
                 >
-                  <Trash2 size={16} />
+                  <Trash2 size={14} />
                 </button>
               )}
             </div>
           </div>
           
           {/* Datos */}
-          <div className="p-4 flex flex-col items-center justify-center text-center bg-white border-t border-gray-100">
+          <div className="p-3 flex flex-col items-center justify-center text-center bg-white border-t border-gray-100">
             <div className="w-full flex items-center justify-center gap-1.5">
-              <h3 className="text-lg font-extrabold text-gray-900 truncate max-w-[85%]">{player.name}</h3>
+              <h3 className="text-sm font-extrabold text-gray-900 truncate max-w-[85%]">{player.name}</h3>
               {player.nationality && (
-                <span title={player.nationality} className="text-base flex-shrink-0 leading-none">
+                <span title={player.nationality} className="text-sm flex-shrink-0 leading-none">
                   {getFlagEmoji(player.nationality)}
                 </span>
               )}
             </div>
-            <div className="flex flex-col items-center mt-1 gap-1">
-              <p className="text-gray-500 font-medium text-sm">{player.age ? `${player.age} años` : '-'}</p>
+            <div className="mt-1">
+              <span className={`px-2 py-0.5 text-[10px] rounded border font-semibold ${getPositionColor(player.position)}`}>
+                {player.position}
+              </span>
+            </div>
+            <div className="flex items-center justify-center mt-1.5 gap-2">
+              <span className="text-gray-500 font-medium text-xs">{player.age ? `${player.age} años` : '-'}</span>
               {player.dominantFoot && (
-                <span className="px-2 py-0.5 bg-gray-50 text-gray-500 text-xs rounded-full border border-gray-200">
-                  Pie: {player.dominantFoot}
+                <span className="px-1.5 py-0.5 bg-gray-50 text-gray-500 text-[10px] rounded-full border border-gray-200 uppercase tracking-wider font-semibold">
+                  {player.dominantFoot}
                 </span>
               )}
             </div>

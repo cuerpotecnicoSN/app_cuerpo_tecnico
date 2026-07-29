@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import type { MatchEvent } from '../../data/mockMatches';
 import { mockMatches } from '../../data/mockMatches';
 import { mockPlayers } from '../../data/mockPlayers';
@@ -9,6 +10,7 @@ import { ArrowLeft, Activity, Check, X, AlertCircle, Target } from 'lucide-react
 const LiveTracker = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [match] = useState(mockMatches.find(m => m.id === id));
   
   // State for recording a new event
@@ -19,7 +21,7 @@ const LiveTracker = () => {
   const [events, setEvents] = useState<MatchEvent[]>(match?.events || []);
 
   if (!match) {
-    return <div className="p-6">Partido no encontrado</div>;
+    return <div className="p-6">{t('matches.notFound')}</div>;
   }
 
   const handlePitchClick = (x: number, y: number) => {
@@ -28,7 +30,7 @@ const LiveTracker = () => {
 
   const registerEvent = (type: string, outcome: 'Success' | 'Failure' | 'Neutral') => {
     if (!coordinates) {
-      alert("Toca el campo primero para marcar dónde ocurrió la acción");
+      alert(t('matches.live.tapPitchFirst'));
       return;
     }
 
@@ -57,18 +59,18 @@ const LiveTracker = () => {
       <div className="w-80 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col h-full z-10 shadow-lg">
         <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
            <button className="flex items-center gap-2 text-primary text-sm font-medium hover:underline mb-4" onClick={() => navigate(`/matches/${match.id}`)}>
-             <ArrowLeft size={16} /> Salir del Directo
+             <ArrowLeft size={16} /> {t('matches.live.exitLive')}
            </button>
            <h2 className="text-lg font-bold truncate">{match.opponent}</h2>
            <div className="flex justify-between mt-1 text-sm text-muted">
-             <span>Min: 45:00</span>
-             <span className="font-bold text-red-600 animate-pulse flex items-center gap-1"><Activity size={14}/> EN VIVO</span>
+             <span>{t('matches.live.minuteLabel', { minute: '45:00' })}</span>
+             <span className="font-bold text-red-600 animate-pulse flex items-center gap-1"><Activity size={14}/> {t('matches.status.Live')}</span>
            </div>
         </div>
 
         {/* Player Selection */}
         <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-           <h3 className="text-xs uppercase font-bold text-muted mb-2">1. Selecciona Jugador</h3>
+           <h3 className="text-xs uppercase font-bold text-muted mb-2">{t('matches.live.selectPlayerStep')}</h3>
            <div className="flex gap-2 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none' }}>
              <button 
                 onClick={() => setSelectedPlayer(null)}
@@ -76,7 +78,7 @@ const LiveTracker = () => {
                   selectedPlayer === null ? 'bg-primary text-white border-primary' : 'bg-gray-100 dark:bg-gray-700 border-transparent text-gray-500'
                 }`}
               >
-                EQP
+                {t('matches.live.teamAbbr')}
               </button>
              {match.lineup.map(pid => {
                const p = mockPlayers.find(pl => pl.id === pid);
@@ -97,9 +99,9 @@ const LiveTracker = () => {
 
         {/* Live Event Feed */}
         <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
-          <h3 className="text-xs uppercase font-bold text-muted mb-1 sticky top-0 bg-white dark:bg-gray-800 pb-2">Historial</h3>
+          <h3 className="text-xs uppercase font-bold text-muted mb-1 sticky top-0 bg-white dark:bg-gray-800 pb-2">{t('matches.live.history')}</h3>
           {events.length === 0 ? (
-            <p className="text-sm text-center text-muted mt-10">Esperando eventos...</p>
+            <p className="text-sm text-center text-muted mt-10">{t('matches.live.waitingEvents')}</p>
           ) : (
             events.map(ev => {
               const p = mockPlayers.find(pl => pl.id === ev.playerId);
@@ -110,7 +112,7 @@ const LiveTracker = () => {
                      <span className="text-muted text-xs">{ev.timestamp}'</span>
                    </div>
                    <div className="flex justify-between items-center mt-1">
-                     <span className="text-muted text-xs">{p ? `${p.firstName} ${p.lastName}` : 'Equipo'}</span>
+                     <span className="text-muted text-xs">{p ? `${p.firstName} ${p.lastName}` : t('matches.live.teamLabel')}</span>
                      {ev.outcome === 'Success' && <Check size={14} className="text-green-500" />}
                      {ev.outcome === 'Failure' && <X size={14} className="text-red-500" />}
                    </div>
@@ -127,9 +129,9 @@ const LiveTracker = () => {
         <div className="p-4 flex justify-center bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm z-10">
           <h2 className="text-lg font-bold flex items-center gap-2">
             {!coordinates ? (
-               <><span className="bg-primary text-white w-6 h-6 rounded-full flex items-center justify-center text-sm">2</span> Toca el campo</>
+               <><span className="bg-primary text-white w-6 h-6 rounded-full flex items-center justify-center text-sm">2</span> {t('matches.live.tapPitchStep')}</>
             ) : (
-               <><span className="bg-primary text-white w-6 h-6 rounded-full flex items-center justify-center text-sm">3</span> Selecciona la acción</>
+               <><span className="bg-primary text-white w-6 h-6 rounded-full flex items-center justify-center text-sm">3</span> {t('matches.live.selectActionStep')}</>
             )}
           </h2>
         </div>
@@ -160,30 +162,30 @@ const LiveTracker = () => {
              <div className="grid grid-cols-4 gap-3 flex-1">
                 {/* Positive Actions */}
                 <button onClick={() => registerEvent('Pase', 'Success')} className="btn bg-green-50 hover:bg-green-100 text-green-700 border-green-200 flex flex-col gap-1 items-center justify-center p-2 h-full">
-                  <Check size={24} /> Pase Correcto
+                  <Check size={24} /> {t('matches.events.pass')}
                 </button>
                 <button onClick={() => registerEvent('Recuperación', 'Success')} className="btn bg-green-50 hover:bg-green-100 text-green-700 border-green-200 flex flex-col gap-1 items-center justify-center p-2 h-full">
-                  <Check size={24} /> Recuperación
+                  <Check size={24} /> {t('matches.events.recovery')}
                 </button>
                 <button onClick={() => registerEvent('Tiro a puerta', 'Success')} className="btn bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200 flex flex-col gap-1 items-center justify-center p-2 h-full font-bold">
-                  <Target size={24} /> Tiro
+                  <Target size={24} /> {t('matches.events.shot')}
                 </button>
                 <button onClick={() => registerEvent('Gol', 'Success')} className="btn bg-yellow-100 hover:bg-yellow-200 text-yellow-700 border-yellow-300 flex flex-col gap-1 items-center justify-center p-2 h-full font-bold text-lg">
-                  ⚽️ GOL
+                  ⚽️ {t('matches.events.goal')}
                 </button>
 
                 {/* Negative Actions */}
                 <button onClick={() => registerEvent('Pase fallado', 'Failure')} className="btn bg-red-50 hover:bg-red-100 text-red-700 border-red-200 flex flex-col gap-1 items-center justify-center p-2 h-full">
-                  <X size={24} /> Pase Fallado
+                  <X size={24} /> {t('matches.events.badPass')}
                 </button>
                 <button onClick={() => registerEvent('Pérdida', 'Failure')} className="btn bg-red-50 hover:bg-red-100 text-red-700 border-red-200 flex flex-col gap-1 items-center justify-center p-2 h-full">
-                  <X size={24} /> Pérdida
+                  <X size={24} /> {t('matches.events.loss')}
                 </button>
                 <button onClick={() => registerEvent('Falta', 'Neutral')} className="btn bg-orange-50 hover:bg-orange-100 text-orange-700 border-orange-200 flex flex-col gap-1 items-center justify-center p-2 h-full">
-                  <AlertCircle size={24} /> Falta Cometida
+                  <AlertCircle size={24} /> {t('matches.live.foulCommitted')}
                 </button>
                 <button onClick={() => registerEvent('Tarjeta', 'Failure')} className="btn bg-gray-100 hover:bg-gray-200 text-gray-800 border-gray-300 flex flex-col gap-1 items-center justify-center p-2 h-full">
-                  🟨 Tarjeta
+                  🟨 {t('matches.events.card')}
                 </button>
              </div>
            </div>

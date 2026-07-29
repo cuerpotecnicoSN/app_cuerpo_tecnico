@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import type { CustomFieldDefinition } from '../../types/customFields';
 import { Star } from 'lucide-react';
 
@@ -10,6 +11,7 @@ interface DynamicFormRendererProps {
 }
 
 const DynamicFormRenderer: React.FC<DynamicFormRendererProps> = ({ fields, values, onChange, userRole }) => {
+  const { t } = useTranslation();
   // Filter fields by role
   const visibleFields = fields.filter(field => {
     if (!field.roleAccess || field.roleAccess.length === 0) return true;
@@ -22,7 +24,7 @@ const DynamicFormRenderer: React.FC<DynamicFormRendererProps> = ({ fields, value
   return (
     <div className="flex flex-col gap-4 mt-6 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-100 dark:border-gray-700">
       <h4 className="font-bold text-gray-700 dark:text-gray-300 mb-2 border-b border-gray-200 dark:border-gray-700 pb-2">
-        Campos Personalizados del Club
+        {t('forms.dynamic.customFieldsTitle')}
       </h4>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -73,11 +75,11 @@ const DynamicFormRenderer: React.FC<DynamicFormRendererProps> = ({ fields, value
                 <div className="flex items-center gap-4 mt-1">
                   <label className="flex items-center gap-1 cursor-pointer">
                     <input type="radio" name={field.id} checked={val === true} onChange={() => onChange(field.id, true)} />
-                    Sí
+                    {t('forms.dynamic.yes')}
                   </label>
                   <label className="flex items-center gap-1 cursor-pointer">
                     <input type="radio" name={field.id} checked={val === false} onChange={() => onChange(field.id, false)} />
-                    No
+                    {t('forms.dynamic.no')}
                   </label>
                 </div>
               )}
@@ -90,7 +92,7 @@ const DynamicFormRenderer: React.FC<DynamicFormRendererProps> = ({ fields, value
                   onChange={(e) => onChange(field.id, e.target.value)}
                   required={field.required}
                 >
-                  <option value="">Selecciona...</option>
+                  <option value="">{t('forms.dynamic.selectPlaceholder')}</option>
                   {field.options?.map(opt => (
                     <option key={opt} value={opt}>{opt}</option>
                   ))}
@@ -119,7 +121,7 @@ const DynamicFormRenderer: React.FC<DynamicFormRendererProps> = ({ fields, value
               {/* DRAWING / COORDINATES (Mocked for now) */}
               {(field.type === 'drawing' || field.type === 'coordinates') && (
                 <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded p-4 text-center text-sm text-muted bg-white dark:bg-gray-800">
-                  Hacer clic para abrir herramienta interactiva (Campograma/Pizarra)
+                  {t('forms.dynamic.drawingPlaceholder')}
                 </div>
               )}
             </div>

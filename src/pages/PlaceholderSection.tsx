@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { jsPDF } from 'jspdf';
 import { Plus, Download, Construction } from 'lucide-react';
 import './PlaceholderSection.css';
@@ -10,11 +11,12 @@ interface PlaceholderSectionProps {
 }
 
 const PlaceholderSection: React.FC<PlaceholderSectionProps> = ({ title, breadcrumb }) => {
+  const { t } = useTranslation();
   const location = useLocation();
   const [items, setItems] = useState<string[]>([]);
 
   const handleCreate = () => {
-    const name = window.prompt(`Nombre para el nuevo elemento de "${title}":`);
+    const name = window.prompt(t('placeholder.promptNewItem', { title }));
     if (name && name.trim()) {
       setItems((prev) => [...prev, name.trim()]);
     }
@@ -32,7 +34,7 @@ const PlaceholderSection: React.FC<PlaceholderSectionProps> = ({ title, breadcru
     doc.line(14, 32, 196, 32);
 
     if (items.length === 0) {
-      doc.text('Sin elementos todavía.', 14, 44);
+      doc.text(t('placeholder.noItemsPdf'), 14, 44);
     } else {
       let y = 44;
       items.forEach((item, i) => {
@@ -54,11 +56,11 @@ const PlaceholderSection: React.FC<PlaceholderSectionProps> = ({ title, breadcru
         <div className="placeholder-actions">
           <button className="btn btn-outline" onClick={handleExport}>
             <Download size={16} />
-            Exportar PDF
+            {t('placeholder.exportPdf')}
           </button>
           <button className="btn btn-primary" onClick={handleCreate}>
             <Plus size={16} />
-            Crear nuevo
+            {t('placeholder.createNew')}
           </button>
         </div>
       </div>
@@ -66,10 +68,9 @@ const PlaceholderSection: React.FC<PlaceholderSectionProps> = ({ title, breadcru
       {items.length === 0 ? (
         <div className="placeholder-empty card">
           <Construction size={32} className="text-muted" />
-          <p className="h3 mt-4">Módulo en construcción</p>
+          <p className="h3 mt-4">{t('placeholder.emptyTitle')}</p>
           <p className="text-muted mt-2" style={{ maxWidth: '420px' }}>
-            Esta sección de <strong>{title}</strong> ya está en el mapa de navegación. Usa
-            "Crear nuevo" para añadir elementos de prueba, o pide que la desarrollemos por completo.
+            {t('placeholder.emptyDescriptionPre')} <strong>{title}</strong> {t('placeholder.emptyDescriptionPost')}
           </p>
           <p className="text-xs text-muted mt-4" style={{ opacity: 0.6 }}>{location.pathname}</p>
         </div>

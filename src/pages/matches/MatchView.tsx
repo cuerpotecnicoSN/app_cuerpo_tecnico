@@ -1,4 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { mockMatches } from '../../data/mockMatches';
 import { mockPlayers } from '../../data/mockPlayers';
 import { ArrowLeft, Play, Users, MapPin, Calendar, CheckSquare } from 'lucide-react';
@@ -6,10 +7,11 @@ import { ArrowLeft, Play, Users, MapPin, Calendar, CheckSquare } from 'lucide-re
 const MatchView = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const match = mockMatches.find(m => m.id === id);
 
   if (!match) {
-    return <div className="p-6">Partido no encontrado</div>;
+    return <div className="p-6">{t('matches.notFound')}</div>;
   }
 
   return (
@@ -20,7 +22,7 @@ const MatchView = () => {
             <ArrowLeft size={20} />
           </button>
           <div>
-            <h1 className="h1">{match.isHome ? 'Local' : 'Visitante'} vs {match.opponent}</h1>
+            <h1 className="h1">{match.isHome ? t('matches.view.home') : t('matches.view.away')} vs {match.opponent}</h1>
             <p className="text-muted mt-1">{match.competition} • {match.season}</p>
           </div>
         </div>
@@ -30,16 +32,16 @@ const MatchView = () => {
           style={{ backgroundColor: '#ef4444', borderColor: '#ef4444' }}
         >
           <Play size={18} fill="currentColor" />
-          Modo Directo
+          {t('matches.enterLive')}
         </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="card md:col-span-2">
-          <h3 className="h3 mb-4 flex items-center gap-2"><CheckSquare size={18} /> Convocatoria y Alineación</h3>
+          <h3 className="h3 mb-4 flex items-center gap-2"><CheckSquare size={18} /> {t('matches.view.callupAndLineup')}</h3>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <h4 className="font-semibold mb-2 text-sm text-muted uppercase">Titulares</h4>
+              <h4 className="font-semibold mb-2 text-sm text-muted uppercase">{t('matches.view.starters')}</h4>
               <div className="flex flex-col gap-2">
                 {match.lineup.map(pid => {
                   const p = mockPlayers.find(pl => pl.id === pid);
@@ -55,7 +57,7 @@ const MatchView = () => {
               </div>
             </div>
             <div>
-              <h4 className="font-semibold mb-2 text-sm text-muted uppercase">Banquillo</h4>
+              <h4 className="font-semibold mb-2 text-sm text-muted uppercase">{t('matches.bench')}</h4>
               <div className="flex flex-col gap-2">
                 {match.callup.filter(id => !match.lineup.includes(id)).map(pid => {
                   const p = mockPlayers.find(pl => pl.id === pid);
@@ -75,11 +77,11 @@ const MatchView = () => {
 
         <div className="flex flex-col gap-6">
           <div className="card">
-            <h3 className="h3 mb-4">Información</h3>
+            <h3 className="h3 mb-4">{t('matches.view.information')}</h3>
             <div className="flex flex-col gap-3 text-sm">
               <div className="flex items-center gap-3 text-muted">
                 <Calendar size={18} />
-                <span>{new Date(match.date).toLocaleDateString()} a las {match.time}</span>
+                <span>{t('matches.view.dateAtTime', { date: new Date(match.date).toLocaleDateString(), time: match.time })}</span>
               </div>
               <div className="flex items-center gap-3 text-muted">
                 <MapPin size={18} />
@@ -87,7 +89,7 @@ const MatchView = () => {
               </div>
               <div className="flex items-center gap-3 text-muted">
                 <Users size={18} />
-                <span>Staff: {match.staff.length} miembros</span>
+                <span>{t('matches.view.staffMembers', { count: match.staff.length })}</span>
               </div>
             </div>
           </div>

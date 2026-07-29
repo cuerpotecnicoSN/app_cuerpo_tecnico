@@ -30,7 +30,28 @@
     "login": "Iniciar Sesión",
     "logout": "Cerrar Sesión",
     "email": "Correo Electrónico",
-    "password": "Contraseña"
+    "password": "Contraseña",
+    "loginPage": {
+      "tagline": "Gestión profesional del cuerpo técnico",
+      "crestAlt": "Escudo del equipo",
+      "subtitleLogin": "Inicia sesión para acceder",
+      "subtitleSignup": "Crear nueva cuenta",
+      "emailPlaceholder": "Correo electrónico",
+      "passwordPlaceholder": "Contraseña",
+      "showPassword": "Mostrar contraseña",
+      "hidePassword": "Ocultar contraseña",
+      "loadingButton": "Cargando...",
+      "loginButton": "Entrar",
+      "signupButton": "Registrarse",
+      "noAccount": "¿No tienes cuenta? Regístrate",
+      "hasAccount": "¿Ya tienes cuenta? Inicia sesión",
+      "signupSuccess": "Cuenta creada. Revisa tu email para confirmarla (si está configurado), o inicia sesión.",
+      "defaultError": "Error de autenticación",
+      "defaultNewUserName": "Nuevo Usuario"
+    },
+    "guard": {
+      "loading": "Cargando StaffControl..."
+    }
   },
   "players": {
     "title": "Plantilla",
@@ -60,7 +81,48 @@
     "score": "Puntuación",
     "goals": "Goles",
     "assists": "Asistencias",
-    "minutes": "Minutos Jugados"
+    "minutes": "Minutos Jugados",
+    "management": {
+      "breadcrumb": "Jugadores",
+      "loadingData": "(Cargando datos reales...)",
+      "gridView": "Vista de cuadrícula",
+      "listView": "Vista de lista",
+      "addPlayer": "Añadir jugador",
+      "totalPlayers": "Total Jugadores",
+      "nationalities": "Nacionalidades",
+      "positionBreakdown": "Desglose por Posición",
+      "positionGK": "Porteros",
+      "positionDEF": "Defensas",
+      "positionMID": "Centrocampistas",
+      "positionFWD": "Delanteros",
+      "positionGKAbbr": "POR",
+      "positionDEFAbbr": "DEF",
+      "positionMIDAbbr": "MED",
+      "positionFWDAbbr": "DEL",
+      "allPositions": "Todas las demarcaciones",
+      "ageLabel": "Edad",
+      "clearFilters": "Limpiar filtros",
+      "noPlayersTitle": "No hay jugadores en la base de datos",
+      "noPlayersSubtitle": "Puedes añadirlos importándolos de BeSoccer o desde el panel de administración.",
+      "noPlayersFilteredTitle": "No hay jugadores que coincidan con los filtros",
+      "confirmDelete": "¿Estás seguro de que quieres eliminar a este jugador?",
+      "deleteError": "Hubo un error al eliminar el jugador.",
+      "colPlayer": "Jugador",
+      "colPosition": "Posición",
+      "colAge": "Edad",
+      "colDominantFoot": "Pie Dominante",
+      "colActions": "Acciones",
+      "editPlayerTooltip": "Editar jugador",
+      "deletePlayerTooltip": "Eliminar jugador",
+      "notDefined": "Sin definir",
+      "yearsSuffix": "años"
+    },
+    "profile": {
+      "loading": "Cargando perfil desde base de datos...",
+      "notFound": "Jugador no encontrado en la base de datos.",
+      "confirmDelete": "¿Seguro que quieres eliminar a {{name}}? Esta acción no se puede deshacer.",
+      "deleteError": "Error al eliminar el jugador: {{message}}"
+    }
   },
   "meetings": {
     "newMeeting": "Nueva Reunión",
@@ -69,7 +131,31 @@
     "date": "Fecha",
     "time": "Hora",
     "type": "Tipo",
-    "notes": "Notas"
+    "notes": "Notas",
+    "formModal": {
+      "title": "Registrar Nueva Intervención",
+      "locationPlaceholder": "Ej. Despacho, Campo...",
+      "involvedPlayers": "Jugadores Implicados (Múltiple)",
+      "mainObjective": "Objetivo Principal",
+      "objectivePlaceholder": "¿Qué se busca con esta reunión?",
+      "developmentSummary": "Desarrollo / Resumen",
+      "developmentPlaceholder": "Describe lo que se ha hablado...",
+      "positivePoints": "Puntos Positivos",
+      "improvements": "Aspectos a Mejorar",
+      "agreementsReached": "Acuerdos Adoptados",
+      "agreementsPlaceholder": "Ej. Realizar 2 sesiones de vídeo extra...",
+      "nextSteps": "Próximos Pasos",
+      "saveRecord": "Guardar Registro",
+      "savedAlert": "Reunión registrada correctamente (Mock)",
+      "types": {
+        "individual": "Reunión individual",
+        "group": "Reunión grupal",
+        "groupDynamic": "Dinámica de grupo",
+        "individualFeedback": "Feedback individual",
+        "evaluation": "Evaluación",
+        "followUp": "Conversación de seguimiento"
+      }
+    }
   },
   "planning": {
     "calendar": "Calendario Semanal",
@@ -84,7 +170,37 @@
     "load": "Carga",
     "intensity": "Intensidad",
     "category": "Categoría",
-    "players": "Jugadores"
+    "players": "Jugadores",
+    "taskFormModal": {
+      "editTitle": "Editar Tarea",
+      "taskName": "Nombre de la Tarea",
+      "mainObjective": "Objetivo Principal",
+      "descriptionAndRules": "Descripción y Reglas",
+      "playersCount": "Nº Jugadores",
+      "playersCountPlaceholder": "Ej. 4v4+2",
+      "space": "Espacio",
+      "spacePlaceholder": "Ej. 40x30m",
+      "durationMin": "Duración (min)",
+      "seriesReps": "Series/Reps",
+      "recovery": "Recuperación",
+      "recoveryPlaceholder": "Ej. 1 min",
+      "loadPlaceholder": "Alta/Media/Baja",
+      "intensityPlaceholder": "1-10",
+      "coachInstructions": "Consignas (Entrenador)",
+      "variants": "Variantes",
+      "mediaUrl": "URL de Imagen / Diagrama (Opcional)",
+      "saveTask": "Guardar Tarea",
+      "savedAlert": "Tarea guardada en la biblioteca (Mock)",
+      "categories": {
+        "warmup": "Calentamiento",
+        "technical": "Técnica",
+        "tactical": "Táctica",
+        "physical": "Física",
+        "match": "Partido",
+        "setPieces": "Estrategia (ABP)",
+        "recovery": "Recuperación"
+      }
+    }
   },
   "matches": {
     "title": "Partidos",
@@ -162,7 +278,27 @@
       "description": "Estos campos aparecerán dinámicamente en los formularios.",
       "newField": "Nuevo Campo",
       "noFields": "No hay campos personalizados configurados.",
-      "createFirst": "Crear el primer campo"
+      "createFirst": "Crear el primer campo",
+      "reqBadge": "Req",
+      "typeLabel": "Tipo:",
+      "onlyRoles": "Solo:",
+      "fieldTypes": {
+        "text": "Texto Corto",
+        "longtext": "Texto Largo",
+        "number": "Número",
+        "date": "Fecha",
+        "time": "Hora",
+        "select": "Desplegable",
+        "multiselect": "Selección Múltiple",
+        "boolean": "Sí/No",
+        "scale": "Escala Numérica",
+        "rating": "Valoración (Estrellas)",
+        "image": "Imagen",
+        "video": "Vídeo",
+        "file": "Archivo",
+        "coordinates": "Coordenadas (Campograma)",
+        "drawing": "Dibujo Táctico"
+      }
     },
     "dynamicForm": {
       "title": "Campos Personalizados del Club",
@@ -177,5 +313,135 @@
     "edit": "Editar",
     "delete": "Eliminar",
     "back": "Volver"
+  },
+  "admin": {
+    "users": {
+      "title": "Gestión de Staff",
+      "seedButton": "Poblar BD (Mock Data)",
+      "seedConfirm": "¿Estás seguro de que quieres poblar la base de datos con jugadores falsos? Esto podría duplicar datos si ya lo hiciste.",
+      "seedSuccess": "¡Base de datos poblada con éxito!",
+      "seedError": "Error al poblar base de datos: {{message}}",
+      "saveError": "Error guardando los cambios.",
+      "loading": "Cargando usuarios...",
+      "columns": {
+        "user": "Usuario",
+        "email": "Email",
+        "role": "Rol",
+        "actions": "Acciones"
+      },
+      "namePlaceholder": "Nombre Completo",
+      "noName": "Sin Nombre",
+      "avatarAlt": "Avatar",
+      "roles": {
+        "admin": "Admin",
+        "coach": "Entrenador",
+        "fitnessCoach": "Preparador Físico",
+        "analyst": "Analista"
+      }
+    }
+  },
+  "staff": {
+    "breadcrumb": "Equipo Técnico",
+    "title": "Entrenadores",
+    "description": "Se muestran automáticamente todas las personas que se registran en la app.",
+    "loading": "Cargando cuerpo técnico...",
+    "loadError": "Error cargando el cuerpo técnico",
+    "emptyTitle": "Todavía no hay entrenadores registrados",
+    "emptyDescription": "En cuanto alguien cree una cuenta desde la pantalla de inicio de sesión, aparecerá aquí automáticamente.",
+    "noName": "Sin nombre",
+    "defaultRole": "Entrenador"
+  },
+  "placeholder": {
+    "promptNewItem": "Nombre para el nuevo elemento de \"{{title}}\":",
+    "exportPdf": "Exportar PDF",
+    "createNew": "Crear nuevo",
+    "noItemsPdf": "Sin elementos todavía.",
+    "emptyTitle": "Módulo en construcción",
+    "emptyDescriptionPre": "Esta sección de",
+    "emptyDescriptionPost": "ya está en el mapa de navegación. Usa \"Crear nuevo\" para añadir elementos de prueba, o pide que la desarrollemos por completo."
+  },
+  "pro": {
+    "moduleIncomplete": {
+      "title": "Módulo Incompleto",
+      "message": "El módulo <strong>{{moduleName}}</strong> se corrompió al pegarlo en el chat.",
+      "instruction": "Por favor, copia el archivo completo en la carpeta del proyecto."
+    },
+    "playerImport": {
+      "autocompleteLabel": "Autocompletar con BeSoccer o Transfermarkt (Opcional)",
+      "urlPlaceholder": "https://www.transfermarkt.es/... o besoccer.es/...",
+      "analyzing": "Analizando...",
+      "extractData": "Extraer Datos",
+      "playerDataTitle": "Datos del Jugador",
+      "firstName": "Nombre *",
+      "lastName": "Apellidos",
+      "position": "Posición",
+      "nationality": "Nacionalidad",
+      "heightCm": "Altura (cm)",
+      "weightKg": "Peso (kg)",
+      "kitNumber": "Dorsal",
+      "marketValue": "Valor de Mercado",
+      "marketValuePlaceholder": "Ej: 150 mil €",
+      "currentClub": "Club Actual",
+      "dominantFoot": "Pie Dominante",
+      "history": "Trayectoria (Equipos)",
+      "historyPlaceholder": "Ej: 22/23: Equipo A ➔ 23/24: Equipo B",
+      "profilePhoto": "Foto Perfil (Recomendado: Quitar fondo)",
+      "noPhoto": "Sin foto",
+      "photoUrlPlaceholder": "https://... o Base64",
+      "cropAndClean": "Recortar y Limpiar",
+      "processing": "Procesando...",
+      "uploadFromPc": "Subir desde PC:",
+      "uploadCropClean": "Subir imagen, recortar y limpiar",
+      "editPlayer": "Editar Jugador",
+      "addPlayer": "Añadir Jugador",
+      "saving": "Guardando...",
+      "saveChanges": "Guardar Cambios",
+      "savePlayer": "Guardar Jugador",
+      "cropTitle": "Recorta la cara del jugador",
+      "cropInstruction": "Selecciona el encuadre (cuadrado perfecto). Se utilizará para extraer el rostro sin el fondo.",
+      "confirmRemoveBg": "Confirmar y Quitar Fondo",
+      "cropAlt": "Recortar imagen",
+      "profileAlt": "Foto de perfil",
+      "tooltipCrop": "Encuadrar, quitar fondo y poner fondo blanco",
+      "errors": {
+        "invalidUrl": "Por favor, introduce un enlace válido de BeSoccer o Transfermarkt",
+        "transfermarktBlocked": "Transfermarkt bloqueó la petición (protección anti-bots). Prueba de nuevo en unos segundos.",
+        "besoccerConnectError": "Error al conectar con BeSoccer",
+        "transfermarktParseError": "No se pudo leer la página de Transfermarkt. (Protección anti-bots o URL inválida)",
+        "besoccerBlocked": "BeSoccer ha bloqueado la extracción automática (protección anti-bots).",
+        "scrapeGenericError": "Error analizando la web",
+        "imageDownloadError": "No se pudo descargar la imagen original",
+        "imageLoadError": "Error al cargar imagen para recortar",
+        "unknown": "Desconocido",
+        "removeBgError": "Error al quitar el fondo",
+        "imageProcessError": "Error al procesar la imagen generada",
+        "nameRequired": "El nombre es obligatorio"
+      }
+    },
+    "dashboard": {
+      "backToRoster": "Volver a la plantilla",
+      "deletePlayer": "Eliminar jugador",
+      "noName": "Sin nombre",
+      "age": "Edad",
+      "birth": "Nacimiento",
+      "birthPlace": "Lugar de Nacimiento",
+      "dominantFoot": "Pie Dominante",
+      "marketValue": "Valor de mercado",
+      "rating": "Valoración",
+      "career": "Trayectoria",
+      "season": "Temporada",
+      "club": "Club",
+      "flagAlt": "Bandera",
+      "yearsSuffix": "años"
+    }
+  },
+  "forms": {
+    "dynamic": {
+      "customFieldsTitle": "Campos Personalizados del Club",
+      "yes": "Sí",
+      "no": "No",
+      "selectPlaceholder": "Selecciona...",
+      "drawingPlaceholder": "Hacer clic para abrir herramienta interactiva (Campograma/Pizarra)"
+    }
   }
 }

@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabase';
 import { UserCog, Edit, Save, X } from 'lucide-react';
 
 const UserManagement: React.FC = () => {
+  const { t } = useTranslation();
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -29,7 +31,7 @@ const UserManagement: React.FC = () => {
     setEditingId(user.id);
     setEditForm({
       full_name: user.full_name || '',
-      role: user.role || 'Entrenador',
+      role: user.role || t('admin.users.roles.coach'),
       avatar_url: user.avatar_url || ''
     });
   };
@@ -55,7 +57,7 @@ const UserManagement: React.FC = () => {
       fetchUsers();
     } catch (error) {
       console.error('Error updating user:', error);
-      alert('Error guardando los cambios.');
+      alert(t('admin.users.saveError'));
     }
   };
 
@@ -64,41 +66,41 @@ const UserManagement: React.FC = () => {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <UserCog size={28} className="text-primary" />
-          <h1 className="h2">Gestión de Staff</h1>
+          <h1 className="h2">{t('admin.users.title')}</h1>
         </div>
-        
-        <button 
+
+        <button
           onClick={async () => {
-            const confirmed = window.confirm('¿Estás seguro de que quieres poblar la base de datos con jugadores falsos? Esto podría duplicar datos si ya lo hiciste.');
+            const confirmed = window.confirm(t('admin.users.seedConfirm'));
             if (confirmed) {
               try {
                 const { seedDatabase, ensureContext } = await import('../../lib/dataService');
                 const seasonId = await ensureContext();
                 await seedDatabase(seasonId);
-                alert('¡Base de datos poblada con éxito!');
+                alert(t('admin.users.seedSuccess'));
               } catch (e: any) {
-                alert('Error al poblar base de datos: ' + e.message);
+                alert(t('admin.users.seedError', { message: e.message }));
               }
             }
           }}
           className="btn btn-outline border-primary text-primary hover:bg-primary hover:text-white text-xs"
         >
-          Poblar BD (Mock Data)
+          {t('admin.users.seedButton')}
         </button>
       </div>
 
       <div className="card">
         {loading ? (
-          <p className="text-muted">Cargando usuarios...</p>
+          <p className="text-muted">{t('admin.users.loading')}</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-border">
-                  <th className="p-3 text-sm font-semibold text-secondary">Usuario</th>
-                  <th className="p-3 text-sm font-semibold text-secondary">Email</th>
-                  <th className="p-3 text-sm font-semibold text-secondary">Rol</th>
-                  <th className="p-3 text-sm font-semibold text-secondary text-right">Acciones</th>
+                  <th className="p-3 text-sm font-semibold text-secondary">{t('admin.users.columns.user')}</th>
+                  <th className="p-3 text-sm font-semibold text-secondary">{t('admin.users.columns.email')}</th>
+                  <th className="p-3 text-sm font-semibold text-secondary">{t('admin.users.columns.role')}</th>
+                  <th className="p-3 text-sm font-semibold text-secondary text-right">{t('admin.users.columns.actions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -110,19 +112,19 @@ const UserManagement: React.FC = () => {
                       <td className="p-3">
                         <div className="flex items-center gap-3">
                           <img 
-                            src={user.avatar_url || `https://ui-avatars.com/api/?name=${user.full_name || 'U'}&background=db0030&color=fff`} 
-                            alt="Avatar" 
+                            src={user.avatar_url || `https://ui-avatars.com/api/?name=${user.full_name || 'U'}&background=db0030&color=fff`}
+                            alt={t('admin.users.avatarAlt')}
                             className="w-10 h-10 rounded-full object-cover"
                           />
                           {isEditing ? (
-                            <input 
+                            <input
                               className="text-sm p-1"
                               value={editForm.full_name}
                               onChange={e => setEditForm({ ...editForm, full_name: e.target.value })}
-                              placeholder="Nombre Completo"
+                              placeholder={t('admin.users.namePlaceholder')}
                             />
                           ) : (
-                            <span className="font-semibold text-sm">{user.full_name || 'Sin Nombre'}</span>
+                            <span className="font-semibold text-sm">{user.full_name || t('admin.users.noName')}</span>
                           )}
                         </div>
                       </td>
@@ -138,14 +140,14 @@ const UserManagement: React.FC = () => {
                             value={editForm.role}
                             onChange={e => setEditForm({ ...editForm, role: e.target.value })}
                           >
-                            <option value="Admin">Admin</option>
-                            <option value="Entrenador">Entrenador</option>
-                            <option value="Preparador Físico">Preparador Físico</option>
-                            <option value="Analista">Analista</option>
+                            <option value="Admin">{t('admin.users.roles.admin')}</option>
+                            <option value="Entrenador">{t('admin.users.roles.coach')}</option>
+                            <option value="Preparador Físico">{t('admin.users.roles.fitnessCoach')}</option>
+                            <option value="Analista">{t('admin.users.roles.analyst')}</option>
                           </select>
                         ) : (
                           <span className={`badge ${user.role === 'Admin' ? 'badge-danger' : 'badge-neutral'}`}>
-                            {user.role || 'Entrenador'}
+                            {user.role || t('admin.users.roles.coach')}
                           </span>
                         )}
                       </td>
