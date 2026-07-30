@@ -1,27 +1,31 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Calendar, Users, Activity, Target, TrendingUp, AlertTriangle, Video } from 'lucide-react';
-import { usePrint } from "../components/reports/PrintContext";
-import InterventionReport from "../components/reports/InterventionReport";
-import PlayerSlideReport from "../components/reports/PlayerSlideReport";
-import StaffSlideReport from "../components/reports/StaffSlideReport";
 import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { useSupabaseData } from '../hooks/useSupabaseData';
 import WeeklyCalendar, { CalendarEvent } from '../components/dashboard/WeeklyCalendar';
+import { getMatches } from '../services/matches';
+import { getTrainingSessions } from '../services/training';
+import type { MatchDB, TrainingSessionDB } from '../components/types';
 import './Dashboard.css';
 
 type UserRole = 'Entrenador' | 'Preparador Físico' | 'Analista';
 
 const Dashboard: React.FC = () => {
   const { t } = useTranslation();
-  const { printReport } = usePrint();
   const [currentRole, setCurrentRole] = useState<UserRole>('Entrenador');
-  
+
   // Fetch real data from Supabase
   const { data: players = [], loading: loadingPlayers } = useSupabaseData<any>('players');
   const { data: profiles = [] } = useSupabaseData<any>('profiles');
   const { data: physicalStats = [] } = useSupabaseData<any>('physical_metrics_history');
-  const { data: _matches = [] } = useSupabaseData<any>('sports_stats');
+  const [matches, setMatches] = useState<MatchDB[]>([]);
+  const [sessions, setSessions] = useState<TrainingSessionDB[]>([]);
+
+  useEffect(() => {
+    getMatches().then(setMatches).catch(() => setMatches([]));
+    getTrainingSessions().then(setSessions).catch(() => setSessions([]));
+  }, []);
 
   // Calcular métricas reales
   const totalPlayers = players.length;
@@ -115,47 +119,19 @@ const Dashboard: React.FC = () => {
       }
     });
 
-    // 2. Mock de Entrenamientos y Partidos para el demo
-    // Añadimos un entrenamiento para mañana
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    events.push({
-      id: 'train-1',
-      title: 'Entrenamiento Equipo',
-      date: tomorrow,
-      type: 'training',
-      time: '10:00 - 12:00',
-      description: 'Entrenamiento táctico en el campo principal'
+    sessions.forEach((s) => {
+      events.push({ id: `train-${s.id}`, title: s.title, date: new Date(s.date), type: 'training', description: s.objective || '' });
     });
 
-    // Añadimos un partido para el fin de semana (sábado)
-    const nextSaturday = new Date();
-    const day = nextSaturday.getDay();
-    const diffToSaturday = 6 - day;
-    nextSaturday.setDate(nextSaturday.getDate() + diffToSaturday);
-    if (diffToSaturday > 0) {
-      events.push({
-        id: 'match-1',
-        title: 'Partido Oficial vs Rival',
-        date: nextSaturday,
-        type: 'match',
-        time: '18:00',
-        description: 'Jornada 5 - Estadio Local'
-      });
-    }
+    matches.forEach((m) => {
+      events.push({ id: `match-${m.id}`, title: `${m.is_home ? 'vs' : '@'} ${m.opponent}`, date: new Date(m.date), type: 'match', time: m.time || '', description: m.competition || '' });
+    });
 
     return events;
-  }, [players]);
+  }, [players, matches, sessions]);
 
   return (
     <div className="dashboard animate-fade-in">
-      <div className="flex gap-2 mb-6 p-4 bg-slate-900 border border-slate-700 rounded-xl">
-        <span className="text-slate-400 font-bold self-center">{t('dashboard.testReports')}</span>
-        <button onClick={() => printReport(<InterventionReport player={{name: "Sergio Navarro", birthDate: "01/01/2000", position: "Mediocentro"}} interventions={[]} />)} className="btn btn-sm btn-outline text-red-500 border-red-500 hover:bg-red-500 hover:text-white">{t('dashboard.printExcelTable')}</button>
-        <button onClick={() => printReport(<PlayerSlideReport player={{name: "SERGIO NAVARRO", position: "Mediocentro", info: "Información General"}} data={{personalInfo: "Jugador de la cantera...", sportsAssessment: "Buen rendimiento físico", implementation: "A mejorar", sportsInfo: "Partidos jugados: 10", development: "Progresión rápida", future: "Potencial alto"}} />)} className="btn btn-sm btn-outline text-white border-white hover:bg-white hover:text-black">{t('dashboard.printPlayerSlide')}</button>
-        <button onClick={() => printReport(<StaffSlideReport staff={{name: "VALERIO BRANDI", role: "Technical Assistant", periodFrom: "Enero", periodTo: "Junio"}} data={{selfOrganization: "Buena gestión del tiempo", matchPlan: "Táctico", prePostTraining: "Siempre preparado", interventionFeedback: "Claro y directo", trainingExercises: "Innovadores", rolesResponsibilities: "Cumplidas", coachStaffRelationships: "Excelente compañerismo", keyPoints: "Liderazgo"}} />)} className="btn btn-sm btn-outline text-white border-white hover:bg-white hover:text-black">{t('dashboard.printStaffSlide')}</button>
-      </div>
-      
       <div className="dashboard-header flex justify-between items-center">
         <div>
           <h1 className="h1">{t('dashboard.welcome')}, Staff {loadingPlayers && <span className="text-sm font-normal text-muted">{t('dashboard.connectingDb')}</span>}</h1>

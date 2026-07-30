@@ -22,7 +22,7 @@ export interface PlayersManagementViewProps {
   viewMode?: 'grid' | 'list';
 }
 
-const getFlagEmoji = (countryName?: string) => {
+export const getFlagEmoji = (countryName?: string) => {
   if (!countryName) return '';
   const name = countryName.toLowerCase().trim();
   const flags: Record<string, string> = {
@@ -111,7 +111,7 @@ export default function PlayersManagementView({ players, onUpdatePlayer, onDelet
                 <tr 
                   key={player.id} 
                   className="hover:bg-gray-50 cursor-pointer transition-colors group"
-                  onClick={() => navigate(`/players/${player.id}`)}
+                  onClick={() => navigate(`/players/${player.id}${window.location.search}`)}
                 >
                   <td className="px-6 py-3 whitespace-nowrap">
                     <div className="flex items-center gap-3">
@@ -186,7 +186,7 @@ export default function PlayersManagementView({ players, onUpdatePlayer, onDelet
       {players.map(player => (
         <div 
           key={player.id} 
-          onClick={() => navigate(`/players/${player.id}`)}
+          onClick={() => navigate(`/players/${player.id}${window.location.search}`)}
           className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md hover:border-red-500/30 hover:-translate-y-1 transition-all duration-300 cursor-pointer group flex flex-col relative"
         >
           {/* Foto */}

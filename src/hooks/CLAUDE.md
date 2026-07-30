@@ -7,5 +7,6 @@
 
 | ID | Time | T | Title | Read |
 |----|------|---|-------|------|
-| #3738 | 10:05 AM | 🔵 | i18n Migration Scope Mapped Across 46 Files | ~451 |
+| #3748 | 3:58 PM | 🔵 | Player management data layer architecture and patterns analyzed | ~703 |
+| #3746 | 3:55 PM | 🔵 | Complete app architecture survey for consolidation planning | ~610 |
 </claude-mem-context>

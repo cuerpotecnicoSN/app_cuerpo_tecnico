@@ -176,3 +176,126 @@ export interface PlayerInjury {
   competitive_leave?: boolean;
   created_at?: string;
 }
+
+// ===== Entrenamientos =====
+
+export interface TaskLibraryItem {
+  id: string;
+  category: string;
+  title: string;
+  description?: string;
+  duration_min?: number;
+  players_min?: number;
+  players_max?: number;
+  material?: string;
+  image_url?: string;
+  created_at?: string;
+}
+
+export interface TrainingSessionDB {
+  id: string;
+  season_id: string;
+  date: string;
+  title: string;
+  objective?: string;
+  notes?: string;
+  created_at?: string;
+}
+
+export interface SessionTask {
+  id: string;
+  session_id: string;
+  task_id: string | null;
+  order: number;
+  duration_min?: number;
+  notes?: string;
+  created_at?: string;
+}
+
+// ===== Partidos =====
+
+export interface MatchDB {
+  id: string;
+  season_id: string;
+  competition?: string;
+  date: string;
+  time?: string;
+  opponent: string;
+  is_home: boolean;
+  stadium?: string;
+  status: 'Scheduled' | 'Live' | 'Finished';
+  result_home?: number | null;
+  result_away?: number | null;
+  scouting_notes?: string;
+  created_at?: string;
+}
+
+export interface MatchFocus {
+  id: string;
+  match_id: string;
+  title: string;
+  description?: string;
+  order: number;
+  created_at?: string;
+}
+
+export interface MatchDataPoint {
+  id: string;
+  match_id: string;
+  player_id?: string | null;
+  staff_id?: string | null;
+  minute?: number;
+  type: string;
+  outcome: 'Success' | 'Failure' | 'Neutral';
+  coordinates?: { x: number; y: number } | null;
+  comments?: string;
+  created_at?: string;
+}
+
+// ===== Dinámicas / Reuniones =====
+
+export interface MeetingDB {
+  id: string;
+  season_id: string;
+  type: 'individual' | 'grupal';
+  date: string;
+  time?: string;
+  location?: string;
+  objective?: string;
+  development?: string;
+  positive_points?: string;
+  improvements?: string;
+  agreements?: string;
+  next_steps?: string;
+  follow_up_date?: string;
+  created_by?: string;
+  created_at?: string;
+}
+
+export interface MeetingPlayer {
+  id: string;
+  meeting_id: string;
+  player_id: string;
+}
+
+// ===== Jugadores: Plan individual / Objetivos / Informes =====
+
+export interface PlayerObjective {
+  id: string;
+  player_id: string;
+  season_id: string;
+  title: string;
+  description?: string;
+  status: 'En progreso' | 'Cumplido' | 'No cumplido';
+  target_date?: string;
+  created_at?: string;
+}
+
+export interface SeasonReport {
+  id: string;
+  player_id: string;
+  season_id: string;
+  summary?: string;
+  file_url?: string;
+  created_at?: string;
+}

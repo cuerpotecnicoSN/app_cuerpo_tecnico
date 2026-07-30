@@ -7,7 +7,16 @@ import { useSupabaseData } from '../../hooks/useSupabaseData';
 import PlayerImportModal from '../../components/pro/PlayerImportModal';
 import { Plus, Users as UsersIcon, Grid, List, Filter, Globe, Search, Download } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-import '../staff/staff.css';
+import './players-grid.css';
+
+const getPositionOrder = (pos: string) => {
+  const lowerPos = (pos || '').toLowerCase();
+  if (lowerPos.includes('portero') || lowerPos.includes('arquero')) return 1;
+  if (lowerPos.includes('defensa') || lowerPos.includes('lateral') || lowerPos.includes('central') || lowerPos.includes('carrilero')) return 2;
+  if (lowerPos.includes('centro') || lowerPos.includes('medio') || lowerPos.includes('pivote') || lowerPos.includes('mediapunta') || lowerPos.includes('volante')) return 3;
+  if (lowerPos.includes('delantero') || lowerPos.includes('extremo') || lowerPos.includes('punta') || lowerPos.includes('atacante')) return 4;
+  return 5;
+};
 
 export default function PlayersPage() {
   
@@ -42,7 +51,7 @@ export default function PlayersPage() {
   }, [dbPlayers]);
 
   const filteredPlayers = useMemo(() => {
-    return players.filter(p => {
+    const filtered = players.filter(p => {
       // Filtro por nombre
       if (searchQuery && !p.name.toLowerCase().includes(searchQuery.toLowerCase())) {
         return false;
@@ -63,6 +72,13 @@ export default function PlayersPage() {
       }
 
       return true;
+    });
+
+    return filtered.sort((a, b) => {
+      const orderA = getPositionOrder(a.position);
+      const orderB = getPositionOrder(b.position);
+      if (orderA !== orderB) return orderA - orderB;
+      return a.name.localeCompare(b.name);
     });
   }, [players, positionFilter, ageRange, searchQuery]);
 
@@ -342,7 +358,7 @@ export default function PlayersPage() {
               placeholder="Buscar jugador..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 pr-4 py-1.5 text-sm border border-gray-300 rounded-lg bg-gray-50 hover:bg-white focus:bg-white transition-colors focus:ring-2 focus:ring-blue-500/20 outline-none w-48"
+              className="!pl-10 pr-4 py-1.5 text-sm border border-gray-300 rounded-lg bg-gray-50 hover:bg-white focus:bg-white transition-colors focus:ring-2 focus:ring-blue-500/20 outline-none w-48"
             />
           </div>
 

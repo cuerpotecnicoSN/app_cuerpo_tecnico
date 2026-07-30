@@ -1,9 +1,9 @@
 import React, { useRef } from 'react';
-import type { MatchEvent } from '../../data/mockMatches';
+import type { MatchDataPoint } from '../../components/types';
 
 interface PitchGraphProps {
   onPitchClick?: (x: number, y: number) => void;
-  events?: MatchEvent[];
+  events?: MatchDataPoint[];
   interactive?: boolean;
 }
 
@@ -78,7 +78,7 @@ const PitchGraph: React.FC<PitchGraphProps> = ({ onPitchClick, events = [], inte
               boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
               pointerEvents: 'none' // Don't block clicks on the pitch
             }}
-            title={`${ev.type} - ${ev.timestamp}`}
+            title={`${ev.type} - ${ev.minute ?? ''}'`}
           />
         );
       })}
