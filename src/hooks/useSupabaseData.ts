@@ -37,7 +37,7 @@ export function useSupabaseData<T>(tableName: string) {
     // Suscribirse a cambios
     subscription = supabase
       .channel(`${tableName}_changes`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: tableName }, (payload) => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: tableName }, ( _payload ) => {
         // En una app real haríamos un manejo fino de inserciones, actualizaciones y borrados
         fetchData();
       })

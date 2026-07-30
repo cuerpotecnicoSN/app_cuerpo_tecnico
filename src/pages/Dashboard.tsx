@@ -7,7 +7,7 @@ import PlayerSlideReport from "../components/reports/PlayerSlideReport";
 import StaffSlideReport from "../components/reports/StaffSlideReport";
 import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { useSupabaseData } from '../hooks/useSupabaseData';
-import WeeklyCalendar, { CalendarEvent, EventType } from '../components/dashboard/WeeklyCalendar';
+import WeeklyCalendar, { CalendarEvent } from '../components/dashboard/WeeklyCalendar';
 import './Dashboard.css';
 
 type UserRole = 'Entrenador' | 'Preparador Físico' | 'Analista';
@@ -21,7 +21,7 @@ const Dashboard: React.FC = () => {
   const { data: players = [], loading: loadingPlayers } = useSupabaseData<any>('players');
   const { data: profiles = [] } = useSupabaseData<any>('profiles');
   const { data: physicalStats = [] } = useSupabaseData<any>('physical_metrics_history');
-  const { data: matches = [] } = useSupabaseData<any>('sports_stats');
+  const { data: _matches = [] } = useSupabaseData<any>('sports_stats');
 
   // Calcular métricas reales
   const totalPlayers = players.length;
