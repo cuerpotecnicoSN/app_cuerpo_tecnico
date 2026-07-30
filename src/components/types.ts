@@ -198,6 +198,7 @@ export interface TrainingSessionDB {
   date: string;
   title: string;
   objective?: string;
+  location?: string;
   notes?: string;
   created_at?: string;
 }

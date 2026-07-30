@@ -90,6 +90,17 @@ CREATE TABLE IF NOT EXISTS public.assessments (
 );
 
 -- 5. Planes de Desarrollo Individual (PDI)
+CREATE TABLE IF NOT EXISTS public.training_sessions (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    season_id UUID REFERENCES public.seasons(id) ON DELETE CASCADE,
+    date DATE NOT NULL,
+    title TEXT NOT NULL,
+    objective TEXT,
+    location TEXT,
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS public.dev_tasks (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     player_id UUID REFERENCES public.players(id) ON DELETE CASCADE NOT NULL,

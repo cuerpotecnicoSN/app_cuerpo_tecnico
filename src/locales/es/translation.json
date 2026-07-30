@@ -10,7 +10,14 @@
     "home": "Inicio",
     "calendar": "Calendario",
     "players": "Jugadores",
+    "roster": "Plantilla",
+    "individualPlan": "Plan Individual",
+    "meetings": "Reuniones Individuales",
+    "evaluations": "Evaluaciones",
     "training": "Entrenamientos",
+    "trainingSessions": "Sesiones",
+    "editSession": "Editar Sesión",
+    "taskLibrary": "Biblioteca de tareas",
     "dynamics": "Dinámicas"
   },
   "common": {

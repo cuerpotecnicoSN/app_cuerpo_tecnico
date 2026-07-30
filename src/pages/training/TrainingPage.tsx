@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
-import { Plus, Trash2, ChevronLeft, Dumbbell } from 'lucide-react';
+import { Plus, Trash2, ChevronLeft, Dumbbell, MapPin } from 'lucide-react';
 import type { TrainingSessionDB, TaskLibraryItem, SessionTask } from '../../components/types';
 import {
   getTrainingSessions, createTrainingSession, deleteTrainingSession,
   getTasks, createTask, deleteTask,
   getSessionTasks, addSessionTask, removeSessionTask,
 } from '../../services/training';
+import { SessionFormModal } from '../../components/training/SessionFormModal';
 
 type View = 'sessions' | 'library';
 
@@ -63,42 +64,69 @@ export default function TrainingPage() {
 function SessionsList({ sessions, onCreate, onOpen, onDelete }: { sessions: TrainingSessionDB[]; onCreate: () => void; onOpen: (s: TrainingSessionDB) => void; onDelete: (id: string) => void }) {
   const { t } = useTranslation();
   const [showForm, setShowForm] = useState(false);
-  const [title, setTitle] = useState('');
-  const [date, setDate] = useState('');
-  const [objective, setObjective] = useState('');
 
-  const handleAdd = async () => {
-    if (!title.trim() || !date) return;
-    await createTrainingSession({ title, date, objective });
-    setTitle(''); setDate(''); setObjective(''); setShowForm(false);
+  const handleSave = async (sessionData: Omit<TrainingSessionDB, 'id' | 'created_at' | 'season_id'>) => {
+    await createTrainingSession(sessionData);
+    setShowForm(false);
     onCreate();
   };
 
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <button onClick={() => setShowForm((v) => !v)} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold flex items-center gap-2">
+        <button onClick={() => setShowForm(true)} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold flex items-center gap-2">
           <Plus size={16} /> {t('trainingPage.newSession')}
         </button>
       </div>
-      {showForm && (
-        <div className="bg-white border border-gray-100 rounded-xl p-4 space-y-3 shadow-sm">
-          <input className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" placeholder={t('common.title') as string} value={title} onChange={(e) => setTitle(e.target.value)} />
-          <input type="date" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" value={date} onChange={(e) => setDate(e.target.value)} />
-          <textarea className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" placeholder={t('trainingPage.objective') as string} value={objective} onChange={(e) => setObjective(e.target.value)} />
-          <button onClick={handleAdd} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold">{t('common.save')}</button>
-        </div>
-      )}
+
+      <SessionFormModal 
+        isOpen={showForm} 
+        onClose={() => setShowForm(false)} 
+        onSave={handleSave} 
+      />
       {sessions.length === 0 && <p className="text-sm text-gray-400">{t('trainingPage.noSessions')}</p>}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {sessions.map((s) => (
-          <div key={s.id} className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm cursor-pointer hover:shadow-md" onClick={() => onOpen(s)}>
-            <div className="flex justify-between items-start">
-              <p className="font-bold text-gray-800">{s.title}</p>
-              <button onClick={(e) => { e.stopPropagation(); onDelete(s.id); }} className="text-gray-300 hover:text-red-500"><Trash2 size={16} /></button>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        {[...sessions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((s) => (
+          <div 
+            key={s.id} 
+            className="group relative bg-white border border-gray-200 rounded-3xl p-6 shadow-sm cursor-pointer hover:shadow-xl hover:-translate-y-1 hover:border-red-200 transition-all duration-300 overflow-hidden min-h-[180px] flex flex-col justify-between" 
+            onClick={() => onOpen(s)}
+          >
+            {/* Fondo con el Escudo */}
+            <div className="absolute -right-12 -bottom-12 opacity-[0.03] pointer-events-none group-hover:scale-110 group-hover:opacity-[0.05] transition-all duration-700">
+              <img src="/escudo.png" alt="Escudo" className="w-56 h-56 object-contain grayscale" />
             </div>
-            <p className="text-xs text-gray-400 mt-1">{s.date}</p>
-            {s.objective && <p className="text-sm text-gray-500 mt-2 line-clamp-2">{s.objective}</p>}
+
+            <div className="relative z-10">
+              <div className="flex justify-between items-start mb-4">
+                <div className="flex-1 pr-4">
+                  <h3 className="font-black text-2xl text-gray-900 tracking-tight uppercase leading-none mb-3 group-hover:text-red-600 transition-colors">{s.title}</h3>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className="text-sm font-extrabold text-red-600 bg-red-50 border border-red-100 px-3 py-1 rounded-lg shadow-sm">
+                      {new Date(s.date).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
+                    </span>
+                    {s.location && (
+                      <span className="text-sm font-bold text-gray-600 flex items-center gap-1.5 bg-gray-50 border border-gray-200 px-3 py-1 rounded-lg shadow-sm">
+                        <MapPin size={14} className="text-blue-500" />
+                        {s.location}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <button 
+                  onClick={(e) => { e.stopPropagation(); onDelete(s.id); }} 
+                  className="text-gray-300 hover:text-red-500 hover:bg-red-50 p-2.5 rounded-xl transition-colors shrink-0"
+                >
+                  <Trash2 size={20} />
+                </button>
+              </div>
+              
+              {s.objective && (
+                <div className="mt-4 pt-4 border-t border-gray-100">
+                  <p className="text-base text-gray-500 font-medium line-clamp-2 leading-snug">{s.objective}</p>
+                </div>
+              )}
+            </div>
           </div>
         ))}
       </div>

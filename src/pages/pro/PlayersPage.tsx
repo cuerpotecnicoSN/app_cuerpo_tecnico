@@ -12,9 +12,9 @@ import './players-grid.css';
 const getPositionOrder = (pos: string) => {
   const lowerPos = (pos || '').toLowerCase();
   if (lowerPos.includes('portero') || lowerPos.includes('arquero')) return 1;
-  if (lowerPos.includes('defensa') || lowerPos.includes('lateral') || lowerPos.includes('central') || lowerPos.includes('carrilero')) return 2;
-  if (lowerPos.includes('centro') || lowerPos.includes('medio') || lowerPos.includes('pivote') || lowerPos.includes('mediapunta') || lowerPos.includes('volante')) return 3;
   if (lowerPos.includes('delantero') || lowerPos.includes('extremo') || lowerPos.includes('punta') || lowerPos.includes('atacante')) return 4;
+  if (lowerPos.includes('defensa') || lowerPos.includes('lateral') || lowerPos.includes('central') || lowerPos.includes('carrilero')) return 2;
+  if (lowerPos.includes('centrocampista') || lowerPos.includes('medio') || lowerPos.includes('pivote') || lowerPos.includes('mediapunta') || lowerPos.includes('volante') || lowerPos.includes('centro')) return 3;
   return 5;
 };
 
@@ -25,6 +25,7 @@ export default function PlayersPage() {
   const [positionFilter, setPositionFilter] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [ageRange, setAgeRange] = useState<[number, number]>([15, 45]);
+  const [showFilters, setShowFilters] = useState(false);
   const { data: dbPlayers, loading } = useSupabaseData<any>('players');
 
   const thumbStyles = 'age-range-thumb';
@@ -88,9 +89,9 @@ export default function PlayersPage() {
     const positions = players.reduce((acc, p) => {
        const pos = (p.position || 'Sin definir').toLowerCase();
        if (pos.includes('portero') || pos.includes('arquero')) acc.porteros = (acc.porteros || 0) + 1;
-       else if (pos.includes('defensa') || pos.includes('lateral') || pos.includes('central') || pos.includes('carrilero')) acc.defensas = (acc.defensas || 0) + 1;
-       else if (pos.includes('centro') || pos.includes('medio') || pos.includes('pivote') || pos.includes('mediapunta') || pos.includes('volante')) acc.medios = (acc.medios || 0) + 1;
        else if (pos.includes('delantero') || pos.includes('extremo') || pos.includes('punta') || pos.includes('atacante')) acc.delanteros = (acc.delanteros || 0) + 1;
+       else if (pos.includes('defensa') || pos.includes('lateral') || pos.includes('central') || pos.includes('carrilero')) acc.defensas = (acc.defensas || 0) + 1;
+       else if (pos.includes('centrocampista') || pos.includes('medio') || pos.includes('pivote') || pos.includes('mediapunta') || pos.includes('volante') || pos.includes('centro')) acc.medios = (acc.medios || 0) + 1;
        return acc;
     }, { porteros: 0, defensas: 0, medios: 0, delanteros: 0 });
 
@@ -270,23 +271,30 @@ export default function PlayersPage() {
         </div>
         <div className="staff-actions">
           {players.length > 0 && (
-            <div className="flex bg-gray-100 p-1 rounded-lg border border-gray-200 mr-2">
+            <div className="flex gap-2 mr-4">
               <button
                 onClick={() => setViewMode('grid')}
-                className={`p-1.5 rounded-md flex items-center justify-center transition-all ${viewMode === 'grid' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'}`}
+                className={`p-2 rounded-xl flex items-center justify-center transition-all border-2 ${viewMode === 'grid' ? 'bg-white border-red-500 text-red-600 shadow-sm' : 'bg-white border-gray-200 text-gray-400 hover:text-gray-600 hover:border-gray-300'}`}
                 title="Vista de cuadrícula"
               >
-                <Grid size={18} />
+                <Grid size={22} />
               </button>
               <button
                 onClick={() => setViewMode('list')}
-                className={`p-1.5 rounded-md flex items-center justify-center transition-all ${viewMode === 'list' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'}`}
+                className={`p-2 rounded-xl flex items-center justify-center transition-all border-2 ${viewMode === 'list' ? 'bg-white border-red-500 text-red-600 shadow-sm' : 'bg-white border-gray-200 text-gray-400 hover:text-gray-600 hover:border-gray-300'}`}
                 title="Vista de lista"
               >
-                <List size={18} />
+                <List size={22} />
               </button>
             </div>
           )}
+          <button 
+             onClick={() => setShowFilters(!showFilters)} 
+             className={`btn flex items-center gap-2 ${showFilters ? 'bg-gray-800 text-white border-gray-800 hover:bg-gray-700' : 'btn-outline bg-white hover:bg-gray-50 border-gray-300 text-gray-700'}`}
+          >
+             <Filter size={16} />
+             Filtrar
+          </button>
           <button onClick={exportToPDF} className="btn btn-outline flex items-center gap-2 bg-white hover:bg-gray-50 border-gray-300 text-gray-700">
              <Download size={16} />
              Exportar PDF
@@ -299,7 +307,7 @@ export default function PlayersPage() {
       </div>
 
       {players.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-4 overflow-x-auto pb-2">
           <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
             <div className="p-3 bg-blue-50 text-blue-600 rounded-lg">
               <UsersIcon size={24} />
@@ -322,7 +330,7 @@ export default function PlayersPage() {
 
           <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-center">
              <p className="text-sm text-gray-500 font-medium mb-2">Desglose por Posición</p>
-             <div className="flex justify-between items-center text-sm font-medium text-gray-700">
+             <div className="flex flex-wrap justify-between items-center text-[11px] xl:text-sm font-medium text-gray-700 gap-1 mt-1">
                 <span className="flex items-center gap-1.5" title="Porteros"><span className="w-2 h-2 rounded-full bg-amber-400"></span> POR: {summaryStats.positions.porteros}</span>
                 <span className="flex items-center gap-1.5" title="Defensas"><span className="w-2 h-2 rounded-full bg-blue-400"></span> DEF: {summaryStats.positions.defensas}</span>
                 <span className="flex items-center gap-1.5" title="Centrocampistas"><span className="w-2 h-2 rounded-full bg-emerald-400"></span> MED: {summaryStats.positions.medios}</span>
@@ -332,8 +340,8 @@ export default function PlayersPage() {
         </div>
       )}
 
-      {players.length > 0 && (
-        <div className="flex flex-wrap items-center gap-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm mt-4">
+      {players.length > 0 && showFilters && (
+        <div className="flex flex-wrap items-center gap-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm mt-4 animate-fade-in">
           <div className="flex items-center gap-2 text-gray-500">
             <Filter size={18} />
             <span className="font-medium text-sm">Filtros:</span>
