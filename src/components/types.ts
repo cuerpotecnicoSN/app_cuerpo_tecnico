@@ -149,3 +149,30 @@ export interface CompetitionVideo {
   date: string;
   description: string;
 }
+
+export interface PlayerWeight {
+  id: string;
+  player_id: string;
+  date: string;
+  weight: number;
+  created_at?: string;
+}
+
+export interface PlayerInjury {
+  id: string;
+  player_id: string;
+  body_zone: string;
+  body_side: 'frontal' | 'posterior';
+  severity: 'Leve' | 'Moderada' | 'Grave';
+  status: 'Activa' | 'En tratamiento' | 'Recuperado' | 'Baja';
+  diagnosis: string;
+  treatment?: string;
+  injury_date: string;
+  baja_date?: string;
+  estimated_return?: string;
+  actual_return?: string;
+  origin?: string;
+  follow_up_notes?: string;
+  competitive_leave?: boolean;
+  created_at?: string;
+}

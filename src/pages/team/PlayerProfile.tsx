@@ -53,6 +53,30 @@ const PlayerProfile = () => {
         preselectedPlayerId={player.id} 
       />
 
+      {/* Main Navigation Buttons / Tabs */}
+      <div className="flex flex-wrap justify-end gap-4 mb-6">
+        <button 
+          className={`flex items-center gap-3 px-6 py-3 rounded-xl font-display font-bold transition-all cursor-pointer ${activeTab === 'ficha' ? 'bg-primary text-white shadow-[0_0_15px_rgba(var(--color-primary-rgb),0.5)] scale-105 border border-primary' : 'bg-surface border border-zinc-700 text-zinc-300 hover:border-zinc-500 hover:bg-surface-light'}`}
+          onClick={() => setActiveTab('ficha')}
+        >
+          <User size={24} /> <span className="text-lg">Ficha Técnica</span>
+        </button>
+
+        <button 
+          className={`flex items-center gap-3 px-6 py-3 rounded-xl font-display font-bold transition-all cursor-pointer ${activeTab === 'peso' ? 'bg-secondary text-white shadow-[0_0_15px_rgba(var(--color-secondary-rgb),0.5)] scale-105 border border-secondary' : 'bg-surface border border-zinc-700 text-zinc-300 hover:border-zinc-500 hover:bg-surface-light'}`}
+          onClick={() => setActiveTab('peso')}
+        >
+          <Activity size={24} /> <span className="text-lg">Control de Peso</span>
+        </button>
+
+        <button 
+          className={`flex items-center gap-3 px-6 py-3 rounded-xl font-display font-bold transition-all cursor-pointer ${activeTab === 'lesiones' ? 'bg-accent text-white shadow-[0_0_15px_rgba(var(--color-accent-rgb),0.5)] scale-105 border border-accent' : 'bg-surface border border-zinc-700 text-zinc-300 hover:border-zinc-500 hover:bg-surface-light'}`}
+          onClick={() => setActiveTab('lesiones')}
+        >
+          <ShieldAlert size={24} /> <span className="text-lg">Lesiones Médicas</span>
+        </button>
+      </div>
+
       {/* Hero Profile Header (High Performance UX) */}
       <div className="card glass-panel mb-6 overflow-hidden relative">
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary rounded-full blur-[100px] opacity-20 -mr-20 -mt-20"></div>
@@ -112,11 +136,9 @@ const PlayerProfile = () => {
         </div>
       </div>
 
-      {/* Tabs */}
+
+      {/* Secondary Tabs (Optional) */}
       <div className="flex gap-2 mb-6 bg-surface p-1 rounded-lg border border-zinc-800 w-fit">
-        <button className={`px-4 py-2 rounded-md font-bold text-sm transition-colors flex items-center gap-2 ${activeTab === 'ficha' ? 'bg-primary text-white' : 'text-zinc-400 hover:text-white'}`} onClick={() => setActiveTab('ficha')}>
-          <User size={16} /> Ficha Técnica
-        </button>
         <button className={`px-4 py-2 rounded-md font-bold text-sm transition-colors flex items-center gap-2 ${activeTab === 'evaluacion' ? 'bg-primary text-white' : 'text-zinc-400 hover:text-white'}`} onClick={() => setActiveTab('evaluacion')}>
           <PieChart size={16} /> Rendimiento
         </button>
@@ -223,6 +245,37 @@ const PlayerProfile = () => {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      </div>
+      <div className={activeTab === 'peso' ? 'block' : 'hidden'}>
+        <div className="card glass-panel">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="h3 font-display text-secondary">Control de Peso</h3>
+            <button className="btn btn-secondary">
+              <Plus size={16} /> Nuevo Registro
+            </button>
+          </div>
+          <div className="text-center p-10 bg-surface rounded-xl border border-zinc-800">
+            <Activity className="mx-auto mb-4 text-zinc-500" size={48} />
+            <h4 className="text-xl font-bold mb-2">Módulo en construcción</h4>
+            <p className="text-muted">Aquí se mostrarán las gráficas de evolución de peso y pliegues cutáneos.</p>
+          </div>
+        </div>
+      </div>
+
+      <div className={activeTab === 'lesiones' ? 'block' : 'hidden'}>
+        <div className="card glass-panel">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="h3 font-display text-accent">Historial de Lesiones Médicas</h3>
+            <button className="btn btn-accent">
+              <Plus size={16} /> Reportar Lesión
+            </button>
+          </div>
+          <div className="text-center p-10 bg-surface rounded-xl border border-zinc-800">
+            <ShieldAlert className="mx-auto mb-4 text-zinc-500" size={48} />
+            <h4 className="text-xl font-bold mb-2">Módulo en construcción</h4>
+            <p className="text-muted">Aquí se mostrará el historial médico, partes de baja y tiempos de recuperación.</p>
           </div>
         </div>
       </div>

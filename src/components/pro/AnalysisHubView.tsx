@@ -1,6 +1,6 @@
-import React from 'react';
 
-export default function AnalysisHubView(props: any) {
+
+export default function AnalysisHubView() {
   return (
     <div className="p-8 text-center text-red-400 bg-red-900/20 border border-red-500/50 rounded-xl my-4">
         <h2 className="text-xl font-bold mb-2">Módulo Incompleto</h2>

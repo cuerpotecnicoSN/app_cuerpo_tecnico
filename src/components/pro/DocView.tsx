@@ -1,7 +1,7 @@
-import React from 'react';
+
 import { useTranslation } from 'react-i18next';
 
-export default function DocView(props: any) {
+export default function DocView() {
   const { t } = useTranslation();
   return (
     <div className="p-8 text-center text-red-400 bg-red-900/20 border border-red-500/50 rounded-xl my-4">

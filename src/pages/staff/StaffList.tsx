@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Mail, ShieldCheck, Users } from 'lucide-react';
+import { Mail, ShieldCheck, Users, Calendar } from 'lucide-react';
 import './staff.css';
 
 interface StaffProfile {
@@ -9,6 +9,7 @@ interface StaffProfile {
   full_name: string | null;
   role: string | null;
   avatar_url: string | null;
+  birth_date: string | null;
   created_at?: string;
 }
 
@@ -86,6 +87,12 @@ const StaffList: React.FC = () => {
                 <Mail size={14} />
                 <span>{person.email}</span>
               </div>
+              {person.birth_date && (
+                <div className="staff-email" style={{ marginTop: '0.25rem' }}>
+                  <Calendar size={14} />
+                  <span>{new Date(person.birth_date).toLocaleDateString()}</span>
+                </div>
+              )}
             </div>
           ))}
         </div>

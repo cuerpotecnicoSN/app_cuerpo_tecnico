@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabase';
 import { Lock, Mail, Eye, EyeOff } from 'lucide-react';
 import './Login.css';
@@ -12,6 +13,7 @@ const PARTICLES = Array.from({ length: 14 }, (_, i) => ({
 }));
 
 const Login: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
@@ -39,17 +41,17 @@ const Login: React.FC = () => {
           password,
           options: {
             data: {
-              full_name: 'Nuevo Usuario',
+              full_name: t('auth.loginPage.defaultNewUserName'),
               role: 'Entrenador'
             }
           }
         });
         if (error) throw error;
-        alert('Cuenta creada. Revisa tu email para confirmarla (si está configurado), o inicia sesión.');
+        alert(t('auth.loginPage.signupSuccess'));
         setIsLogin(true);
       }
     } catch (err: any) {
-      setError(err.message || 'Error de autenticación');
+      setError(err.message || t('auth.loginPage.defaultError'));
     } finally {
       setLoading(false);
     }
@@ -74,9 +76,9 @@ const Login: React.FC = () => {
           />
         ))}
         <div className="login-brand-content">
-          <img src="/escudo.png" alt="Escudo del equipo" className="login-brand-crest" />
+          <img src="/escudo.png" alt={t('auth.loginPage.crestAlt')} className="login-brand-crest" />
           <h1 className="login-brand-title">Staff<span>Control</span></h1>
-          <p className="login-brand-tagline">Gestión profesional del cuerpo técnico</p>
+          <p className="login-brand-tagline">{t('auth.loginPage.tagline')}</p>
         </div>
         <div className="login-brand-stripe" />
       </div>
@@ -84,13 +86,13 @@ const Login: React.FC = () => {
       <div className="login-form-panel">
         <div className="login-card">
           <div className="login-header">
-            <img src="/escudo.png" alt="Escudo del equipo" className="login-mobile-crest" />
+            <img src="/escudo.png" alt={t('auth.loginPage.crestAlt')} className="login-mobile-crest" />
             <div className="login-icon-wrap">
               <img src="/icono.png" alt="StaffControl" />
             </div>
             <h2 className="login-title">StaffControl</h2>
             <p className="login-subtitle">
-              {isLogin ? 'Inicia sesión para acceder' : 'Crear nueva cuenta'}
+              {isLogin ? t('auth.loginPage.subtitleLogin') : t('auth.loginPage.subtitleSignup')}
             </p>
           </div>
 
@@ -105,7 +107,7 @@ const Login: React.FC = () => {
               <Mail size={20} />
               <input
                 type="email"
-                placeholder="Correo electrónico"
+                placeholder={t('auth.loginPage.emailPlaceholder')}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -116,7 +118,7 @@ const Login: React.FC = () => {
               <Lock size={20} />
               <input
                 type={showPassword ? 'text' : 'password'}
-                placeholder="Contraseña"
+                placeholder={t('auth.loginPage.passwordPlaceholder')}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -125,7 +127,7 @@ const Login: React.FC = () => {
                 type="button"
                 className="login-field-eye"
                 onClick={() => setShowPassword((v) => !v)}
-                aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                aria-label={showPassword ? t('auth.loginPage.hidePassword') : t('auth.loginPage.showPassword')}
                 tabIndex={-1}
               >
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -137,7 +139,7 @@ const Login: React.FC = () => {
               className="btn btn-primary w-full mt-2 login-submit"
               disabled={loading}
             >
-              {loading ? 'Cargando...' : (isLogin ? 'Entrar' : 'Registrarse')}
+              {loading ? t('auth.loginPage.loadingButton') : (isLogin ? t('auth.loginPage.loginButton') : t('auth.loginPage.signupButton'))}
             </button>
           </form>
 
@@ -148,8 +150,8 @@ const Login: React.FC = () => {
               onClick={() => setIsLogin(!isLogin)}
             >
               {isLogin
-                ? '¿No tienes cuenta? Regístrate'
-                : '¿Ya tienes cuenta? Inicia sesión'}
+                ? t('auth.loginPage.noAccount')
+                : t('auth.loginPage.hasAccount')}
             </button>
           </div>
         </div>

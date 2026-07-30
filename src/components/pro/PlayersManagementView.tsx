@@ -1,4 +1,4 @@
-import React from 'react';
+
 import type { Player, DevTask, MedicalRecord, SportsStats } from '../types';
 import { useNavigate } from 'react-router-dom';
 import { Edit2, Trash2 } from 'lucide-react';
@@ -182,7 +182,7 @@ export default function PlayersManagementView({ players, onUpdatePlayer, onDelet
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 animate-fade-in mt-6">
+    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 2xl:grid-cols-12 gap-3 animate-fade-in mt-6">
       {players.map(player => (
         <div 
           key={player.id} 
@@ -223,25 +223,25 @@ export default function PlayersManagementView({ players, onUpdatePlayer, onDelet
           </div>
           
           {/* Datos */}
-          <div className="p-3 flex flex-col items-center justify-center text-center bg-white border-t border-gray-100">
-            <div className="w-full flex items-center justify-center gap-1.5">
-              <h3 className="text-sm font-extrabold text-gray-900 truncate max-w-[85%]">{player.name}</h3>
+          <div className="p-2 flex flex-col items-center justify-center text-center bg-white border-t border-gray-100">
+            <div className="w-full flex items-center justify-center gap-1">
+              <h3 className="text-xs font-extrabold text-gray-900 truncate max-w-[85%]">{player.name}</h3>
               {player.nationality && (
-                <span title={player.nationality} className="text-sm flex-shrink-0 leading-none">
+                <span title={player.nationality} className="text-xs flex-shrink-0 leading-none">
                   {getFlagEmoji(player.nationality)}
                 </span>
               )}
             </div>
             <div className="mt-1">
-              <span className={`px-2 py-0.5 text-[10px] rounded border font-semibold ${getPositionColor(player.position)}`}>
+              <span className={`px-1.5 py-0.5 text-[9px] rounded border font-bold ${getPositionColor(player.position)}`}>
                 {player.position}
               </span>
             </div>
-            <div className="flex items-center justify-center mt-1.5 gap-2">
-              <span className="text-gray-500 font-medium text-xs">{player.age ? `${player.age} años` : '-'}</span>
+            <div className="flex items-center justify-center mt-1 gap-1.5">
+              <span className="text-gray-500 font-medium text-[10px]">{player.age ? `${player.age}a` : '-'}</span>
               {player.dominantFoot && (
-                <span className="px-1.5 py-0.5 bg-gray-50 text-gray-500 text-[10px] rounded-full border border-gray-200 uppercase tracking-wider font-semibold">
-                  {player.dominantFoot}
+                <span className="px-1 text-gray-500 text-[9px] rounded-sm border border-gray-200 uppercase tracking-wider font-bold bg-gray-50">
+                  {player.dominantFoot.charAt(0)}
                 </span>
               )}
             </div>

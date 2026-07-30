@@ -8,7 +8,7 @@ const SettingsDashboard = () => {
   const [activeTab, setActiveTab] = useState<'forms' | 'general' | 'roles'>('forms');
 
   return (
-    <div className="animate-fade-in p-6 max-w-7xl mx-auto">
+    <div className="animate-fade-in p-6 w-full">
       <div className="mb-6">
         <h1 className="h1 flex items-center gap-3">
           <Settings className="text-primary" size={32} />

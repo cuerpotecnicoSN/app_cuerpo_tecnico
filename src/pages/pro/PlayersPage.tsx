@@ -1,16 +1,16 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import type { Player, DevTask, MedicalRecord, SportsStats } from '../../components/types';
 import PlayersManagementView from '../../components/pro/PlayersManagementView';
-import { useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
+
+
 import { useSupabaseData } from '../../hooks/useSupabaseData';
 import PlayerImportModal from '../../components/pro/PlayerImportModal';
-import { Plus, Users as UsersIcon, Grid, List, Filter, Globe, Search } from 'lucide-react';
+import { Plus, Users as UsersIcon, Grid, List, Filter, Globe, Search, Download } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import '../staff/staff.css';
 
 export default function PlayersPage() {
-  const navigate = useNavigate();
+  
   const [showImportModal, setShowImportModal] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [positionFilter, setPositionFilter] = useState('');
@@ -35,7 +35,7 @@ export default function PlayersPage() {
       weaknesses: [],
       goals: [],
       status: p.medical_status || 'Apto',
-      nationality: p.nationality,
+      nationality: p.nationality || '',
       dominantFoot: p.dominant_foot,
       avatar: p.photo_url || 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=200'
     }));
@@ -68,7 +68,7 @@ export default function PlayersPage() {
 
   const summaryStats = useMemo(() => {
     const totalPlayers = players.length;
-    const nationalities = new Set(players.filter(p => p.nationality).map(p => p.nationality.toLowerCase().trim())).size;
+    const nationalities = new Set(players.filter(p => p.nationality || '').map(p => p.nationality || ''.toLowerCase().trim())).size;
     const positions = players.reduce((acc, p) => {
        const pos = (p.position || 'Sin definir').toLowerCase();
        if (pos.includes('portero') || pos.includes('arquero')) acc.porteros = (acc.porteros || 0) + 1;
@@ -114,8 +114,137 @@ export default function PlayersPage() {
     }
   };
 
+  const exportToPDF = async () => {
+    try {
+      const { jsPDF } = await import('jspdf');
+      const doc = new jsPDF();
+
+      // Cabecera negra y roja
+      doc.setFillColor(20, 20, 24); // Negro oscuro
+      doc.rect(0, 0, 210, 45, 'F');
+      doc.setFillColor(220, 38, 38); // Rojo vibrante
+      doc.rect(0, 45, 210, 5, 'F');
+
+      const img = new Image();
+      img.src = '/escudo.png'; // Fallback a equipo.png si la pide
+      await new Promise((resolve) => {
+        img.onload = resolve;
+        img.onerror = resolve; // Continue even if image fails
+      });
+
+      if (img.width > 0) {
+         const canvas = document.createElement('canvas');
+         canvas.width = img.width;
+         canvas.height = img.height;
+         const ctx = canvas.getContext('2d');
+         if (ctx) {
+           ctx.drawImage(img, 0, 0);
+           const dataUrl = canvas.toDataURL('image/png');
+           doc.addImage(dataUrl, 'PNG', 15, 7, 30, 30);
+         }
+      }
+
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(26);
+      doc.setFont("helvetica", "bold");
+      doc.text("PLANTILLA DEL EQUIPO", 55, 22);
+
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(200, 200, 200);
+      doc.text(`Generado el ${new Date().toLocaleDateString()} | Total Jugadores: ${players.length}`, 55, 32);
+
+      // Pre-load player images
+      const playerImages: Record<string, string | null> = {};
+      await Promise.all(players.map(async p => {
+         if (!p.avatar || p.avatar.includes('unsplash.com')) {
+            playerImages[p.id] = null;
+            return;
+         }
+         try {
+            const imgUrl = p.avatar.startsWith('data:') ? p.avatar : `https://corsproxy.io/?${encodeURIComponent(p.avatar)}`;
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            const dataUrl = await new Promise<string>((resolve, reject) => {
+               img.onload = () => {
+                  const canvas = document.createElement('canvas');
+                  canvas.width = img.width;
+                  canvas.height = img.height;
+                  const ctx = canvas.getContext('2d');
+                  if (ctx) {
+                     ctx.drawImage(img, 0, 0);
+                     resolve(canvas.toDataURL('image/png'));
+                  } else reject(new Error('No canvas context'));
+               };
+               img.onerror = () => reject(new Error('Image load failed'));
+               img.src = imgUrl;
+            });
+            playerImages[p.id] = dataUrl;
+         } catch (e) {
+            playerImages[p.id] = null;
+         }
+      }));
+
+      // Ordenamos todos los jugadores por nombre
+      const sortedPlayers = [...players].sort((a, b) => a.name.localeCompare(b.name));
+
+      let y = 60;
+      let x = 15;
+
+      doc.setTextColor(0, 0, 0);
+
+      sortedPlayers.forEach(p => {
+        if (y > 282) {
+          if (x === 15) { x = 110; y = 60; }
+          else { doc.addPage(); x = 15; y = 60; }
+        }
+
+        const base64Img = playerImages[p.id];
+        if (base64Img) {
+          doc.addImage(base64Img, 'PNG', x, y - 5, 8, 8);
+        } else {
+          doc.setFillColor(220, 220, 220);
+          doc.rect(x, y - 5, 8, 8, 'F');
+        }
+
+        doc.setTextColor(30, 30, 30);
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "bold");
+        const name = p.name.length > 25 ? p.name.substring(0, 23) + '...' : p.name;
+        doc.text(name, x + 10, y - 1);
+
+        let info = [];
+        if (p.position && p.position !== 'Sin definir') info.push(p.position);
+        if (p.age) info.push(`${p.age} años`);
+        if (p.nationality || '') info.push(p.nationality || '');
+        
+        doc.setTextColor(120, 120, 120);
+        doc.setFontSize(8);
+        doc.setFont("helvetica", "normal");
+        doc.text(info.join(' - '), x + 10, y + 3);
+
+        y += 13;
+      });
+
+      // Pie de página
+      const pageCount = (doc as any).internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(150, 150, 150);
+        doc.text(`Página ${i} de ${pageCount}`, 105, 290, { align: 'center' });
+      }
+
+      doc.save("Plantilla_Club.pdf");
+    } catch (err) {
+      console.error("Error generating PDF:", err);
+      alert("Hubo un error al generar el PDF.");
+    }
+  };
+
+
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
+    <div className="w-full mx-auto h-full space-y-6 animate-fade-in">
       <div className="staff-header" style={{ marginBottom: 0 }}>
         <div>
           <p className="staff-breadcrumb">Jugadores</p>
@@ -142,6 +271,10 @@ export default function PlayersPage() {
               </button>
             </div>
           )}
+          <button onClick={exportToPDF} className="btn btn-outline flex items-center gap-2 bg-white hover:bg-gray-50 border-gray-300 text-gray-700">
+             <Download size={16} />
+             Exportar PDF
+          </button>
           <button onClick={() => setShowImportModal(true)} className="btn btn-primary">
             <Plus size={16} />
             Añadir jugador

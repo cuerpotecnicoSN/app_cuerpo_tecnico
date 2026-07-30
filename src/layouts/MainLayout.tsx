@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Menu, X, LogOut, ChevronDown } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { navigation } from '../config/navigation';
+import EditProfileModal from '../components/auth/EditProfileModal';
 import './MainLayout.css';
 
 const MainLayout: React.FC = () => {
@@ -12,6 +13,7 @@ const MainLayout: React.FC = () => {
   const { profile, signOut } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDesktopMenuOpen, setIsDesktopMenuOpen] = useState(true);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   const isSectionActive = (path: string) =>
     location.pathname === path || (path !== '/' && location.pathname.startsWith(path));
@@ -99,6 +101,14 @@ const MainLayout: React.FC = () => {
         </nav>
 
         <div className="sidebar-footer">
+          <div 
+            className="sidebar-user-info cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={() => setIsProfileModalOpen(true)}
+            title="Editar Mi Perfil"
+          >
+            <span className="sidebar-user-name">{profile?.full_name || 'Admin'}</span>
+            <span className="sidebar-user-role">{profile?.role || 'Entrenador'}</span>
+          </div>
           <button className="btn logout-btn" onClick={signOut}>
             <LogOut size={18} />
             <span>{t('auth.logout')}</span>
@@ -136,7 +146,11 @@ const MainLayout: React.FC = () => {
               ))}
             </div>
 
-            <div className="user-profile">
+            <div 
+              className="user-profile cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={() => setIsProfileModalOpen(true)}
+              title="Editar Mi Perfil"
+            >
               <div className="flex flex-col items-end user-name-block">
                 <span className="text-sm" style={{ fontWeight: 700, color: 'var(--color-text-primary)' }}>{profile?.full_name || 'Admin'}</span>
                 <span className="text-xs" style={{ fontWeight: 600, color: 'var(--color-primary)' }}>{profile?.role || 'Entrenador'}</span>
@@ -158,6 +172,11 @@ const MainLayout: React.FC = () => {
       {isMobileMenuOpen && (
         <div className="mobile-overlay" onClick={() => setIsMobileMenuOpen(false)}></div>
       )}
+      
+      <EditProfileModal 
+        isOpen={isProfileModalOpen} 
+        onClose={() => setIsProfileModalOpen(false)} 
+      />
     </div>
   );
 };

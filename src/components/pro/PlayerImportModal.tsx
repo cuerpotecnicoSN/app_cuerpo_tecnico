@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Search, Check, AlertCircle, ImagePlus, Eraser, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -605,6 +605,10 @@ export default function PlayerImportModal({ onClose, onSuccess, playerToEdit }: 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-bold text-secondary">Nacionalidad</label>
                 <input type="text" value={formData.nationality} onChange={e => setFormData({...formData, nationality: e.target.value})} className="w-full" />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-bold text-secondary">Fecha de Nacimiento</label>
+                <input type="date" value={formData.birth_date || ''} onChange={e => setFormData({...formData, birth_date: e.target.value})} className="w-full" />
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-bold text-secondary">Altura (cm)</label>

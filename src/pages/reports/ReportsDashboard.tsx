@@ -15,7 +15,7 @@ const ReportsDashboard = () => {
   };
 
   return (
-    <div className="animate-fade-in p-6 max-w-7xl mx-auto print:p-0 print:m-0">
+    <div className="animate-fade-in p-6 w-full print:p-0 print:m-0">
       <div className="flex justify-between items-start mb-6 print:hidden">
         <div>
           <h1 className="h1">{t('reports.title') || 'Análisis e Informes'}</h1>

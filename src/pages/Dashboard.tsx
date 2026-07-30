@@ -7,6 +7,7 @@ import PlayerSlideReport from "../components/reports/PlayerSlideReport";
 import StaffSlideReport from "../components/reports/StaffSlideReport";
 import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { useSupabaseData } from '../hooks/useSupabaseData';
+import WeeklyCalendar, { CalendarEvent, EventType } from '../components/dashboard/WeeklyCalendar';
 import './Dashboard.css';
 
 type UserRole = 'Entrenador' | 'Preparador Físico' | 'Analista';
@@ -18,6 +19,7 @@ const Dashboard: React.FC = () => {
   
   // Fetch real data from Supabase
   const { data: players = [], loading: loadingPlayers } = useSupabaseData<any>('players');
+  const { data: profiles = [] } = useSupabaseData<any>('profiles');
   const { data: physicalStats = [] } = useSupabaseData<any>('physical_metrics_history');
   const { data: matches = [] } = useSupabaseData<any>('sports_stats');
 
@@ -30,65 +32,136 @@ const Dashboard: React.FC = () => {
   const performanceData = useMemo(() => {
     if (!physicalStats || physicalStats.length === 0) {
       return [
-        { name: 'Lun', load: 0, intensity: 0 },
-        { name: 'Mar', load: 0, intensity: 0 },
-        { name: 'Mié', load: 0, intensity: 0 },
-        { name: 'Jue', load: 0, intensity: 0 },
-        { name: 'Vie', load: 0, intensity: 0 },
-        { name: 'Sáb', load: 0, intensity: 0 },
+        { name: t('dashboard.days.mon'), load: 0, intensity: 0 },
+        { name: t('dashboard.days.tue'), load: 0, intensity: 0 },
+        { name: t('dashboard.days.wed'), load: 0, intensity: 0 },
+        { name: t('dashboard.days.thu'), load: 0, intensity: 0 },
+        { name: t('dashboard.days.fri'), load: 0, intensity: 0 },
+        { name: t('dashboard.days.sat'), load: 0, intensity: 0 },
       ];
     }
     // Lógica básica para mapear datos reales (se puede expandir)
     return physicalStats.slice(0, 6).map((stat: any, i: number) => ({
-      name: `Día ${i+1}`,
+      name: `${t('dashboard.dayLabel')} ${i+1}`,
       load: stat.fatigue_level * 100 || 0,
       intensity: stat.stress_level * 100 || 0
     }));
-  }, [physicalStats]);
+  }, [physicalStats, t]);
 
   const getStatsByRole = () => {
     switch(currentRole) {
       case 'Preparador Físico':
         return [
-          { title: 'Carga Semanal Acumulada', value: physicalStats.length > 0 ? 'Calculando...' : '0 AU', subtitle: 'Base de datos conectada', icon: Activity, color: 'secondary' },
-          { title: 'Jugadores en Riesgo', value: injuredPlayers.toString(), subtitle: 'Fatiga alta (>80%)', icon: AlertTriangle, color: 'danger' },
-          { title: 'Disponibilidad Médica', value: totalPlayers ? `${Math.round((availablePlayers/totalPlayers)*100)}%` : '0%', subtitle: `${injuredPlayers} Lesionados`, icon: Users, color: 'primary' },
-          { title: 'RPE Promedio Ayer', value: 'N/A', subtitle: 'Esperando datos', icon: TrendingUp, color: 'accent' },
+          { title: t('dashboard.weeklyLoadAccumulated'), value: physicalStats.length > 0 ? t('dashboard.calculating') : '0 AU', subtitle: t('dashboard.dbConnected'), icon: Activity, color: 'secondary' },
+          { title: t('dashboard.playersAtRisk'), value: injuredPlayers.toString(), subtitle: t('dashboard.highFatigue'), icon: AlertTriangle, color: 'danger' },
+          { title: t('dashboard.medicalAvailability'), value: totalPlayers ? `${Math.round((availablePlayers/totalPlayers)*100)}%` : '0%', subtitle: `${injuredPlayers} ${t('dashboard.injuredSuffix')}`, icon: Users, color: 'primary' },
+          { title: t('dashboard.avgRpeYesterday'), value: 'N/A', subtitle: t('dashboard.waitingData'), icon: TrendingUp, color: 'accent' },
         ];
       case 'Analista':
         return [
-          { title: 'Próximo Rival', value: 'Por definir', subtitle: 'Sin partidos en BD', icon: Target, color: 'primary' },
-          { title: 'Clips de Video Pendientes', value: '0', subtitle: 'Para reunión táctica', icon: Video, color: 'secondary' },
-          { title: 'xG Último Partido', value: '0.00', subtitle: '-', icon: Activity, color: 'accent' },
-          { title: 'Pérdidas en Campo Propio', value: '0', subtitle: 'Esperando datos', icon: TrendingUp, color: 'secondary' },
+          { title: t('dashboard.nextOpponent'), value: t('dashboard.toBeDefined'), subtitle: t('dashboard.noMatchesInDb'), icon: Target, color: 'primary' },
+          { title: t('dashboard.pendingVideoClips'), value: '0', subtitle: t('dashboard.forTacticalMeeting'), icon: Video, color: 'secondary' },
+          { title: t('dashboard.xgLastMatch'), value: '0.00', subtitle: '-', icon: Activity, color: 'accent' },
+          { title: t('dashboard.lossesOwnHalf'), value: '0', subtitle: t('dashboard.waitingData'), icon: TrendingUp, color: 'secondary' },
         ];
       default: // Entrenador
         return [
-          { title: t('dashboard.nextMatch'), value: 'Sin eventos', subtitle: 'Añadir en Calendario', icon: Target, color: 'primary' },
-          { title: t('dashboard.availablePlayers'), value: `${availablePlayers} / ${totalPlayers}`, subtitle: injuredPlayers > 0 ? `${injuredPlayers} lesionados` : 'Todos sanos', icon: Users, color: 'secondary' },
-          { title: t('dashboard.trainingLoad'), value: 'N/A', subtitle: 'Faltan datos de sesión', icon: Activity, color: 'accent' },
-          { title: t('dashboard.daysToComp'), value: '-', subtitle: 'Calendario vacío', icon: Calendar, color: 'primary' },
+          { title: t('dashboard.nextMatch'), value: t('dashboard.noEvents'), subtitle: t('dashboard.addInCalendar'), icon: Target, color: 'primary' },
+          { title: t('dashboard.availablePlayers'), value: `${availablePlayers} / ${totalPlayers}`, subtitle: injuredPlayers > 0 ? `${injuredPlayers} ${t('dashboard.injuredSuffix')}` : t('dashboard.allHealthy'), icon: Users, color: 'secondary' },
+          { title: t('dashboard.trainingLoad'), value: 'N/A', subtitle: t('dashboard.missingSessionData'), icon: Activity, color: 'accent' },
+          { title: t('dashboard.daysToComp'), value: '-', subtitle: t('dashboard.emptyCalendar'), icon: Calendar, color: 'primary' },
         ];
     }
   };
 
   const stats = getStatsByRole();
 
+  // Generar eventos para el calendario
+  const calendarEvents = useMemo(() => {
+    const events: CalendarEvent[] = [];
+    const today = new Date();
+    
+    // 1. Cumpleaños de la semana actual
+    players.forEach((player: any) => {
+      if (player.birth_date) {
+        const birthDate = new Date(player.birth_date);
+        // Set the birthday to the current year
+        const currentYearBirthday = new Date(today.getFullYear(), birthDate.getMonth(), birthDate.getDate());
+        
+        // Comprobar si es de esta semana (simplificado: cae cerca de hoy o simplemente lo añadimos al día correspondiente)
+        events.push({
+          id: `bday-${player.id}`,
+          title: `Cumpleaños: ${player.first_name} ${player.last_name}`,
+          date: currentYearBirthday,
+          type: 'birthday',
+          description: `${player.first_name} cumple años!`
+        });
+      }
+    });
+
+    // 1b. Cumpleaños del cuerpo técnico
+    profiles.forEach((profile: any) => {
+      if (profile.birth_date) {
+        const birthDate = new Date(profile.birth_date);
+        const currentYearBirthday = new Date(today.getFullYear(), birthDate.getMonth(), birthDate.getDate());
+        
+        events.push({
+          id: `bday-staff-${profile.id}`,
+          title: `Cumpleaños Staff: ${profile.full_name || 'Entrenador'}`,
+          date: currentYearBirthday,
+          type: 'birthday',
+          description: `¡El entrenador ${profile.full_name || ''} cumple años!`
+        });
+      }
+    });
+
+    // 2. Mock de Entrenamientos y Partidos para el demo
+    // Añadimos un entrenamiento para mañana
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    events.push({
+      id: 'train-1',
+      title: 'Entrenamiento Equipo',
+      date: tomorrow,
+      type: 'training',
+      time: '10:00 - 12:00',
+      description: 'Entrenamiento táctico en el campo principal'
+    });
+
+    // Añadimos un partido para el fin de semana (sábado)
+    const nextSaturday = new Date();
+    const day = nextSaturday.getDay();
+    const diffToSaturday = 6 - day;
+    nextSaturday.setDate(nextSaturday.getDate() + diffToSaturday);
+    if (diffToSaturday > 0) {
+      events.push({
+        id: 'match-1',
+        title: 'Partido Oficial vs Rival',
+        date: nextSaturday,
+        type: 'match',
+        time: '18:00',
+        description: 'Jornada 5 - Estadio Local'
+      });
+    }
+
+    return events;
+  }, [players]);
+
   return (
     <div className="dashboard animate-fade-in">
       <div className="flex gap-2 mb-6 p-4 bg-slate-900 border border-slate-700 rounded-xl">
-        <span className="text-slate-400 font-bold self-center">Probar Informes:</span>
-        <button onClick={() => printReport(<InterventionReport player={{name: "Sergio Navarro", birthDate: "01/01/2000", position: "Mediocentro"}} interventions={[]} />)} className="btn btn-sm btn-outline text-red-500 border-red-500 hover:bg-red-500 hover:text-white">Imprimir Tabla Excel</button>
-        <button onClick={() => printReport(<PlayerSlideReport player={{name: "SERGIO NAVARRO", position: "Mediocentro", info: "Información General"}} data={{personalInfo: "Jugador de la cantera...", sportsAssessment: "Buen rendimiento físico", implementation: "A mejorar", sportsInfo: "Partidos jugados: 10", development: "Progresión rápida", future: "Potencial alto"}} />)} className="btn btn-sm btn-outline text-white border-white hover:bg-white hover:text-black">Imprimir Diapositiva Jugador</button>
-        <button onClick={() => printReport(<StaffSlideReport staff={{name: "VALERIO BRANDI", role: "Technical Assistant", periodFrom: "Enero", periodTo: "Junio"}} data={{selfOrganization: "Buena gestión del tiempo", matchPlan: "Táctico", prePostTraining: "Siempre preparado", interventionFeedback: "Claro y directo", trainingExercises: "Innovadores", rolesResponsibilities: "Cumplidas", coachStaffRelationships: "Excelente compañerismo", keyPoints: "Liderazgo"}} />)} className="btn btn-sm btn-outline text-white border-white hover:bg-white hover:text-black">Imprimir Diapositiva Staff</button>
+        <span className="text-slate-400 font-bold self-center">{t('dashboard.testReports')}</span>
+        <button onClick={() => printReport(<InterventionReport player={{name: "Sergio Navarro", birthDate: "01/01/2000", position: "Mediocentro"}} interventions={[]} />)} className="btn btn-sm btn-outline text-red-500 border-red-500 hover:bg-red-500 hover:text-white">{t('dashboard.printExcelTable')}</button>
+        <button onClick={() => printReport(<PlayerSlideReport player={{name: "SERGIO NAVARRO", position: "Mediocentro", info: "Información General"}} data={{personalInfo: "Jugador de la cantera...", sportsAssessment: "Buen rendimiento físico", implementation: "A mejorar", sportsInfo: "Partidos jugados: 10", development: "Progresión rápida", future: "Potencial alto"}} />)} className="btn btn-sm btn-outline text-white border-white hover:bg-white hover:text-black">{t('dashboard.printPlayerSlide')}</button>
+        <button onClick={() => printReport(<StaffSlideReport staff={{name: "VALERIO BRANDI", role: "Technical Assistant", periodFrom: "Enero", periodTo: "Junio"}} data={{selfOrganization: "Buena gestión del tiempo", matchPlan: "Táctico", prePostTraining: "Siempre preparado", interventionFeedback: "Claro y directo", trainingExercises: "Innovadores", rolesResponsibilities: "Cumplidas", coachStaffRelationships: "Excelente compañerismo", keyPoints: "Liderazgo"}} />)} className="btn btn-sm btn-outline text-white border-white hover:bg-white hover:text-black">{t('dashboard.printStaffSlide')}</button>
       </div>
       
       <div className="dashboard-header flex justify-between items-center">
         <div>
-          <h1 className="h1">{t('dashboard.welcome')}, Staff {loadingPlayers && <span className="text-sm font-normal text-muted">(Conectando BD...)</span>}</h1>
+          <h1 className="h1">{t('dashboard.welcome')}, Staff {loadingPlayers && <span className="text-sm font-normal text-muted">{t('dashboard.connectingDb')}</span>}</h1>
           <p className="text-muted mt-1">{t('dashboard.summary')}</p>
         </div>
-        
+
         {/* Simulador de Roles */}
         <div className="flex gap-2 bg-surface p-1 rounded-md border border-zinc-800">
           {(['Entrenador', 'Preparador Físico', 'Analista'] as UserRole[]).map(role => (
@@ -99,7 +172,7 @@ const Dashboard: React.FC = () => {
                 currentRole === role ? 'bg-primary text-white' : 'text-zinc-400 hover:text-white'
               }`}
             >
-              {role}
+              {role === 'Preparador Físico' ? t('dashboard.roleFitness') : role === 'Analista' ? t('dashboard.roleAnalyst') : t('dashboard.roleTrainer')}
             </button>
           ))}
         </div>
@@ -123,8 +196,8 @@ const Dashboard: React.FC = () => {
       <div className="dashboard-content grid-2">
         <div className="card glass-panel flex-col flex">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="h3 font-display">Carga Semanal vs Intensidad</h3>
-            <span className="badge badge-neutral">Datos Reales BD</span>
+            <h3 className="h3 font-display">{t('dashboard.weeklyLoadVsIntensity')}</h3>
+            <span className="badge badge-neutral">{t('dashboard.realDbData')}</span>
           </div>
           <div className="flex-1 min-h-[250px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -150,27 +223,16 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="card glass-panel flex flex-col">
-          <h3 className="h3 font-display mb-6">Próximos Eventos de BD</h3>
-          <div className="flex flex-col gap-4">
-            {matches.length === 0 ? (
-              <div className="p-8 text-center text-muted border border-dashed border-zinc-700 rounded-lg">
-                No hay eventos próximos registrados en la base de datos de Supabase.
-              </div>
-            ) : (
-              matches.slice(0, 3).map((match: any) => (
-                <div key={match.id} className="flex items-center gap-4 p-3 rounded-lg border border-zinc-800 bg-surface/50 hover:border-accent transition-colors cursor-pointer">
-                  <div className="bg-accent/20 p-3 rounded-md text-accent">
-                    <Target size={20} />
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="font-bold">Partido registrado</h4>
-                    <p className="text-sm text-muted">ID: {match.id}</p>
-                  </div>
-                </div>
-              ))
-            )}
+        <div className="card glass-panel flex flex-col col-span-2 mt-4">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="h3 font-display">{t('dashboard.upcomingDbEvents', 'Calendario Semanal')}</h3>
+            <span className="badge badge-neutral text-xs px-2 py-1 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[#eab308]"></span> Cumpleaños
+              <span className="w-2 h-2 rounded-full bg-[#3b82f6] ml-2"></span> Entrenamientos
+              <span className="w-2 h-2 rounded-full bg-[var(--color-primary)] ml-2"></span> Partidos
+            </span>
           </div>
+          <WeeklyCalendar events={calendarEvents} />
         </div>
       </div>
     </div>

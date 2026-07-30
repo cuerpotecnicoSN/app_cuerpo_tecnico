@@ -166,6 +166,28 @@
   border-top: 1px solid var(--color-border);
 }
 
+.sidebar-user-info {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1rem;
+  padding: 0 0.5rem;
+}
+
+.sidebar-user-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-user-role {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
 .logout-btn {
   width: 100%;
   display: flex;

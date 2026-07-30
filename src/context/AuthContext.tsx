@@ -8,6 +8,7 @@ type Profile = {
   full_name: string | null;
   role: string;
   avatar_url: string | null;
+  birth_date: string | null;
 };
 
 type AuthContextType = {
@@ -80,7 +81,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           email: userObj.email || '',
           full_name: meta.full_name || userObj.email?.split('@')[0] || 'Usuario',
           role: userRole,
-          avatar_url: meta.avatar_url || null
+          avatar_url: meta.avatar_url || null,
+          birth_date: meta.birth_date || null
         });
       }
     } catch (error) {
