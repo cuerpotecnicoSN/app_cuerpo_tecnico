@@ -228,9 +228,9 @@
 
 .login-field input {
   width: 100%;
-  padding-left: 2.75rem;
-  padding-top: 0.75rem;
-  padding-bottom: 0.75rem;
+  padding-left: 2.75rem !important;
+  padding-top: 0.75rem !important;
+  padding-bottom: 0.75rem !important;
   transition: all var(--transition-normal);
 }
 
