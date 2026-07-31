@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Trash2, ChevronLeft } from 'lucide-react';
+import { Plus, Trash2, ChevronLeft, MapPin, Swords } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import type { MatchDB, MatchFocus, MatchDataPoint } from '../../components/types';
 import { getMatches, createMatch, deleteMatch, updateMatch, getMatchFocuses, createMatchFocus, deleteMatchFocus, getMatchDataPoints, createMatchDataPoint, deleteMatchDataPoint } from '../../services/matches';
@@ -55,17 +55,83 @@ export default function MatchesPage() {
       )}
 
       {matches.length === 0 && <p className="text-sm text-gray-400">{t('matchesPage.noMatches')}</p>}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {matches.map((m) => (
-          <div key={m.id} className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm cursor-pointer hover:shadow-md" onClick={() => setActiveMatch(m)}>
-            <div className="flex justify-between items-start">
-              <p className="font-bold text-gray-800">{m.is_home ? 'vs' : '@'} {m.opponent}</p>
-              <button onClick={(e) => { e.stopPropagation(); deleteMatch(m.id).then(load); }} className="text-gray-300 hover:text-red-500"><Trash2 size={16} /></button>
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+        {matches.map((m) => {
+          const theme = (() => {
+            const comp = (m.competition || '').toLowerCase();
+            if (comp.includes('amistoso')) return { border: 'bg-orange-500', icon: 'text-orange-50', bg: 'bg-orange-50', text: 'text-orange-600', borderLight: 'border-orange-100', hoverText: 'group-hover:text-orange-600' };
+            if (comp.includes('copa')) return { border: 'bg-purple-500', icon: 'text-purple-50', bg: 'bg-purple-50', text: 'text-purple-600', borderLight: 'border-purple-100', hoverText: 'group-hover:text-purple-600' };
+            return { border: 'bg-blue-500', icon: 'text-blue-50', bg: 'bg-blue-50', text: 'text-blue-600', borderLight: 'border-blue-100', hoverText: 'group-hover:text-blue-600' };
+          })();
+
+          const myTeamName = "AC Milan Sub-23";
+          const homeTeamName = m.is_home ? myTeamName : m.opponent;
+          const awayTeamName = m.is_home ? m.opponent : myTeamName;
+
+          return (
+          <div key={m.id} className="relative bg-white border border-gray-100 rounded-[28px] p-6 shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden group" onClick={() => setActiveMatch(m)}>
+            <div className={`absolute top-0 left-0 w-2 h-full ${theme.border} rounded-l-[28px]`} />
+            <div className={`absolute -right-10 -top-10 ${theme.icon} opacity-50 pointer-events-none group-hover:scale-110 transition-transform duration-500`}>
+              <Swords size={160} />
             </div>
-            <p className="text-xs text-gray-400 mt-1">{m.date} {m.competition ? `· ${m.competition}` : ''}</p>
-            {(m.result_home != null && m.result_away != null) && <p className="text-sm font-bold text-gray-700 mt-1">{m.result_home} - {m.result_away}</p>}
+            
+            <div className="relative z-10 flex flex-col h-full justify-between">
+              <div>
+                <div className="flex justify-between items-start mb-6">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className={`text-sm font-extrabold ${theme.text} ${theme.bg} border ${theme.borderLight} px-3 py-1 rounded-lg shadow-sm uppercase`}>
+                      {m.competition || 'Partido'}
+                    </span>
+                    <span className="text-sm font-bold text-gray-600 flex items-center gap-1.5 bg-gray-50 border border-gray-200 px-3 py-1 rounded-lg shadow-sm">
+                      {new Date(m.date).toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })}
+                      {m.time && ` | ${m.time}`}
+                    </span>
+                    {m.stadium && (
+                      <span className="text-sm font-bold text-gray-600 flex items-center gap-1.5 bg-gray-50 border border-gray-200 px-3 py-1 rounded-lg shadow-sm">
+                        <MapPin size={14} className="text-gray-400" />
+                        {m.stadium}
+                      </span>
+                    )}
+                  </div>
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); deleteMatch(m.id).then(load); }} 
+                    className="text-gray-300 hover:text-red-500 hover:bg-red-50 p-2.5 rounded-xl transition-colors shrink-0 relative z-20 -mt-2 -mr-2"
+                  >
+                    <Trash2 size={20} />
+                  </button>
+                </div>
+
+                {/* Equipos y Escudos Gigantes */}
+                <div className="flex items-center justify-center gap-2 sm:gap-6 mt-4">
+                  <div className="flex flex-col items-center flex-1">
+                    <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-3xl bg-gray-50 flex items-center justify-center p-4 border border-gray-100 shadow-sm relative z-10 group-hover:-translate-y-1 transition-transform duration-300">
+                      {m.home_logo ? <img src={m.home_logo} alt="Home" className="w-full h-full object-contain drop-shadow-sm" /> : <div className="w-12 h-12 rounded-full bg-gray-200" />}
+                    </div>
+                    <span className={`mt-4 text-center font-black text-lg sm:text-xl text-gray-900 leading-tight line-clamp-2 ${theme.hoverText} transition-colors`}>{homeTeamName}</span>
+                  </div>
+                  
+                  <div className="flex flex-col items-center justify-center px-1 sm:px-4">
+                    {(m.result_home != null && m.result_away != null) ? (
+                      <div className="bg-gray-900 text-white font-black text-3xl sm:text-4xl px-5 py-3 rounded-2xl shadow-lg relative z-20">
+                        {m.result_home} - {m.result_away}
+                      </div>
+                    ) : (
+                      <span className="text-xl font-black text-gray-300 uppercase tracking-widest">vs</span>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col items-center flex-1">
+                    <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-3xl bg-gray-50 flex items-center justify-center p-4 border border-gray-100 shadow-sm relative z-10 group-hover:-translate-y-1 transition-transform duration-300">
+                      {m.away_logo ? <img src={m.away_logo} alt="Away" className="w-full h-full object-contain drop-shadow-sm" /> : <div className="w-12 h-12 rounded-full bg-gray-200" />}
+                    </div>
+                    <span className={`mt-4 text-center font-black text-lg sm:text-xl text-gray-900 leading-tight line-clamp-2 ${theme.hoverText} transition-colors`}>{awayTeamName}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

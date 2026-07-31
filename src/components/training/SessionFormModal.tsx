@@ -1,5 +1,18 @@
-import { useState, useEffect } from 'react';
-import { X, MapPin, Calendar as CalendarIcon, AlignLeft, Target, Loader2 } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { X, MapPin, Calendar as CalendarIcon, AlignLeft, Target, Loader2, Clock } from 'lucide-react';
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+
+// Fix Leaflet default icon issues in React
+import icon from 'leaflet/dist/images/marker-icon.png';
+import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+const DefaultIcon = L.icon({
+  iconUrl: icon,
+  shadowUrl: iconShadow,
+  iconAnchor: [12, 41]
+});
+L.Marker.prototype.options.icon = DefaultIcon;
 import { useTranslation } from 'react-i18next';
 import type { TrainingSessionDB } from '../types';
 
@@ -14,17 +27,24 @@ export function SessionFormModal({ isOpen, onClose, onSave, initialData }: Sessi
   const { t } = useTranslation();
   const [title, setTitle] = useState(initialData?.title || '');
   const [date, setDate] = useState(initialData?.date || '');
+  const [time, setTime] = useState(initialData?.time || '');
   const [objective, setObjective] = useState(initialData?.objective || '');
   const [location, setLocation] = useState(initialData?.location || '');
   
   const [mapCoordinates, setMapCoordinates] = useState<{lat: string, lon: string} | null>(null);
   const [isSearchingMap, setIsSearchingMap] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const skipSearch = useRef(false);
 
   // Debounced search for map location
   useEffect(() => {
     if (!location.trim()) {
       setMapCoordinates(null);
+      return;
+    }
+    
+    if (skipSearch.current) {
+      skipSearch.current = false;
       return;
     }
 
@@ -58,6 +78,7 @@ export function SessionFormModal({ isOpen, onClose, onSave, initialData }: Sessi
       await onSave({
         title: title.trim(),
         date,
+        time: time || undefined,
         objective: objective.trim(),
         location: location.trim()
       });
@@ -71,6 +92,46 @@ export function SessionFormModal({ isOpen, onClose, onSave, initialData }: Sessi
   };
 
   if (!isOpen) return null;
+
+  const handleMapClick = async (lat: number, lng: number) => {
+    setMapCoordinates({ lat: lat.toString(), lon: lng.toString() });
+    
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`);
+      const data = await res.json();
+      if (data && data.display_name) {
+        let locationName = data.display_name;
+        if (data.address) {
+           const street = data.address.road || data.address.pedestrian || data.address.suburb;
+           const city = data.address.city || data.address.town || data.address.village;
+           if (street && city) locationName = `${street}, ${city}`;
+           else if (city) locationName = city;
+           else if (street) locationName = street;
+        }
+        skipSearch.current = true;
+        setLocation(locationName);
+      }
+    } catch (err) {
+      console.error('Reverse geocoding error', err);
+    }
+  };
+
+  const MapEvents = () => {
+    useMapEvents({
+      click: (e) => handleMapClick(e.latlng.lat, e.latlng.lng)
+    });
+    return null;
+  };
+
+  const MapCenterer = () => {
+    const map = useMap();
+    useEffect(() => {
+      if (mapCoordinates) {
+        map.setView([parseFloat(mapCoordinates.lat), parseFloat(mapCoordinates.lon)], 15);
+      }
+    }, [mapCoordinates, map]);
+    return null;
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
@@ -110,18 +171,32 @@ export function SessionFormModal({ isOpen, onClose, onSave, initialData }: Sessi
                 />
               </div>
 
-              <div>
-                <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-1.5">
-                  <CalendarIcon size={16} className="text-emerald-500" />
-                  Fecha <span className="text-red-500">*</span>
-                </label>
-                <input 
-                  type="date" 
-                  required
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-gray-50 hover:bg-white focus:bg-white cursor-pointer"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-1.5">
+                    <CalendarIcon size={16} className="text-emerald-500" />
+                    Fecha <span className="text-red-500">*</span>
+                  </label>
+                  <input 
+                    type="date" 
+                    required
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                    className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-gray-50 hover:bg-white focus:bg-white cursor-pointer"
+                  />
+                </div>
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-1.5">
+                    <Clock size={16} className="text-orange-500" />
+                    Hora
+                  </label>
+                  <input 
+                    type="time" 
+                    value={time}
+                    onChange={(e) => setTime(e.target.value)}
+                    className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-gray-50 hover:bg-white focus:bg-white cursor-pointer"
+                  />
+                </div>
               </div>
 
               <div>
@@ -156,26 +231,34 @@ export function SessionFormModal({ isOpen, onClose, onSave, initialData }: Sessi
               </div>
               
               <div className="w-full h-[400px] bg-gray-100 rounded-xl border-2 border-dashed border-gray-200 overflow-hidden relative flex flex-col items-center justify-center">
-                {isSearchingMap ? (
-                  <div className="flex flex-col items-center text-gray-400">
-                    <Loader2 size={32} className="animate-spin mb-2" />
-                    <p className="text-sm font-medium">Buscando ubicación...</p>
-                  </div>
-                ) : mapCoordinates ? (
-                  <iframe 
-                    width="100%" 
-                    height="100%" 
-                    frameBorder="0" 
-                    scrolling="no" 
-                    marginHeight={0} 
-                    marginWidth={0} 
-                    src={`https://www.openstreetmap.org/export/embed.html?bbox=${parseFloat(mapCoordinates.lon)-0.005},${parseFloat(mapCoordinates.lat)-0.005},${parseFloat(mapCoordinates.lon)+0.005},${parseFloat(mapCoordinates.lat)+0.005}&layer=mapnik&marker=${mapCoordinates.lat},${mapCoordinates.lon}`}
-                    className="w-full h-full"
+                <MapContainer 
+                  center={mapCoordinates ? [parseFloat(mapCoordinates.lat), parseFloat(mapCoordinates.lon)] : [40.4168, -3.7038]} 
+                  zoom={mapCoordinates ? 15 : 5} 
+                  style={{ width: '100%', height: '100%', zIndex: 10 }}
+                >
+                  <TileLayer
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                   />
-                ) : (
-                  <div className="text-center p-6 text-gray-400 flex flex-col items-center">
-                    <MapPin size={48} className="opacity-20 mb-2" />
-                    <p className="text-sm font-medium">El mapa aparecerá aquí al escribir una ubicación</p>
+                  {mapCoordinates && (
+                    <Marker position={[parseFloat(mapCoordinates.lat), parseFloat(mapCoordinates.lon)]} />
+                  )}
+                  <MapEvents />
+                  <MapCenterer />
+                </MapContainer>
+                
+                {!mapCoordinates && !isSearchingMap && (
+                  <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center bg-gray-50/50 backdrop-blur-[2px] z-20">
+                    <MapPin size={48} className="text-blue-500 mb-2 drop-shadow-md" />
+                    <p className="text-sm font-bold text-gray-700 bg-white/90 px-4 py-2 rounded-lg shadow-sm border border-gray-200 text-center max-w-[80%]">
+                      Escribe una ubicación o <span className="text-blue-600">pulsa en el mapa</span> para fijar el lugar de entrenamiento
+                    </p>
+                  </div>
+                )}
+                {isSearchingMap && (
+                  <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center bg-white/80 backdrop-blur-[2px] z-20">
+                    <Loader2 size={32} className="animate-spin text-blue-500 mb-2" />
+                    <p className="text-sm font-bold text-gray-700">Buscando...</p>
                   </div>
                 )}
               </div>

@@ -189,6 +189,7 @@ export interface TaskLibraryItem {
   players_max?: number;
   material?: string;
   image_url?: string;
+  board_data?: string;
   created_at?: string;
 }
 
@@ -196,6 +197,7 @@ export interface TrainingSessionDB {
   id: string;
   season_id: string;
   date: string;
+  time?: string;
   title: string;
   objective?: string;
   location?: string;
@@ -223,6 +225,8 @@ export interface MatchDB {
   time?: string;
   opponent: string;
   is_home: boolean;
+  home_logo?: string;
+  away_logo?: string;
   stadium?: string;
   status: 'Scheduled' | 'Live' | 'Finished';
   result_home?: number | null;
