@@ -14,8 +14,8 @@ interface CalEvent {
   home_logo?: string;
   away_logo?: string;
   competition?: string;
-  result_home?: number;
-  result_away?: number;
+  result_home?: number | null;
+  result_away?: number | null;
 }
 
 export default function CalendarPage() {
