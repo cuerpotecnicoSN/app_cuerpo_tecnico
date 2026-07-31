@@ -131,21 +131,19 @@ const Dashboard: React.FC = () => {
   }, [players, matches, sessions]);
 
   return (
-    <div className="dashboard animate-fade-in">
-      <div className="dashboard-header flex justify-between items-center">
-        <div>
-          <h1 className="h1">{t('dashboard.welcome')}, Staff {loadingPlayers && <span className="text-sm font-normal text-muted">{t('dashboard.connectingDb')}</span>}</h1>
-          <p className="text-muted mt-1">{t('dashboard.summary')}</p>
-        </div>
+    <div className="flex flex-col gap-6 animate-fade-in">
+      <div className="flex flex-col sm:flex-row justify-end items-start sm:items-center gap-4">
 
         {/* Simulador de Roles */}
-        <div className="flex gap-2 bg-surface p-1 rounded-md border border-zinc-800">
+        <div className="flex gap-1 bg-[var(--color-bg-surface)] p-1 rounded-xl border border-[var(--color-border)]">
           {(['Entrenador', 'Preparador Físico', 'Analista'] as UserRole[]).map(role => (
             <button
               key={role}
               onClick={() => setCurrentRole(role)}
-              className={`px-4 py-2 rounded text-sm font-bold transition-colors ${
-                currentRole === role ? 'bg-primary text-white' : 'text-zinc-400 hover:text-white'
+              className={`px-4 py-2 rounded-lg text-base font-semibold transition-all ${
+                currentRole === role
+                  ? 'bg-[var(--color-primary)] text-white shadow-sm'
+                  : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-hover)]'
               }`}
             >
               {role === 'Preparador Físico' ? t('dashboard.roleFitness') : role === 'Analista' ? t('dashboard.roleAnalyst') : t('dashboard.roleTrainer')}
@@ -154,28 +152,31 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      <div className="stats-grid">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {stats.map((stat, index) => (
-          <div key={index} className="card stat-card glass-panel">
-            <div className={`stat-icon-wrapper bg-${stat.color}-glow`}>
-              <stat.icon className={`text-${stat.color}`} size={24} />
+          <div
+            key={index}
+            className="bg-[var(--color-bg-base)] border border-[var(--color-border)] rounded-2xl p-5 flex items-center gap-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300"
+          >
+            <div className={`w-12 h-12 shrink-0 rounded-xl flex items-center justify-center bg-${stat.color}-glow`}>
+              <stat.icon className={`text-${stat.color}`} size={22} />
             </div>
-            <div className="stat-info">
-              <h3 className="text-xs text-muted font-bold uppercase tracking-wider">{stat.title}</h3>
-              <p className="h2 stat-value font-display mt-1">{stat.value}</p>
-              <p className="text-xs stat-subtitle mt-1 text-secondary">{stat.subtitle}</p>
+            <div className="min-w-0">
+              <h3 className="text-sm text-[var(--color-text-muted)] font-semibold">{stat.title}</h3>
+              <p className="text-2xl font-bold text-[var(--color-text-primary)] mt-0.5 truncate">{stat.value}</p>
+              <p className="text-sm mt-0.5 text-[var(--color-text-secondary)] truncate">{stat.subtitle}</p>
             </div>
           </div>
         ))}
       </div>
 
-      <div className="dashboard-content grid-2">
-        <div className="card glass-panel flex-col flex">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="h3 font-display">{t('dashboard.weeklyLoadVsIntensity')}</h3>
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+        <div className="bg-[var(--color-bg-base)] border border-[var(--color-border)] rounded-2xl p-5 shadow-sm flex flex-col">
+          <div className="flex justify-between items-center mb-5">
+            <h3 className="text-base font-bold text-[var(--color-text-primary)]">{t('dashboard.weeklyLoadVsIntensity')}</h3>
             <span className="badge badge-neutral">{t('dashboard.realDbData')}</span>
           </div>
-          <div className="flex-1 min-h-[250px]">
+          <div className="flex-1 min-h-[220px]">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={performanceData}>
                 <defs>
@@ -189,19 +190,19 @@ const Dashboard: React.FC = () => {
                   </linearGradient>
                 </defs>
                 <XAxis dataKey="name" stroke="var(--color-text-muted)" fontSize={12} tickLine={false} axisLine={false} />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: '8px' }}
+                <Tooltip
+                  contentStyle={{ backgroundColor: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: '12px' }}
                 />
-                <Area type="monotone" dataKey="load" stroke="var(--color-primary)" strokeWidth={3} fillOpacity={1} fill="url(#colorLoad)" />
-                <Area type="monotone" dataKey="intensity" stroke="var(--color-secondary)" strokeWidth={3} fillOpacity={1} fill="url(#colorInt)" />
+                <Area type="monotone" dataKey="load" stroke="var(--color-primary)" strokeWidth={2.5} fillOpacity={1} fill="url(#colorLoad)" />
+                <Area type="monotone" dataKey="intensity" stroke="var(--color-secondary)" strokeWidth={2.5} fillOpacity={1} fill="url(#colorInt)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="card glass-panel flex flex-col col-span-2 mt-4">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="h3 font-display">{t('dashboard.upcomingDbEvents', 'Calendario Semanal')}</h3>
+        <div className="bg-[var(--color-bg-base)] border border-[var(--color-border)] rounded-2xl p-5 shadow-sm flex flex-col xl:col-span-2">
+          <div className="flex flex-wrap justify-between items-center gap-2 mb-5">
+            <h3 className="text-base font-bold text-[var(--color-text-primary)]">{t('dashboard.upcomingDbEvents', 'Calendario Semanal')}</h3>
             <span className="badge badge-neutral text-xs px-2 py-1 flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-[#eab308]"></span> Cumpleaños
               <span className="w-2 h-2 rounded-full bg-[#3b82f6] ml-2"></span> Entrenamientos

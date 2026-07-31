@@ -11,7 +11,10 @@
     "calendar": "Calendar",
     "players": "Players",
     "training": "Training",
-    "dynamics": "Dynamics"
+    "dynamics": "Dynamics",
+    "matchInfo": "Match Info",
+    "matchFocuses": "Match Focuses",
+    "matchData": "Live Data Record"
   },
   "common": {
     "save": "Save",
@@ -41,7 +44,7 @@
     "noEvents": "No events this month"
   },
   "trainingPage": {
-    "title": "Training",
+    "title": "Sessions",
     "sessions": "Sessions",
     "taskLibrary": "Task library",
     "newSession": "New session",
@@ -445,13 +448,6 @@
       "yes": "Yes",
       "no": "No"
     }
-  },
-  "common": {
-    "save": "Save",
-    "cancel": "Cancel",
-    "edit": "Edit",
-    "delete": "Delete",
-    "back": "Back"
   },
   "admin": {
     "users": {

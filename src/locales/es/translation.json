@@ -18,7 +18,10 @@
     "trainingSessions": "Sesiones",
     "editSession": "Editar Sesión",
     "taskLibrary": "Biblioteca de tareas",
-    "dynamics": "Dinámicas"
+    "dynamics": "Dinámicas",
+    "matchInfo": "Info partido",
+    "matchFocuses": "Focos partidos",
+    "matchData": "Live registro datos"
   },
   "common": {
     "save": "Guardar",
@@ -48,7 +51,7 @@
     "noEvents": "Sin eventos este mes"
   },
   "trainingPage": {
-    "title": "Entrenamientos",
+    "title": "Sesiones",
     "sessions": "Sesiones",
     "taskLibrary": "Biblioteca de tareas",
     "newSession": "Nueva sesión",
@@ -72,9 +75,9 @@
     "stadium": "Estadio",
     "home": "Local",
     "away": "Visitante",
-    "info": "Info del partido",
-    "focuses": "Focos",
-    "dataCollection": "Recopilación de datos",
+    "info": "Info partido",
+    "focuses": "Focos partidos",
+    "dataCollection": "Live registro datos",
     "scoutingNotes": "Notas de scouting",
     "newFocus": "Nuevo foco",
     "newDataPoint": "Nuevo dato",
@@ -452,13 +455,6 @@
       "yes": "Sí",
       "no": "No"
     }
-  },
-  "common": {
-    "save": "Guardar",
-    "cancel": "Cancelar",
-    "edit": "Editar",
-    "delete": "Eliminar",
-    "back": "Volver"
   },
   "admin": {
     "users": {

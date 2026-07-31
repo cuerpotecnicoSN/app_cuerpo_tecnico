@@ -11,7 +11,10 @@
     "calendar": "Calendario",
     "players": "Giocatori",
     "training": "Allenamenti",
-    "dynamics": "Dinamiche"
+    "dynamics": "Dinamiche",
+    "matchInfo": "Info partita",
+    "matchFocuses": "Fondi partita",
+    "matchData": "Dati in diretta"
   },
   "common": {
     "save": "Salva",
@@ -41,7 +44,7 @@
     "noEvents": "Nessun evento questo mese"
   },
   "trainingPage": {
-    "title": "Allenamenti",
+    "title": "Sessioni",
     "sessions": "Sessioni",
     "taskLibrary": "Libreria di esercizi",
     "newSession": "Nuova sessione",
@@ -445,13 +448,6 @@
       "yes": "Sì",
       "no": "No"
     }
-  },
-  "common": {
-    "save": "Salva",
-    "cancel": "Annulla",
-    "edit": "Modifica",
-    "delete": "Elimina",
-    "back": "Indietro"
   },
   "admin": {
     "users": {

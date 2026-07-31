@@ -195,8 +195,10 @@ const MainLayout: React.FC = () => {
       </nav>
 
       {/* Main Content Area */}
-      <main className="flex-1 min-h-0 overflow-y-auto bg-gray-50 dark:bg-[#0a0a0a] pb-16 lg:pb-0">
-        <Outlet />
+      <main className="flex-1 w-full min-w-0 min-h-0 overflow-y-auto overflow-x-hidden bg-gray-50 dark:bg-[#0a0a0a] px-4 sm:px-5 lg:px-10 pb-16 lg:pb-0">
+        <div className="w-full max-w-[1600px] mx-auto py-4 lg:py-6">
+          <Outlet />
+        </div>
       </main>
 
       <EditProfileModal isOpen={isProfileModalOpen} onClose={() => setIsProfileModalOpen(false)} />
