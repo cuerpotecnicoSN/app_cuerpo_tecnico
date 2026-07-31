@@ -13,6 +13,7 @@ export default function MatchesPage() {
   const [showForm, setShowForm] = useState(false);
   const [opponent, setOpponent] = useState('');
   const [date, setDate] = useState('');
+  const [time, setTime] = useState('');
   const [competition, setCompetition] = useState('');
   const [stadium, setStadium] = useState('');
   const [isHome, setIsHome] = useState(true);
@@ -22,13 +23,13 @@ export default function MatchesPage() {
 
   const handleAdd = async () => {
     if (!opponent.trim() || !date) return;
-    await createMatch({ opponent, date, competition, stadium, is_home: isHome, status: 'Scheduled' });
-    setOpponent(''); setDate(''); setCompetition(''); setStadium(''); setIsHome(true); setShowForm(false);
+    await createMatch({ opponent, date, time: time || undefined, competition, stadium, is_home: isHome, status: 'Scheduled' });
+    setOpponent(''); setDate(''); setTime(''); setCompetition(''); setStadium(''); setIsHome(true); setShowForm(false);
     load();
   };
 
   if (activeMatch) {
-    return <MatchDetail match={activeMatch} onBack={() => { setActiveMatch(null); load(); }} />;
+    return <MatchDetail match={activeMatch} onBack={() => { setActiveMatch(null); load(); }} onUpdate={load} />;
   }
 
   return (
@@ -43,7 +44,10 @@ export default function MatchesPage() {
       {showForm && (
         <div className="bg-white border border-gray-100 rounded-xl p-4 space-y-3 shadow-sm">
           <input className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" placeholder={t('matchesPage.opponent') as string} value={opponent} onChange={(e) => setOpponent(e.target.value)} />
-          <input type="date" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" value={date} onChange={(e) => setDate(e.target.value)} />
+          <div className="flex gap-2">
+            <input type="date" className="w-1/2 border border-gray-200 rounded-lg px-3 py-2 text-sm" value={date} onChange={(e) => setDate(e.target.value)} />
+            <input type="time" className="w-1/2 border border-gray-200 rounded-lg px-3 py-2 text-sm" value={time} onChange={(e) => setTime(e.target.value)} />
+          </div>
           <input className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" placeholder={t('matchesPage.competition') as string} value={competition} onChange={(e) => setCompetition(e.target.value)} />
           <input className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" placeholder={t('matchesPage.stadium') as string} value={stadium} onChange={(e) => setStadium(e.target.value)} />
           <div className="flex gap-3 text-sm">
@@ -137,11 +141,15 @@ export default function MatchesPage() {
   );
 }
 
-function MatchDetail({ match, onBack }: { match: MatchDB; onBack: () => void }) {
+function MatchDetail({ match, onBack, onUpdate }: { match: MatchDB; onBack: () => void; onUpdate: () => void }) {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const initialTab = (searchParams.get('view') as 'info' | 'focuses' | 'data') || 'info';
   const [tab, setTab] = useState<'info' | 'focuses' | 'data'>(initialTab);
+  
+  const [isEditingInfo, setIsEditingInfo] = useState(false);
+  const [editDate, setEditDate] = useState(match.date);
+  const [editTime, setEditTime] = useState(match.time || '');
   const [scoutingNotes, setScoutingNotes] = useState(match.scouting_notes || '');
   const [focuses, setFocuses] = useState<MatchFocus[]>([]);
   const [dataPoints, setDataPoints] = useState<MatchDataPoint[]>([]);
@@ -179,9 +187,39 @@ function MatchDetail({ match, onBack }: { match: MatchDB; onBack: () => void }) 
         <ChevronLeft size={16} /> {t('common.back')}
       </button>
 
-      <div className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm">
-        <h2 className="text-xl font-extrabold text-gray-900">{match.is_home ? 'vs' : '@'} {match.opponent}</h2>
-        <p className="text-sm text-gray-400">{match.date} {match.competition ? `· ${match.competition}` : ''}</p>
+      <div className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h2 className="text-xl font-extrabold text-gray-900">{match.is_home ? 'vs' : '@'} {match.opponent}</h2>
+          
+          {isEditingInfo ? (
+            <div className="flex gap-2 mt-2">
+              <input type="date" className="border border-gray-200 rounded-lg px-2 py-1 text-sm" value={editDate} onChange={(e) => setEditDate(e.target.value)} />
+              <input type="time" className="border border-gray-200 rounded-lg px-2 py-1 text-sm" value={editTime} onChange={(e) => setEditTime(e.target.value)} />
+              <button 
+                onClick={async () => {
+                  await updateMatch(match.id, { date: editDate, time: editTime || undefined });
+                  setIsEditingInfo(false);
+                  onUpdate();
+                  match.date = editDate; // optimistically update local object
+                  match.time = editTime || undefined;
+                }}
+                className="bg-blue-600 text-white px-3 py-1 rounded-lg text-sm font-bold"
+              >
+                {t('common.save')}
+              </button>
+              <button onClick={() => setIsEditingInfo(false)} className="bg-gray-200 text-gray-700 px-3 py-1 rounded-lg text-sm font-bold">
+                {t('common.cancel')}
+              </button>
+            </div>
+          ) : (
+            <p className="text-sm text-gray-400 flex items-center gap-2">
+              <span>{match.date} {match.time ? `| ${match.time}` : ''} {match.competition ? `· ${match.competition}` : ''}</span>
+              <button onClick={() => setIsEditingInfo(true)} className="text-blue-500 hover:text-blue-700 text-xs font-bold underline">
+                {t('common.edit')}
+              </button>
+            </p>
+          )}
+        </div>
       </div>
 
       <div className="flex gap-2 flex-wrap">
