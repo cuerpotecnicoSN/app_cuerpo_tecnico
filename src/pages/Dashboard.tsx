@@ -16,7 +16,7 @@ const Dashboard: React.FC = () => {
   const [currentRole, setCurrentRole] = useState<UserRole>('Entrenador');
 
   // Fetch real data from Supabase
-  const { data: players = [], loading: loadingPlayers } = useSupabaseData<any>('players');
+  const { data: players = [] } = useSupabaseData<any>('players');
   const { data: profiles = [] } = useSupabaseData<any>('profiles');
   const { data: physicalStats = [] } = useSupabaseData<any>('physical_metrics_history');
   const [matches, setMatches] = useState<MatchDB[]>([]);
