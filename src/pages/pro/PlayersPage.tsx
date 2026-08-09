@@ -5,7 +5,7 @@ import PlayersManagementView from '../../components/pro/PlayersManagementView';
 
 import { useSupabaseData } from '../../hooks/useSupabaseData';
 import PlayerImportModal from '../../components/pro/PlayerImportModal';
-import { Plus, Users as UsersIcon, Grid, List, Filter, Globe, Search, Download } from 'lucide-react';
+import { Plus, Users as UsersIcon, Grid, List, Filter, Globe, Search, Download, Edit2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import './players-grid.css';
 
@@ -26,6 +26,7 @@ export default function PlayersPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [ageRange, setAgeRange] = useState<[number, number]>([15, 45]);
   const [showFilters, setShowFilters] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
   const { data: dbPlayers, loading } = useSupabaseData<any>('players');
 
   const thumbStyles = 'age-range-thumb';
@@ -299,6 +300,13 @@ export default function PlayersPage() {
              <Download size={16} />
              Exportar PDF
           </button>
+          <button 
+             onClick={() => setIsEditMode(!isEditMode)} 
+             className={`btn flex items-center gap-2 transition-colors ${isEditMode ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100' : 'btn-outline bg-white hover:bg-gray-50 border-gray-300 text-gray-700'}`}
+          >
+             <Edit2 size={16} />
+             Editar jugador
+          </button>
           <button onClick={() => setShowImportModal(true)} className="btn btn-primary">
             <Plus size={16} />
             Añadir jugador
@@ -512,6 +520,7 @@ export default function PlayersPage() {
               onUpdateStats={(playerId: string, updatedStats: SportsStats) => setStats({...stats, [playerId]: updatedStats})}
               activeRole="Entrenador"
               language="es"
+              isEditMode={isEditMode}
             />
           )}
         </>

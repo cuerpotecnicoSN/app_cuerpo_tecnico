@@ -20,6 +20,7 @@ export interface PlayersManagementViewProps {
   activeRole?: string;
   language?: string;
   viewMode?: 'grid' | 'list';
+  isEditMode?: boolean;
 }
 
 export const getFlagEmoji = (countryName?: string) => {
@@ -89,7 +90,7 @@ export const getPositionColor = (position?: string) => {
   return 'bg-gray-100 text-gray-700 border-gray-200';
 };
 
-export default function PlayersManagementView({ players, onUpdatePlayer, onDeletePlayer, viewMode = 'grid' }: PlayersManagementViewProps) {
+export default function PlayersManagementView({ players, onUpdatePlayer, onDeletePlayer, viewMode = 'grid', isEditMode = false }: PlayersManagementViewProps) {
   const navigate = useNavigate();
 
   if (viewMode === 'list') {
@@ -152,7 +153,7 @@ export default function PlayersManagementView({ players, onUpdatePlayer, onDelet
                   </td>
                   <td className="px-6 py-3 whitespace-nowrap text-right">
                     <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      {onUpdatePlayer && (
+                      {isEditMode && onUpdatePlayer && (
                         <button 
                           onClick={(e) => { e.stopPropagation(); onUpdatePlayer(player); }}
                           className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
@@ -161,7 +162,7 @@ export default function PlayersManagementView({ players, onUpdatePlayer, onDelet
                           <Edit2 size={16} />
                         </button>
                       )}
-                      {onDeletePlayer && (
+                      {isEditMode && onDeletePlayer && (
                         <button 
                           onClick={(e) => { e.stopPropagation(); onDeletePlayer(player.id); }}
                           className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
@@ -200,26 +201,28 @@ export default function PlayersManagementView({ players, onUpdatePlayer, onDelet
               }}
             />
             
-            <div className="absolute top-2 right-2 flex gap-1.5">
-              {onUpdatePlayer && (
-                <button 
-                  onClick={(e) => { e.stopPropagation(); onUpdatePlayer(player); }}
-                  className="p-1.5 bg-white/90 hover:bg-white text-gray-700 hover:text-blue-600 rounded-md backdrop-blur-md transition-colors shadow-sm"
-                  title="Editar jugador"
-                >
-                  <Edit2 size={14} />
-                </button>
-              )}
-              {onDeletePlayer && (
-                <button 
-                  onClick={(e) => { e.stopPropagation(); onDeletePlayer(player.id); }}
-                  className="p-1.5 bg-white/90 hover:bg-white text-gray-700 hover:text-red-600 rounded-md backdrop-blur-md transition-colors shadow-sm"
-                  title="Eliminar jugador"
-                >
-                  <Trash2 size={14} />
-                </button>
-              )}
-            </div>
+            {isEditMode && (
+              <div className="absolute top-2 right-2 flex gap-1.5">
+                {onUpdatePlayer && (
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); onUpdatePlayer(player); }}
+                    className="p-1.5 bg-white/90 hover:bg-white text-gray-700 hover:text-blue-600 rounded-md backdrop-blur-md transition-colors shadow-sm"
+                    title="Editar jugador"
+                  >
+                    <Edit2 size={14} />
+                  </button>
+                )}
+                {onDeletePlayer && (
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); onDeletePlayer(player.id); }}
+                    className="p-1.5 bg-white/90 hover:bg-white text-gray-700 hover:text-red-600 rounded-md backdrop-blur-md transition-colors shadow-sm"
+                    title="Eliminar jugador"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                )}
+              </div>
+            )}
           </div>
           
           {/* Datos */}

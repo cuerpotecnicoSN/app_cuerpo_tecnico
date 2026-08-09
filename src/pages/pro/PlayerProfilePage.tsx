@@ -7,7 +7,7 @@ import PlayerWeightTab from '../../components/pro/PlayerWeightTab';
 import PlayerInjuriesTab from '../../components/pro/PlayerInjuriesTab';
 import { useSupabaseData } from '../../hooks/useSupabaseData';
 import { getPlayerObjectives, createPlayerObjective, updatePlayerObjective, deletePlayerObjective, getSeasonReports, createSeasonReport, deleteSeasonReport } from '../../services/playerObjectives';
-import { getMeetingsForPlayer } from '../../services/meetings';
+import { getMeetingsForPlayer, createMeeting, deleteMeeting, addMeetingPlayer } from '../../services/meetings';
 import { getFlagEmoji } from '../../components/pro/PlayersManagementView';
 
 import PlayerImportModal from '../../components/pro/PlayerImportModal';
@@ -444,20 +444,61 @@ function PlayerObjectivesTab({ playerId }: { playerId: string }) {
 function PlayerMeetingsTab({ playerId }: { playerId: string }) {
   const { t } = useTranslation();
   const [meetings, setMeetings] = useState<MeetingDB[]>([]);
-  useEffect(() => { getMeetingsForPlayer(playerId, 'individual').then(setMeetings).catch(() => setMeetings([])); }, [playerId]);
+  const [showForm, setShowForm] = useState(false);
+  const [date, setDate] = useState('');
+  const [time, setTime] = useState('');
+  const [location, setLocation] = useState('');
+  const [objective, setObjective] = useState('');
+  const [coach, setCoach] = useState('');
+
+  const load = () => getMeetingsForPlayer(playerId, 'individual').then(setMeetings).catch(() => setMeetings([]));
+  useEffect(() => { load(); }, [playerId]);
+
+  const handleAdd = async () => {
+    if (!date) return;
+    const m = await createMeeting({ type: 'individual', date, time, location, objective, created_by: coach });
+    await addMeetingPlayer(m.id, playerId);
+    setDate(''); setTime(''); setLocation(''); setObjective(''); setCoach(''); setShowForm(false);
+    load();
+  };
 
   return (
-    <div className="space-y-3 animate-fade-in">
-      {meetings.length === 0 && <p className="text-sm text-gray-400">{t('playerTabs.noMeetings')}</p>}
-      {meetings.map((m) => (
-        <div key={m.id} className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm">
-          <div className="flex justify-between items-center mb-1">
-            <span className="font-bold text-gray-800">{m.date} {m.time || ''}</span>
-            {m.location && <span className="text-xs text-gray-400">{m.location}</span>}
+    <div className="space-y-4 animate-fade-in">
+      <div className="flex justify-end">
+        <button onClick={() => setShowForm((v) => !v)} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold flex items-center gap-2">
+          <Plus size={16} /> Añadir reunión
+        </button>
+      </div>
+      {showForm && (
+        <div className="bg-white border border-gray-100 rounded-xl p-4 space-y-3 shadow-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <input type="date" className="border border-gray-200 rounded-lg px-3 py-2 text-sm" value={date} onChange={(e) => setDate(e.target.value)} />
+            <input type="time" className="border border-gray-200 rounded-lg px-3 py-2 text-sm" value={time} onChange={(e) => setTime(e.target.value)} />
+            <input className="border border-gray-200 rounded-lg px-3 py-2 text-sm" placeholder="Lugar" value={location} onChange={(e) => setLocation(e.target.value)} />
+            <input className="border border-gray-200 rounded-lg px-3 py-2 text-sm" placeholder="Entrenador" value={coach} onChange={(e) => setCoach(e.target.value)} />
           </div>
-          {m.objective && <p className="text-sm text-gray-600">{m.objective}</p>}
+          <textarea className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" placeholder="Objetivo de la reunión" value={objective} onChange={(e) => setObjective(e.target.value)} />
+          <button onClick={handleAdd} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold">{t('common.save')}</button>
         </div>
-      ))}
+      )}
+      {meetings.length === 0 && !showForm && <p className="text-sm text-gray-400">{t('playerTabs.noMeetings')}</p>}
+      <div className="space-y-2">
+        {meetings.map((m) => (
+          <div key={m.id} className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm flex items-start justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-3 mb-1">
+                <span className="font-bold text-gray-800">{m.date} {m.time || ''}</span>
+                {m.location && <span className="text-xs text-gray-400">{m.location}</span>}
+              </div>
+              {m.created_by && <div className="mb-1 text-xs font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md inline-block">Entrenador: {m.created_by}</div>}
+              {m.objective && <p className="text-sm text-gray-600">{m.objective}</p>}
+            </div>
+            <button onClick={async () => { await deleteMeeting(m.id); load(); }} className="text-gray-300 hover:text-red-500 shrink-0">
+              <Trash2 size={16} />
+            </button>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
