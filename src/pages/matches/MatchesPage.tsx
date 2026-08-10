@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Trash2, ChevronLeft, MapPin, Swords } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
@@ -18,8 +18,32 @@ export default function MatchesPage() {
   const [stadium, setStadium] = useState('');
   const [isHome, setIsHome] = useState(true);
 
+  const [closestMatchId, setClosestMatchId] = useState<string | null>(null);
+  const closestRef = useRef<HTMLDivElement>(null);
+
   const load = () => getMatches().then(setMatches).catch(() => setMatches([]));
   useEffect(() => { load(); }, []);
+
+  const filteredMatches = matches
+    .filter(m => m.date >= '2026-08-01')
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  useEffect(() => {
+    if (filteredMatches.length > 0) {
+      const today = new Date().toISOString().split('T')[0];
+      const upcoming = filteredMatches.find(m => m.date >= today);
+      const closest = upcoming || filteredMatches[filteredMatches.length - 1];
+      if (closest) setClosestMatchId(closest.id);
+    }
+  }, [matches]);
+
+  useEffect(() => {
+    if (closestRef.current) {
+      setTimeout(() => {
+        closestRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+    }
+  }, [closestMatchId]);
 
   const handleAdd = async () => {
     if (!opponent.trim() || !date) return;
@@ -58,9 +82,9 @@ export default function MatchesPage() {
         </div>
       )}
 
-      {matches.length === 0 && <p className="text-sm text-gray-400">{t('matchesPage.noMatches')}</p>}
+      {filteredMatches.length === 0 && <p className="text-sm text-gray-400">{t('matchesPage.noMatches')}</p>}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
-        {matches.map((m) => {
+        {filteredMatches.map((m) => {
           const theme = (() => {
             const comp = (m.competition || '').toLowerCase();
             if (comp.includes('amistoso')) return { border: 'bg-orange-500', icon: 'text-orange-50', bg: 'bg-orange-50', text: 'text-orange-600', borderLight: 'border-orange-100', hoverText: 'group-hover:text-orange-600' };
@@ -68,12 +92,12 @@ export default function MatchesPage() {
             return { border: 'bg-blue-500', icon: 'text-blue-50', bg: 'bg-blue-50', text: 'text-blue-600', borderLight: 'border-blue-100', hoverText: 'group-hover:text-blue-600' };
           })();
 
-          const myTeamName = "AC Milan Sub-23";
+          const myTeamName = "Milan Futuro";
           const homeTeamName = m.is_home ? myTeamName : m.opponent;
           const awayTeamName = m.is_home ? m.opponent : myTeamName;
 
           return (
-          <div key={m.id} className="relative bg-white border border-gray-100 rounded-[28px] p-6 shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden group" onClick={() => setActiveMatch(m)}>
+          <div key={m.id} ref={m.id === closestMatchId ? closestRef : null} className="relative bg-white border border-gray-100 rounded-[28px] p-6 shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden group" onClick={() => setActiveMatch(m)}>
             <div className={`absolute top-0 left-0 w-2 h-full ${theme.border} rounded-l-[28px]`} />
             <div className={`absolute -right-10 -top-10 ${theme.icon} opacity-50 pointer-events-none group-hover:scale-110 transition-transform duration-500`}>
               <Swords size={160} />
