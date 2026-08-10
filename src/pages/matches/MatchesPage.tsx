@@ -90,23 +90,25 @@ export default function MatchesPage() {
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <h1 className="text-2xl font-extrabold text-gray-900">{t('matchesPage.title')}</h1>
-        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-          <div className="flex bg-gray-100 p-1 rounded-xl">
-            <button onClick={() => setFilterType('all')} className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${filterType === 'all' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>Todos</button>
-            <button onClick={() => setFilterType('league')} className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${filterType === 'league' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>Liga</button>
-            <button onClick={() => setFilterType('cup')} className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${filterType === 'cup' ? 'bg-purple-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>Copa</button>
-            <button onClick={() => setFilterType('friendly')} className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${filterType === 'friendly' ? 'bg-orange-500 text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>Amistosos</button>
+        <div className="flex flex-wrap items-center gap-4 w-full sm:w-auto">
+          <div className="flex bg-gray-100 p-1.5 rounded-xl gap-1">
+            <button onClick={() => setFilterType('all')} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${filterType === 'all' ? 'bg-gray-900 text-white shadow-md' : 'text-gray-500 hover:bg-gray-200 hover:text-gray-700'}`}>Todos</button>
+            <button onClick={() => setFilterType('league')} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${filterType === 'league' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-200 hover:text-gray-700'}`}>Liga</button>
+            <button onClick={() => setFilterType('cup')} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${filterType === 'cup' ? 'bg-purple-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-200 hover:text-gray-700'}`}>Copa</button>
+            <button onClick={() => setFilterType('friendly')} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${filterType === 'friendly' ? 'bg-orange-500 text-white shadow-md' : 'text-gray-500 hover:bg-gray-200 hover:text-gray-700'}`}>Amistosos</button>
           </div>
-          <button 
-            onClick={handleExport}
-            disabled={exporting || filteredMatches.length === 0}
-            className="px-4 py-2 bg-gray-900 text-white rounded-xl text-sm font-bold shadow-md hover:bg-gray-800 transition-colors disabled:opacity-50"
-          >
-            {exporting ? 'Exportando...' : 'Exportar PDF'}
-          </button>
-          <button onClick={() => setShowForm((v) => !v)} className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold flex items-center gap-2 shadow-md hover:bg-blue-700 transition-colors">
-            <Plus size={16} /> {t('matchesPage.newMatch')}
-          </button>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={handleExport}
+              disabled={exporting || filteredMatches.length === 0}
+              className="px-5 py-2.5 bg-gray-900 text-white rounded-xl text-sm font-bold shadow-md hover:bg-gray-800 transition-all active:scale-95 disabled:opacity-50 disabled:active:scale-100"
+            >
+              {exporting ? 'Exportando...' : 'Exportar PDF'}
+            </button>
+            <button onClick={() => setShowForm((v) => !v)} className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl text-sm font-bold flex items-center gap-2 shadow-md hover:shadow-lg transition-all active:scale-95">
+              <Plus size={16} strokeWidth={3} /> {t('matchesPage.newMatch')}
+            </button>
+          </div>
         </div>
       </div>
 
