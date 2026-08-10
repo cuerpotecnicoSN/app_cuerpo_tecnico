@@ -88,27 +88,56 @@ export default function MatchesPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <h1 className="text-2xl font-extrabold text-gray-900">{t('matchesPage.title')}</h1>
-        <div className="flex flex-wrap items-center gap-4 w-full sm:w-auto">
-          <div className="flex bg-gray-100 p-1.5 rounded-xl gap-1">
-            <button onClick={() => setFilterType('all')} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${filterType === 'all' ? 'bg-gray-900 text-white shadow-md' : 'text-gray-500 hover:bg-gray-200 hover:text-gray-700'}`}>Todos</button>
-            <button onClick={() => setFilterType('league')} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${filterType === 'league' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-200 hover:text-gray-700'}`}>Liga</button>
-            <button onClick={() => setFilterType('cup')} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${filterType === 'cup' ? 'bg-purple-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-200 hover:text-gray-700'}`}>Copa</button>
-            <button onClick={() => setFilterType('friendly')} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${filterType === 'friendly' ? 'bg-orange-500 text-white shadow-md' : 'text-gray-500 hover:bg-gray-200 hover:text-gray-700'}`}>Amistosos</button>
-          </div>
-          <div className="flex items-center gap-2">
+      {/* Header Container */}
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+        
+        {/* Left Side: Title & Filters */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+          <h1 className="text-2xl font-extrabold text-gray-900 shrink-0">{t('matchesPage.title')}</h1>
+          
+          <div className="flex bg-gray-100 p-1.5 rounded-xl gap-1 overflow-x-auto w-full sm:w-auto">
             <button 
-              onClick={handleExport}
-              disabled={exporting || filteredMatches.length === 0}
-              className="px-5 py-2.5 bg-gray-900 text-white rounded-xl text-sm font-bold shadow-md hover:bg-gray-800 transition-all active:scale-95 disabled:opacity-50 disabled:active:scale-100"
+              onClick={() => setFilterType('all')} 
+              className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all ${filterType === 'all' ? 'bg-gray-900 text-white shadow-md' : 'text-gray-500 hover:bg-gray-200 hover:text-gray-800'}`}
             >
-              {exporting ? 'Exportando...' : 'Exportar PDF'}
+              Todos
             </button>
-            <button onClick={() => setShowForm((v) => !v)} className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl text-sm font-bold flex items-center gap-2 shadow-md hover:shadow-lg transition-all active:scale-95">
-              <Plus size={16} strokeWidth={3} /> {t('matchesPage.newMatch')}
+            <button 
+              onClick={() => setFilterType('league')} 
+              className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all ${filterType === 'league' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-200 hover:text-gray-800'}`}
+            >
+              Liga
+            </button>
+            <button 
+              onClick={() => setFilterType('cup')} 
+              className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all ${filterType === 'cup' ? 'bg-purple-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-200 hover:text-gray-800'}`}
+            >
+              Copa
+            </button>
+            <button 
+              onClick={() => setFilterType('friendly')} 
+              className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all ${filterType === 'friendly' ? 'bg-orange-500 text-white shadow-md' : 'text-gray-500 hover:bg-gray-200 hover:text-gray-800'}`}
+            >
+              Amistosos
             </button>
           </div>
+        </div>
+
+        {/* Right Side: Action Buttons */}
+        <div className="flex items-center gap-3 w-full xl:w-auto justify-start sm:justify-end">
+          <button 
+            onClick={handleExport}
+            disabled={exporting || filteredMatches.length === 0}
+            className="px-5 py-2.5 bg-gray-900 text-white rounded-xl text-sm font-bold shadow-md hover:bg-gray-800 transition-all active:scale-95 disabled:opacity-50 disabled:active:scale-100 flex-1 sm:flex-none text-center"
+          >
+            {exporting ? 'Exportando...' : 'Exportar PDF'}
+          </button>
+          <button 
+            onClick={() => setShowForm((v) => !v)} 
+            className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all active:scale-95 flex-1 sm:flex-none"
+          >
+            <Plus size={16} strokeWidth={3} /> {t('matchesPage.newMatch')}
+          </button>
         </div>
       </div>
 
