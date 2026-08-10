@@ -69,10 +69,10 @@ def run():
             try:
                 logging.info("Iniciando sesión en Tuttocampo...")
                 try:
-                    page.locator('a[href="#loginmodal"]').first.click(timeout=5000, force=True)
+                    page.evaluate('document.querySelector("a[href=\\"#loginmodal\\"]").click()')
                 except:
                     # Fallback
-                    page.locator('a.login').first.click(timeout=5000, force=True)
+                    page.evaluate('document.querySelector("a.login").click()')
                     
                 page.wait_for_selector('#login_username', timeout=5000)
                 page.fill('#login_username', TUTTOCAMPO_EMAIL)
