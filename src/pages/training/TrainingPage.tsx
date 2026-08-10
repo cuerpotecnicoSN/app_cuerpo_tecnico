@@ -31,13 +31,14 @@ export default function TrainingPage() {
 
   useEffect(() => {
     const vParam = searchParams.get('view');
-    if (vParam) {
-      setView(vParam === 'library' ? 'library' : vParam === 'edit' ? 'edit' : 'sessions');
-    }
+    const newView = vParam === 'library' ? 'library' : vParam === 'edit' ? 'edit' : 'sessions';
+    setView(newView);
+    setActiveSession(null); // Limpiar sesión activa al cambiar de pestaña desde el menú
   }, [searchParams]);
 
   const handleViewChange = (newView: View) => {
     setView(newView);
+    setActiveSession(null);
     setSearchParams({ view: newView });
   };
 
