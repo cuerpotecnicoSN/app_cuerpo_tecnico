@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Plus, Trash2, ChevronLeft, MapPin, Swords } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import type { MatchDB, MatchFocus, MatchDataPoint } from '../../components/types';
-import { getMatches, createMatch, deleteMatch, updateMatch, getMatchFocuses, createMatchFocus, deleteMatchFocus, getMatchDataPoints, createMatchDataPoint, deleteMatchDataPoint } from '../../services/matches';
+import { getMatches, createMatch, updateMatch, getMatchFocuses, createMatchFocus, deleteMatchFocus, getMatchDataPoints, createMatchDataPoint, deleteMatchDataPoint } from '../../services/matches';
 import { exportMatchesListPdf } from '../../utils/matchesPdf';
 import { useSupabaseData } from '../../hooks/useSupabaseData';
 

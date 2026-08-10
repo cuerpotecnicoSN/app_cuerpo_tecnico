@@ -72,7 +72,7 @@ export const exportMatchesListPdf = async (
   let currentY = 35;
   const itemH = 22;
 
-  matches.forEach((m, idx) => {
+  matches.forEach((m) => {
     if (currentY + itemH > PAGE_H - 15) {
       doc.addPage();
       currentY = 20;
