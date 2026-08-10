@@ -382,7 +382,7 @@ export default function CalendarPage() {
     const join = (...parts: (string | undefined)[]) => parts.filter(Boolean).join(' · ') || undefined;
     switch (e.type) {
       case 'match':
-        return { date: e.date, time: e.time, type: 'match', typeLabel: e.competition || 'Partido', title: e.label, meta: e.location };
+        return { date: e.date, time: e.time, type: 'match', typeLabel: e.competition || 'Partido', title: e.label, meta: e.location, homeLogo: e.home_logo, awayLogo: e.away_logo };
       case 'training':
         return { date: e.date, time: e.time, type: 'training', typeLabel: 'Entrenamiento', title: e.title || 'Entrenamiento', meta: join(e.objective, e.location) };
       case 'meeting':
@@ -436,7 +436,7 @@ export default function CalendarPage() {
       case 'match':
         const comp = (competition || '').toLowerCase();
         if (comp.includes('amistoso')) return 'bg-orange-50 text-orange-700 border-orange-200';
-        if (comp.includes('copa')) return 'bg-purple-50 text-purple-700 border-purple-200';
+        if (comp.includes('copa') || comp.includes('coppa')) return 'bg-purple-50 text-purple-700 border-purple-200';
         return 'bg-blue-50 text-blue-700 border-blue-200';
       case 'training': return 'bg-red-50 text-red-700 border-red-200';
       case 'meeting': return 'bg-indigo-50 text-indigo-700 border-indigo-200';

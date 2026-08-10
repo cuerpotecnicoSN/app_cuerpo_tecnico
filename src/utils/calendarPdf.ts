@@ -7,6 +7,8 @@ export interface PdfEvent {
   typeLabel: string;
   title: string;
   meta?: string;
+  homeLogo?: string;
+  awayLogo?: string;
 }
 
 export interface CalendarPdfOptions {
@@ -101,6 +103,18 @@ export const exportCalendarPdf = async ({
     return `${out.trim()}…`;
   };
 
+  const loadedLogos: Record<string, { dataUrl: string; ratio: number } | null> = {};
+  for (const ev of inRange) {
+    if (ev.homeLogo && !loadedLogos[ev.homeLogo]) {
+      const url = ev.homeLogo.startsWith('http') ? `https://corsproxy.io/?${encodeURIComponent(ev.homeLogo)}` : ev.homeLogo;
+      loadedLogos[ev.homeLogo] = await loadImage(url);
+    }
+    if (ev.awayLogo && !loadedLogos[ev.awayLogo]) {
+      const url = ev.awayLogo.startsWith('http') ? `https://corsproxy.io/?${encodeURIComponent(ev.awayLogo)}` : ev.awayLogo;
+      loadedLogos[ev.awayLogo] = await loadImage(url);
+    }
+  }
+
   // Obtener los meses que abarca el rango
   const start = parseDate(from);
   const end = parseDate(to);
@@ -121,10 +135,10 @@ export const exportCalendarPdf = async ({
       doc.addPage();
     }
 
-    // ---------- Cabecera ----------
-    doc.setFillColor(17, 18, 23);
+    // ---------- Cabecera Moderna ----------
+    doc.setFillColor(255, 255, 255); // Fondo blanco
     doc.rect(0, 0, PAGE_W, 28, 'F');
-    doc.setFillColor(220, 38, 38);
+    doc.setFillColor(220, 38, 38); // Línea roja vibrante
     doc.rect(0, 28, PAGE_W, 1.5, 'F');
 
     let titleX = MARGIN;
@@ -135,31 +149,31 @@ export const exportCalendarPdf = async ({
       titleX = MARGIN + logoW + 7;
     }
 
-    doc.setTextColor(255, 255, 255);
+    doc.setTextColor(30, 35, 45); // Texto oscuro
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(18);
+    doc.setFontSize(20);
     
     const tempDate = new Date(year, monthIndex, 1);
     const monthTitle = tempDate.toLocaleDateString(locale, { month: 'long', year: 'numeric' }).toUpperCase();
-    doc.text(monthTitle, titleX, 14);
+    doc.text(monthTitle, titleX, 15);
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8.5);
-    doc.setTextColor(168, 172, 180);
+    doc.setTextColor(120, 125, 135); // Texto gris claro
     const longDate = (d: Date) => d.toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' });
-    doc.text(`Rango: Del ${longDate(start)} al ${longDate(end)}`, titleX, 21);
+    doc.text(`Rango: Del ${longDate(start)} al ${longDate(end)}`, titleX, 22);
 
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.setTextColor(255, 255, 255);
-    if (clubName) doc.text(clubName.toUpperCase(), PAGE_W - MARGIN, 13, { align: 'right' });
+    doc.setFontSize(11);
+    doc.setTextColor(30, 35, 45);
+    if (clubName) doc.text(clubName.toUpperCase(), PAGE_W - MARGIN, 14, { align: 'right' });
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7.5);
-    doc.setTextColor(168, 172, 180);
+    doc.setFontSize(8);
+    doc.setTextColor(140, 145, 155);
     doc.text(
       `Generado el ${new Date().toLocaleDateString(locale)}`,
       PAGE_W - MARGIN,
-      20,
+      21,
       { align: 'right' }
     );
 
@@ -244,20 +258,12 @@ export const exportCalendarPdf = async ({
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(8);
       
-      const isToday = d.toISOString().slice(0, 10) === todayStr;
-      if (isToday) {
-        doc.setFillColor(37, 99, 235);
-        doc.circle(cx + colW - 4.5, cy + 4, 2.5, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.text(dayNum, cx + colW - 4.5, cy + 4.9, { align: 'center' });
+      if (isCurrentMonth) {
+        doc.setTextColor(40, 45, 55);
       } else {
-        if (isCurrentMonth) {
-          doc.setTextColor(40, 45, 55);
-        } else {
-          doc.setTextColor(170, 175, 185);
-        }
-        doc.text(dayNum, cx + colW - 3, cy + 4, { align: 'right' });
+        doc.setTextColor(170, 175, 185);
       }
+      doc.text(dayNum, cx + colW - 3, cy + 4, { align: 'right' });
 
       // Dibujar eventos en la celda
       const dayStr = d.toISOString().slice(0, 10);
@@ -265,36 +271,59 @@ export const exportCalendarPdf = async ({
       
       const eventStartY = cy + 7;
       const availH = rowH - 8.5;
-      const eventH = 3.8;
-      const eventGap = 0.6;
+      const eventH = 4.5;
+      const eventGap = 0.8;
       const maxEvents = Math.floor(availH / (eventH + eventGap));
 
       dayEvents.forEach((ev, evIdx) => {
         if (evIdx < maxEvents) {
           const eventY = eventStartY + evIdx * (eventH + eventGap);
           const color = TYPE_COLORS[ev.type];
-          const [br, bg, bb] = tint(color, 0.93);
           
-          // Pastilla del evento
-          doc.setFillColor(br, bg, bb);
-          doc.roundedRect(cx + 1, eventY, colW - 2, eventH, 0.5, 0.5, 'F');
+          // Pastilla del evento con borde de color
+          doc.setFillColor(255, 255, 255);
+          doc.setDrawColor(color[0], color[1], color[2]);
+          doc.setLineWidth(0.2);
+          doc.roundedRect(cx + 1, eventY, colW - 2, eventH, 0.8, 0.8, 'FD');
           
-          // Borde izquierdo de la pastilla
+          // Borde izquierdo grueso (acento)
           doc.setFillColor(color[0], color[1], color[2]);
-          doc.rect(cx + 1, eventY, 0.8, eventH, 'F');
+          doc.rect(cx + 1.2, eventY + 0.2, 0.8, eventH - 0.4, 'F');
+          
+          let textX = cx + 3;
+
+          // Si es partido, dibujamos escudos si están disponibles
+          if (ev.type === 'match' && (ev.homeLogo || ev.awayLogo)) {
+            const hl = ev.homeLogo ? loadedLogos[ev.homeLogo] : null;
+            if (hl) {
+              doc.addImage(hl.dataUrl, 'PNG', textX, eventY + 0.5, 3.5, 3.5);
+              textX += 4;
+            }
+            const al = ev.awayLogo ? loadedLogos[ev.awayLogo] : null;
+            if (al) {
+              doc.addImage(al.dataUrl, 'PNG', textX, eventY + 0.5, 3.5, 3.5);
+              textX += 4;
+            }
+            textX += 0.5; // Margen adicional tras los escudos
+          }
           
           // Texto del evento
           doc.setFont('helvetica', 'bold');
           doc.setFontSize(5.5);
-          doc.setTextColor(30, 35, 45);
+          doc.setTextColor(40, 45, 55);
           
           let eventText = '';
           if (ev.time) {
             eventText += `[${ev.time}] `;
           }
-          eventText += ev.title;
+          // Si es partido con escudos, igual el titulo es muy largo. Lo truncamos.
+          if (ev.type === 'match' && (ev.homeLogo || ev.awayLogo)) {
+             eventText += ev.typeLabel; // Ej: Liga, Copa, en vez de AC Milan Sub-23 vs Juventus
+          } else {
+             eventText += ev.title;
+          }
           
-          doc.text(fitText(eventText, colW - 4.5), cx + 2.5, eventY + 2.7);
+          doc.text(fitText(eventText, colW - (textX - cx) - 1.5), textX, eventY + 3);
         } else if (evIdx === maxEvents) {
           const eventY = eventStartY + evIdx * (eventH + eventGap);
           doc.setFont('helvetica', 'bold');
