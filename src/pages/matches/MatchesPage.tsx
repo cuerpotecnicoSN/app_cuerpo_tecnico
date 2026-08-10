@@ -4,6 +4,7 @@ import { Plus, Trash2, ChevronLeft, MapPin, Swords } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import type { MatchDB, MatchFocus, MatchDataPoint } from '../../components/types';
 import { getMatches, createMatch, deleteMatch, updateMatch, getMatchFocuses, createMatchFocus, deleteMatchFocus, getMatchDataPoints, createMatchDataPoint, deleteMatchDataPoint } from '../../services/matches';
+import { exportMatchesListPdf } from '../../utils/matchesPdf';
 import { useSupabaseData } from '../../hooks/useSupabaseData';
 
 export default function MatchesPage() {
@@ -20,12 +21,22 @@ export default function MatchesPage() {
 
   const [closestMatchId, setClosestMatchId] = useState<string | null>(null);
   const closestRef = useRef<HTMLDivElement>(null);
+  const [filterType, setFilterType] = useState<'all' | 'league' | 'cup' | 'friendly'>('all');
+  const [exporting, setExporting] = useState(false);
 
   const load = () => getMatches().then(setMatches).catch(() => setMatches([]));
   useEffect(() => { load(); }, []);
 
   const filteredMatches = matches
     .filter(m => m.date >= '2026-08-01')
+    .filter(m => {
+      if (filterType === 'all') return true;
+      const comp = (m.competition || '').toLowerCase();
+      if (filterType === 'friendly') return comp.includes('amistoso');
+      if (filterType === 'cup') return comp.includes('copa') || comp.includes('coppa');
+      if (filterType === 'league') return !comp.includes('amistoso') && !comp.includes('copa') && !comp.includes('coppa');
+      return true;
+    })
     .sort((a, b) => a.date.localeCompare(b.date));
 
   useEffect(() => {
@@ -52,17 +63,51 @@ export default function MatchesPage() {
     load();
   };
 
+  const handleExport = async () => {
+    if (exporting || filteredMatches.length === 0) return;
+    setExporting(true);
+    try {
+      const labels = {
+        all: 'Todos los partidos',
+        league: 'Liga',
+        cup: 'Copa',
+        friendly: 'Amistosos'
+      };
+      await exportMatchesListPdf(filteredMatches, labels[filterType]);
+    } catch (e) {
+      console.error(e);
+      alert('Error al exportar PDF');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   if (activeMatch) {
     return <MatchDetail match={activeMatch} onBack={() => { setActiveMatch(null); load(); }} onUpdate={load} />;
   }
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between flex-wrap gap-3">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <h1 className="text-2xl font-extrabold text-gray-900">{t('matchesPage.title')}</h1>
-        <button onClick={() => setShowForm((v) => !v)} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold flex items-center gap-2">
-          <Plus size={16} /> {t('matchesPage.newMatch')}
-        </button>
+        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+          <div className="flex bg-gray-100 p-1 rounded-xl">
+            <button onClick={() => setFilterType('all')} className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${filterType === 'all' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>Todos</button>
+            <button onClick={() => setFilterType('league')} className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${filterType === 'league' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>Liga</button>
+            <button onClick={() => setFilterType('cup')} className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${filterType === 'cup' ? 'bg-purple-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>Copa</button>
+            <button onClick={() => setFilterType('friendly')} className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${filterType === 'friendly' ? 'bg-orange-500 text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>Amistosos</button>
+          </div>
+          <button 
+            onClick={handleExport}
+            disabled={exporting || filteredMatches.length === 0}
+            className="px-4 py-2 bg-gray-900 text-white rounded-xl text-sm font-bold shadow-md hover:bg-gray-800 transition-colors disabled:opacity-50"
+          >
+            {exporting ? 'Exportando...' : 'Exportar PDF'}
+          </button>
+          <button onClick={() => setShowForm((v) => !v)} className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold flex items-center gap-2 shadow-md hover:bg-blue-700 transition-colors">
+            <Plus size={16} /> {t('matchesPage.newMatch')}
+          </button>
+        </div>
       </div>
 
       {showForm && (
