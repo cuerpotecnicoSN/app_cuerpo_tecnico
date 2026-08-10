@@ -76,7 +76,12 @@ def run():
                     pass
                 
                 data = match_page.evaluate('''() => {
-                    const teams = Array.from(document.querySelectorAll('.participant__participantName')).map(el => el.textContent.trim());
+                    const cleanTeamName = (name) => {
+                        if (!name) return "";
+                        return name.replace(/\\s*\\([A-Za-z]{2,3}\\)\\s*$/g, "").trim();
+                    };
+
+                    const teams = Array.from(document.querySelectorAll('.participant__participantNameWrapper')).map(el => cleanTeamName(el.textContent.trim()));
                     const logos = Array.from(document.querySelectorAll('.participant__image')).map(el => el.src);
                     
                     let dateStr = "";
@@ -97,12 +102,15 @@ def run():
                     }
                     
                     let compStr = "";
-                    const compSpan = document.querySelector('span[data-testid="wcl-scores-overline-03"]');
-                    if (compSpan) {
-                        compStr = compSpan.textContent.trim();
-                        if (compStr.includes("Amistosos de Clubs")) {
+                    let compSpans = document.querySelectorAll('span[data-testid="wcl-scores-overline-03"]');
+                    if (compSpans.length === 0) {
+                        compSpans = document.querySelectorAll('.wcl-breadcrumbItem_8btmf span[itemprop="name"]');
+                    }
+                    if (compSpans.length > 0) {
+                        compStr = compSpans[compSpans.length - 1].textContent.trim();
+                        if (compStr.includes("Amistosos de Clubs") || compStr.includes("Amistoso")) {
                             compStr = "Amistoso";
-                        } else if (compStr.toLowerCase().includes("jornada")) {
+                        } else if (compStr.toLowerCase().includes("jornada") || compStr.toLowerCase().includes("round") || compStr.toLowerCase().includes("liga")) {
                             compStr = "Liga - " + compStr;
                         }
                     }
@@ -146,9 +154,18 @@ def run():
                         logging.warning("No se pudo extraer la fecha correcta, omitiendo partido.")
                         continue
                     
-                    is_home = "AC Milan" in data['homeTeam']
+                    home_lower = data['homeTeam'].lower()
+                    is_home = "milan" in home_lower or "milán" in home_lower or "futuro" in home_lower
                     opponent = data['awayTeam'] if is_home else data['homeTeam']
                     
+                    MILAN_LOGO = "https://b2-content.tuttocampo.it/Teams/80/1234787.png"
+                    home_logo = MILAN_LOGO if is_home else data['homeLogo']
+                    away_logo = MILAN_LOGO if not is_home else data['awayLogo']
+                    
+                    if data['competition'] != "Amistoso":
+                        logging.info(f"Saltando {opponent}: no es amistoso ({data['competition']})")
+                        continue
+                        
                     existing = supabase.table("matches").select("id").eq("date", date_part).eq("opponent", opponent).execute() if supabase else None
                     
                     status = "Finished" if data['resultHome'] is not None else "Scheduled"
@@ -159,8 +176,8 @@ def run():
                         "time": time_part,
                         "opponent": opponent,
                         "is_home": is_home,
-                        "home_logo": data['homeLogo'],
-                        "away_logo": data['awayLogo'],
+                        "home_logo": home_logo,
+                        "away_logo": away_logo,
                         "stadium": data['stadium'],
                         "competition": data['competition'],
                         "result_home": data['resultHome'],
