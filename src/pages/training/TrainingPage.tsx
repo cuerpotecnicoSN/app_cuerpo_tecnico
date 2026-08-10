@@ -12,13 +12,13 @@ import { SessionFormModal } from '../../components/training/SessionFormModal';
 import { TaskModal } from '../../components/training/TaskModal';
 import { TaskBoardEditor } from '../../components/training/TaskBoardEditor';
 
-type View = 'sessions' | 'library' | 'edit';
+type View = 'sessions' | 'library';
 
 export default function TrainingPage() {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const viewParam = searchParams.get('view') as View;
-  const initialView: View = viewParam === 'library' ? 'library' : viewParam === 'edit' ? 'edit' : 'sessions';
+  const initialView: View = viewParam === 'library' ? 'library' : 'sessions';
   const [view, setView] = useState<View>(initialView);
   const [sessions, setSessions] = useState<TrainingSessionDB[]>([]);
   const [tasks, setTasks] = useState<TaskLibraryItem[]>([]);
@@ -31,7 +31,7 @@ export default function TrainingPage() {
 
   useEffect(() => {
     const vParam = searchParams.get('view');
-    const newView = vParam === 'library' ? 'library' : vParam === 'edit' ? 'edit' : 'sessions';
+    const newView = vParam === 'library' ? 'library' : 'sessions';
     setView(newView);
     setActiveSession(null); // Limpiar sesión activa al cambiar de pestaña desde el menú
   }, [searchParams]);
@@ -58,8 +58,6 @@ export default function TrainingPage() {
 
       {view === 'sessions' ? (
         <SessionsList sessions={sessions} onCreate={loadSessions} onOpen={setActiveSession} onDelete={async (id) => { await deleteTrainingSession(id); loadSessions(); }} />
-      ) : view === 'edit' ? (
-        <SessionEditSelector sessions={sessions} onSelect={setActiveSession} />
       ) : (
         <TaskLibraryView tasks={tasks} onCreate={loadTasks} onDelete={async (id) => { await deleteTask(id); loadTasks(); }} />
       )}
@@ -67,50 +65,7 @@ export default function TrainingPage() {
   );
 }
 
-function SessionEditSelector({ sessions, onSelect }: { sessions: TrainingSessionDB[]; onSelect: (s: TrainingSessionDB) => void }) {
-  if (sessions.length === 0) {
-    return (
-      <div className="bg-white border border-gray-200 rounded-3xl p-8 text-center max-w-md mx-auto mt-10 shadow-sm">
-        <Dumbbell className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-        <h3 className="text-lg font-bold text-gray-900 mb-2">No hay sesiones</h3>
-        <p className="text-gray-500 text-sm">Crea una sesión primero desde la pestaña "Sesiones" para poder editarla aquí.</p>
-      </div>
-    );
-  }
 
-  return (
-    <div className="w-full min-h-[70vh] flex flex-col items-center justify-center p-4">
-      <div className="bg-white border border-gray-200 rounded-[2rem] p-10 max-w-2xl w-full shadow-lg flex flex-col items-center">
-        <div className="bg-blue-50 w-20 h-20 rounded-full flex items-center justify-center mb-6 shadow-inner">
-          <ClipboardList className="w-10 h-10 text-blue-600" />
-        </div>
-        <h2 className="text-3xl font-black text-gray-900 mb-3 text-center uppercase tracking-tight">Editar Sesión</h2>
-        <p className="text-base text-gray-500 mb-8 text-center max-w-md">Selecciona la sesión que quieres preparar en el editor de pizarra táctica.</p>
-        
-        <div className="w-full relative max-w-lg">
-          <select 
-            className="w-full appearance-none bg-gray-50 border-2 border-gray-200 text-gray-900 text-lg font-bold rounded-2xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 block px-6 py-4 pr-12 transition-all hover:border-gray-300 cursor-pointer outline-none"
-            onChange={(e) => {
-              const selected = sessions.find(s => s.id === e.target.value);
-              if (selected) onSelect(selected);
-            }}
-            defaultValue=""
-          >
-            <option value="" disabled>-- Elige una sesión --</option>
-            {[...sessions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(s => (
-              <option key={s.id} value={s.id}>
-                {new Date(s.date).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })} {s.time ? `| ${s.time}` : ''} - {s.title}
-              </option>
-            ))}
-          </select>
-          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-6 text-gray-400">
-            <ChevronDown className="w-6 h-6" />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function SessionsList({ sessions, onCreate, onOpen, onDelete }: { sessions: TrainingSessionDB[]; onCreate: () => void; onOpen: (s: TrainingSessionDB) => void; onDelete: (id: string) => void }) {
   const { t } = useTranslation();

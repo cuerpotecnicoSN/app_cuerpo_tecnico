@@ -28,7 +28,6 @@ export const navigation: NavSection[] = [
     icon: Dumbbell,
     children: [
       { labelKey: 'nav.trainingSessions', path: '/training?view=sessions' },
-      { labelKey: 'nav.editSession', path: '/training?view=edit' },
       { labelKey: 'nav.taskLibrary', path: '/training?view=library' }
     ]
   },
