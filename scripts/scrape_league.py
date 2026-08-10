@@ -67,7 +67,12 @@ def run():
         if TUTTOCAMPO_EMAIL and TUTTOCAMPO_PASSWORD:
             try:
                 logging.info("Iniciando sesión en Tuttocampo...")
-                page.locator('a.login').first.click(timeout=5000)
+                try:
+                    page.evaluate("showLogin()")
+                except:
+                    # Fallback
+                    page.locator('a.login').first.click(timeout=5000)
+                    
                 page.wait_for_selector('#login_username', timeout=5000)
                 page.fill('#login_username', TUTTOCAMPO_EMAIL)
                 page.fill('#login_password', TUTTOCAMPO_PASSWORD)
