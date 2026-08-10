@@ -9,6 +9,8 @@ export interface PdfEvent {
   meta?: string;
   homeLogo?: string;
   awayLogo?: string;
+  opponent?: string;
+  isHome?: boolean;
 }
 
 export interface CalendarPdfOptions {
@@ -275,39 +277,76 @@ export const exportCalendarPdf = async ({
       const eventGap = 0.8;
       const maxEvents = Math.floor(availH / (eventH + eventGap));
 
+      // Asignamos doble altura a los partidos para que quepa más info, si hay espacio
+      let currentY = eventStartY;
       dayEvents.forEach((ev, evIdx) => {
-        if (evIdx < maxEvents) {
-          const eventY = eventStartY + evIdx * (eventH + eventGap);
-          const color = TYPE_COLORS[ev.type];
-          
-          // Pastilla del evento con borde de color
-          doc.setFillColor(255, 255, 255);
-          doc.setDrawColor(color[0], color[1], color[2]);
-          doc.setLineWidth(0.2);
-          doc.roundedRect(cx + 1, eventY, colW - 2, eventH, 0.8, 0.8, 'FD');
-          
-          // Borde izquierdo grueso (acento)
-          doc.setFillColor(color[0], color[1], color[2]);
-          doc.rect(cx + 1.2, eventY + 0.2, 0.8, eventH - 0.4, 'F');
-          
-          let textX = cx + 3;
+        if (currentY + eventH > cy + rowH - 2 && evIdx < dayEvents.length) {
+          // No cabe, imprimir "+X más"
+          if (currentY <= cy + rowH - 3) {
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(5.2);
+            doc.setTextColor(110, 115, 125);
+            doc.text(`+ ${dayEvents.length - evIdx} más`, cx + 2.5, currentY + 2.5);
+          }
+          return;
+        }
 
-          // Si es partido, dibujamos escudos si están disponibles
-          if (ev.type === 'match' && (ev.homeLogo || ev.awayLogo)) {
+        const isMatch = ev.type === 'match';
+        const actualEventH = (isMatch && (ev.homeLogo || ev.awayLogo || ev.opponent)) ? eventH * 1.6 : eventH;
+        
+        if (currentY + actualEventH > cy + rowH - 2) {
+          // Si con altura doble no cabe, usamos altura normal
+          if (currentY + eventH > cy + rowH - 2) return;
+        }
+
+        const color = TYPE_COLORS[ev.type];
+        
+        // Pastilla del evento con borde de color
+        doc.setFillColor(255, 255, 255);
+        doc.setDrawColor(color[0], color[1], color[2]);
+        doc.setLineWidth(0.2);
+        doc.roundedRect(cx + 1, currentY, colW - 2, actualEventH, 0.8, 0.8, 'FD');
+        
+        // Borde izquierdo grueso (acento)
+        doc.setFillColor(color[0], color[1], color[2]);
+        doc.rect(cx + 1.2, currentY + 0.2, 0.8, actualEventH - 0.4, 'F');
+        
+        let textX = cx + 3;
+
+        // Renderizado especial para partidos (doble línea)
+        if (isMatch) {
+          // Dibujamos escudos si están disponibles
+          if (ev.homeLogo || ev.awayLogo) {
             const hl = ev.homeLogo ? loadedLogos[ev.homeLogo] : null;
             if (hl) {
-              doc.addImage(hl.dataUrl, 'PNG', textX, eventY + 0.5, 3.5, 3.5);
+              doc.addImage(hl.dataUrl, 'PNG', textX, currentY + 0.6, 3.5, 3.5);
               textX += 4;
             }
             const al = ev.awayLogo ? loadedLogos[ev.awayLogo] : null;
             if (al) {
-              doc.addImage(al.dataUrl, 'PNG', textX, eventY + 0.5, 3.5, 3.5);
+              doc.addImage(al.dataUrl, 'PNG', textX, currentY + 0.6, 3.5, 3.5);
               textX += 4;
             }
             textX += 0.5; // Margen adicional tras los escudos
           }
           
-          // Texto del evento
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(5.5);
+          doc.setTextColor(40, 45, 55);
+          
+          const titleText = ev.opponent ? (ev.isHome ? `vs ${ev.opponent}` : `@ ${ev.opponent}`) : ev.title;
+          doc.text(fitText(titleText, colW - (textX - cx) - 1.5), textX, currentY + 3.2);
+
+          // Segunda línea: Competición y hora
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(4.5);
+          doc.setTextColor(100, 105, 115);
+          let subText = ev.typeLabel || 'Partido';
+          if (ev.time) subText = `${ev.time} · ${subText}`;
+          doc.text(fitText(subText, colW - 4.5), cx + 3, currentY + 6.2);
+
+        } else {
+          // Renderizado normal para otros eventos
           doc.setFont('helvetica', 'bold');
           doc.setFontSize(5.5);
           doc.setTextColor(40, 45, 55);
@@ -316,22 +355,11 @@ export const exportCalendarPdf = async ({
           if (ev.time) {
             eventText += `[${ev.time}] `;
           }
-          // Si es partido con escudos, igual el titulo es muy largo. Lo truncamos.
-          if (ev.type === 'match' && (ev.homeLogo || ev.awayLogo)) {
-             eventText += ev.typeLabel; // Ej: Liga, Copa, en vez de AC Milan Sub-23 vs Juventus
-          } else {
-             eventText += ev.title;
-          }
-          
-          doc.text(fitText(eventText, colW - (textX - cx) - 1.5), textX, eventY + 3);
-        } else if (evIdx === maxEvents) {
-          const eventY = eventStartY + evIdx * (eventH + eventGap);
-          doc.setFont('helvetica', 'bold');
-          doc.setFontSize(5.2);
-          doc.setTextColor(110, 115, 125);
-          const remaining = dayEvents.length - maxEvents;
-          doc.text(`+ ${remaining} más`, cx + 2.5, eventY + 2.5);
+          eventText += ev.title;
+          doc.text(fitText(eventText, colW - 4.5), cx + 3, currentY + 3);
         }
+
+        currentY += actualEventH + eventGap;
       });
     });
 

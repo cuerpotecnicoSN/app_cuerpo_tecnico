@@ -382,7 +382,18 @@ export default function CalendarPage() {
     const join = (...parts: (string | undefined)[]) => parts.filter(Boolean).join(' · ') || undefined;
     switch (e.type) {
       case 'match':
-        return { date: e.date, time: e.time, type: 'match', typeLabel: e.competition || 'Partido', title: e.label, meta: e.location, homeLogo: e.home_logo, awayLogo: e.away_logo };
+        return { 
+          date: e.date, 
+          time: e.time, 
+          type: 'match', 
+          typeLabel: e.competition || 'Partido', 
+          title: e.label, 
+          meta: e.location, 
+          homeLogo: e.home_logo, 
+          awayLogo: e.away_logo,
+          opponent: e.opponent,
+          isHome: e.is_home
+        };
       case 'training':
         return { date: e.date, time: e.time, type: 'training', typeLabel: 'Entrenamiento', title: e.title || 'Entrenamiento', meta: join(e.objective, e.location) };
       case 'meeting':
