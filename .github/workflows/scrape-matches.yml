@@ -33,4 +33,4 @@ jobs:
           TUTTOCAMPO_PASSWORD: ${{ secrets.TUTTOCAMPO_PASSWORD }}
         run: |
           python scripts/scrape_matches.py
-          python scripts/scrape_league.py
+         
