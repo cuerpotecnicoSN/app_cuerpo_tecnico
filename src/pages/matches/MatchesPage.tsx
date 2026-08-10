@@ -121,12 +121,6 @@ export default function MatchesPage() {
                       </span>
                     )}
                   </div>
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); deleteMatch(m.id).then(load); }} 
-                    className="text-gray-300 hover:text-red-500 hover:bg-red-50 p-2.5 rounded-xl transition-colors shrink-0 relative z-20 -mt-2 -mr-2"
-                  >
-                    <Trash2 size={20} />
-                  </button>
                 </div>
 
                 {/* Equipos y Escudos Gigantes */}
