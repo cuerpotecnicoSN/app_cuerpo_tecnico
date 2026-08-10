@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
-import { Plus, Trash2, ChevronLeft, ChevronDown, Dumbbell, MapPin, X, Download, Save, FolderSearch, ClipboardList } from 'lucide-react';
+import { Plus, Trash2, ChevronLeft, ChevronDown, Dumbbell, MapPin, X, Download, Save, FolderSearch, ClipboardList, Edit2 } from 'lucide-react';
 import type { TrainingSessionDB, TaskLibraryItem, SessionTask } from '../../components/types';
 import {
-  getTrainingSessions, createTrainingSession, deleteTrainingSession,
+  getTrainingSessions, createTrainingSession, deleteTrainingSession, updateTrainingSession,
   getTasks, createTask, deleteTask,
   getSessionTasks, addSessionTask, removeSessionTask,
 } from '../../services/training';
@@ -70,25 +70,33 @@ export default function TrainingPage() {
 function SessionsList({ sessions, onCreate, onOpen, onDelete }: { sessions: TrainingSessionDB[]; onCreate: () => void; onOpen: (s: TrainingSessionDB) => void; onDelete: (id: string) => void }) {
   const { t } = useTranslation();
   const [showForm, setShowForm] = useState(false);
+  const [editingSession, setEditingSession] = useState<TrainingSessionDB | undefined>(undefined);
 
   const handleSave = async (sessionData: Omit<TrainingSessionDB, 'id' | 'created_at' | 'season_id'>) => {
-    await createTrainingSession(sessionData);
+    if (editingSession?.id) {
+      await updateTrainingSession(editingSession.id, sessionData);
+    } else {
+      await createTrainingSession(sessionData);
+    }
     setShowForm(false);
+    setEditingSession(undefined);
     onCreate();
   };
 
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <button onClick={() => setShowForm(true)} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold flex items-center gap-2">
+        <button onClick={() => { setEditingSession(undefined); setShowForm(true); }} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold flex items-center gap-2">
           <Plus size={16} /> {t('trainingPage.newSession')}
         </button>
       </div>
 
       <SessionFormModal 
+        key={editingSession ? editingSession.id : 'new'} // Force re-mount when changing edit target
         isOpen={showForm} 
-        onClose={() => setShowForm(false)} 
-        onSave={handleSave} 
+        onClose={() => { setShowForm(false); setEditingSession(undefined); }} 
+        onSave={handleSave}
+        initialData={editingSession}
       />
       {sessions.length === 0 && <p className="text-sm text-gray-400">{t('trainingPage.noSessions')}</p>}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -120,12 +128,29 @@ function SessionsList({ sessions, onCreate, onOpen, onDelete }: { sessions: Trai
                     )}
                   </div>
                 </div>
-                <button 
-                  onClick={(e) => { e.stopPropagation(); onDelete(s.id); }} 
-                  className="text-gray-300 hover:text-red-500 hover:bg-red-50 p-2.5 rounded-xl transition-colors shrink-0"
-                >
-                  <Trash2 size={20} />
-                </button>
+                <div className="flex items-center flex-shrink-0 relative z-20 -mr-2 -mt-2">
+                  <button 
+                    onClick={(e) => { 
+                      e.stopPropagation(); 
+                      setEditingSession(s); 
+                      setShowForm(true); 
+                    }} 
+                    className="text-gray-300 hover:text-blue-500 hover:bg-blue-50 p-2.5 rounded-xl transition-colors"
+                  >
+                    <Edit2 size={20} />
+                  </button>
+                  <button 
+                    onClick={(e) => { 
+                      e.stopPropagation(); 
+                      if (window.confirm('¿Estás seguro de que quieres eliminar esta sesión? Esta acción no se puede deshacer.')) {
+                        onDelete(s.id); 
+                      }
+                    }} 
+                    className="text-gray-300 hover:text-red-500 hover:bg-red-50 p-2.5 rounded-xl transition-colors"
+                  >
+                    <Trash2 size={20} />
+                  </button>
+                </div>
               </div>
               
               {s.objective && (
