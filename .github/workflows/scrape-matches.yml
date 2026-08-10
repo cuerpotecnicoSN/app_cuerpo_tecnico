@@ -29,4 +29,8 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: python scripts/scrape_matches.py
+          TUTTOCAMPO_EMAIL: ${{ secrets.TUTTOCAMPO_EMAIL }}
+          TUTTOCAMPO_PASSWORD: ${{ secrets.TUTTOCAMPO_PASSWORD }}
+        run: |
+          python scripts/scrape_matches.py
+          python scripts/scrape_league.py
