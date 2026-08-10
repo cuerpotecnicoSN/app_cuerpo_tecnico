@@ -39,7 +39,8 @@ def run():
         browser = p.chromium.launch(headless=True)
         context = browser.new_context(
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            timezone_id="Europe/Madrid"
+            timezone_id="Europe/Madrid",
+            viewport={"width": 1920, "height": 1080}
         )
         page = context.new_page()
         logging.info("Abriendo URL de Tuttocampo...")
@@ -68,10 +69,10 @@ def run():
             try:
                 logging.info("Iniciando sesión en Tuttocampo...")
                 try:
-                    page.locator('a[href="#loginmodal"]').first.click(timeout=5000)
+                    page.locator('a[href="#loginmodal"]').first.click(timeout=5000, force=True)
                 except:
                     # Fallback
-                    page.locator('a.login').first.click(timeout=5000)
+                    page.locator('a.login').first.click(timeout=5000, force=True)
                     
                 page.wait_for_selector('#login_username', timeout=5000)
                 page.fill('#login_username', TUTTOCAMPO_EMAIL)
