@@ -95,28 +95,28 @@ export default function MatchesPage() {
         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
           <h1 className="text-2xl font-extrabold text-gray-900 shrink-0">{t('matchesPage.title')}</h1>
           
-          <div className="flex bg-gray-100 p-1.5 rounded-xl gap-1 overflow-x-auto w-full sm:w-auto">
+          <div className="flex bg-gray-100 p-1.5 rounded-xl gap-1 overflow-x-auto w-full sm:w-auto shadow-inner">
             <button 
               onClick={() => setFilterType('all')} 
-              className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all ${filterType === 'all' ? 'bg-gray-900 text-white shadow-md' : 'text-gray-500 hover:bg-gray-200 hover:text-gray-800'}`}
+              className={`px-5 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all ${filterType === 'all' ? 'bg-blue-600 text-white shadow-md scale-105' : 'text-gray-500 hover:bg-gray-200 hover:text-gray-800'}`}
             >
               Todos
             </button>
             <button 
               onClick={() => setFilterType('league')} 
-              className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all ${filterType === 'league' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-200 hover:text-gray-800'}`}
+              className={`px-5 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all ${filterType === 'league' ? 'bg-blue-600 text-white shadow-md scale-105' : 'text-gray-500 hover:bg-gray-200 hover:text-gray-800'}`}
             >
               Liga
             </button>
             <button 
               onClick={() => setFilterType('cup')} 
-              className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all ${filterType === 'cup' ? 'bg-purple-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-200 hover:text-gray-800'}`}
+              className={`px-5 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all ${filterType === 'cup' ? 'bg-blue-600 text-white shadow-md scale-105' : 'text-gray-500 hover:bg-gray-200 hover:text-gray-800'}`}
             >
               Copa
             </button>
             <button 
               onClick={() => setFilterType('friendly')} 
-              className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all ${filterType === 'friendly' ? 'bg-orange-500 text-white shadow-md' : 'text-gray-500 hover:bg-gray-200 hover:text-gray-800'}`}
+              className={`px-5 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all ${filterType === 'friendly' ? 'bg-blue-600 text-white shadow-md scale-105' : 'text-gray-500 hover:bg-gray-200 hover:text-gray-800'}`}
             >
               Amistosos
             </button>
