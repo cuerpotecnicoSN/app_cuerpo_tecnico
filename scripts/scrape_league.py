@@ -68,7 +68,7 @@ def run():
             try:
                 logging.info("Iniciando sesión en Tuttocampo...")
                 try:
-                    page.evaluate("showLogin()")
+                    page.locator('a[href="#loginmodal"]').first.click(timeout=5000)
                 except:
                     # Fallback
                     page.locator('a.login').first.click(timeout=5000)
