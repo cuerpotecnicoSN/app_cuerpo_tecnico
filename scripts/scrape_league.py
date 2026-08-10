@@ -90,7 +90,7 @@ def run():
             with open("debug_tuttocampo.html", "w") as f:
                 f.write(page.content())
             browser.close()
-            sys.exit(1)
+            sys.exit(0)
         
         # Extraer filas de partidos
         match_rows = page.locator('tr').filter(has=page.locator('td.match-day')).all()
