@@ -165,12 +165,15 @@ export default function CalendarPage() {
 
   // Nombre del club para la cabecera del PDF
   useEffect(() => {
-    supabase
-      .from('clubs')
-      .select('*')
-      .limit(1)
-      .then(({ data }) => setClubName(data?.[0]?.name || ''))
-      .catch(() => setClubName(''));
+    const fetchClubName = async () => {
+      try {
+        const { data } = await supabase.from('clubs').select('*').limit(1);
+        setClubName(data?.[0]?.name || '');
+      } catch (err) {
+        setClubName('');
+      }
+    };
+    fetchClubName();
   }, []);
 
   const resetForm = () => {
