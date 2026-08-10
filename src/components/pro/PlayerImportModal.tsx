@@ -33,6 +33,7 @@ export default function PlayerImportModal({ onClose, onSuccess, playerToEdit }: 
   const [formData, setFormData] = useState<any>({
     first_name: playerToEdit?.first_name || '',
     last_name: playerToEdit?.last_name || '',
+    football_name: playerToEdit?.football_name || '',
     main_position: playerToEdit?.main_position || '',
     nationality: playerToEdit?.nationality || '',
     height_cm: playerToEdit?.height_cm || 0,
@@ -597,6 +598,10 @@ export default function PlayerImportModal({ onClose, onSuccess, playerToEdit }: 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-bold text-secondary">Apellidos</label>
                 <input type="text" value={formData.last_name} onChange={e => setFormData({...formData, last_name: e.target.value})} className="w-full" />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-bold text-secondary">Nombre futbolístico</label>
+                <input type="text" value={formData.football_name} onChange={e => setFormData({...formData, football_name: e.target.value})} className="w-full" placeholder="Ej. Pedri, Gavi" />
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-bold text-secondary">Posición</label>

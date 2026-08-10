@@ -330,7 +330,9 @@ export default function CalendarPage() {
       .map((p: any) => {
         const bd = new Date(p.birth_date);
         const thisYear = new Date(year, bd.getMonth(), bd.getDate());
-        return { id: `bday-${p.id}`, date: thisYear.toISOString().slice(0, 10), type: 'birthday' as const, label: `CUMPLEAÑOS: ${p.first_name || ''} ${p.last_name || ''}`.trim() };
+        // Formato local: toISOString() desplaza el día en zonas horarias UTC+
+        const iso = `${thisYear.getFullYear()}-${String(thisYear.getMonth() + 1).padStart(2, '0')}-${String(thisYear.getDate()).padStart(2, '0')}`;
+        return { id: `bday-${p.id}`, date: iso, type: 'birthday' as const, label: `CUMPLEAÑOS: ${p.first_name || ''} ${p.last_name || ''}`.trim() };
       });
   }, [dbPlayers, cursor]);
 
@@ -392,7 +394,10 @@ export default function CalendarPage() {
           homeLogo: e.home_logo, 
           awayLogo: e.away_logo,
           opponent: e.opponent,
-          isHome: e.is_home
+          isHome: e.is_home,
+          score: (e.result_home !== null && e.result_home !== undefined && e.result_away !== null && e.result_away !== undefined)
+            ? `${e.result_home}-${e.result_away}`
+            : undefined
         };
       case 'training':
         return { date: e.date, time: e.time, type: 'training', typeLabel: 'Entrenamiento', title: e.title || 'Entrenamiento', meta: join(e.objective, e.location) };

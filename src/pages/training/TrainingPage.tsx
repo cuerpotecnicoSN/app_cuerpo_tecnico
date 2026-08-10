@@ -1,12 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
-import { Plus, Trash2, ChevronLeft, ChevronDown, Dumbbell, MapPin, X, Download, Save, FolderSearch, ClipboardList, Edit2 } from 'lucide-react';
+import { Plus, Trash2, ChevronLeft, Dumbbell, MapPin, X, Download, Save, FolderSearch, ClipboardList, Edit2, ArrowUp, ArrowDown, ListOrdered, Check, AlertTriangle } from 'lucide-react';
 import type { TrainingSessionDB, TaskLibraryItem, SessionTask } from '../../components/types';
 import {
   getTrainingSessions, createTrainingSession, deleteTrainingSession, updateTrainingSession,
-  getTasks, createTask, deleteTask,
-  getSessionTasks, addSessionTask, removeSessionTask,
+  getTasks, createTask, updateTask, deleteTask,
+  getSessionTasks, addSessionTask, removeSessionTask, reorderSessionTasks,
 } from '../../services/training';
 import { SessionFormModal } from '../../components/training/SessionFormModal';
 import { TaskModal } from '../../components/training/TaskModal';
@@ -43,7 +43,14 @@ export default function TrainingPage() {
   };
 
   if (activeSession) {
-    return <SessionEditor session={activeSession} tasks={tasks} onBack={() => { setActiveSession(null); loadSessions(); }} />;
+    return (
+      <SessionEditor
+        session={activeSession}
+        tasks={tasks}
+        onTasksChange={loadTasks}
+        onBack={() => { setActiveSession(null); loadSessions(); }}
+      />
+    );
   }
 
   return (
@@ -66,6 +73,61 @@ export default function TrainingPage() {
 }
 
 
+
+/** Diálogo de confirmación reutilizable para acciones destructivas. */
+function ConfirmDialog({
+  open, title, message, confirmLabel = 'Eliminar', busy = false, onConfirm, onCancel,
+}: {
+  open: boolean;
+  title: string;
+  message: ReactNode;
+  confirmLabel?: string;
+  busy?: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onCancel(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open, onCancel]);
+
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in" onClick={busy ? undefined : onCancel} />
+      <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
+        <div className="p-6 flex gap-4">
+          <div className="shrink-0 w-11 h-11 rounded-full bg-red-50 text-red-600 flex items-center justify-center">
+            <AlertTriangle size={22} />
+          </div>
+          <div className="min-w-0">
+            <h3 className="text-lg font-black text-gray-900 leading-tight">{title}</h3>
+            <div className="mt-1.5 text-sm text-gray-500 leading-relaxed">{message}</div>
+          </div>
+        </div>
+        <div className="px-6 py-3 bg-gray-50 border-t border-gray-100 flex justify-end gap-2">
+          <button
+            onClick={onCancel}
+            disabled={busy}
+            className="px-4 py-2 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-200 disabled:opacity-50 transition-colors"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={busy}
+            className="px-5 py-2 rounded-xl text-sm font-bold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 transition-colors flex items-center gap-2 shadow-lg shadow-red-500/20"
+          >
+            <Trash2 size={15} /> {busy ? 'Eliminando...' : confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function SessionsList({ sessions, onCreate, onOpen, onDelete }: { sessions: TrainingSessionDB[]; onCreate: () => void; onOpen: (s: TrainingSessionDB) => void; onDelete: (id: string) => void }) {
   const { t } = useTranslation();
@@ -166,21 +228,33 @@ function SessionsList({ sessions, onCreate, onOpen, onDelete }: { sessions: Trai
   );
 }
 
-function TaskLibraryView({ tasks, onCreate, onDelete }: { tasks: TaskLibraryItem[]; onCreate: () => void; onDelete: (id: string) => void }) {
+function TaskLibraryView({ tasks, onCreate, onDelete }: { tasks: TaskLibraryItem[]; onCreate: () => void; onDelete: (id: string) => void | Promise<void> }) {
   const { t } = useTranslation();
   const [showModal, setShowModal] = useState(false);
   const [editingTask, setEditingTask] = useState<TaskLibraryItem | undefined>(undefined);
+  const [pendingDelete, setPendingDelete] = useState<TaskLibraryItem | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const handleSave = async (taskData: Omit<TaskLibraryItem, 'id' | 'created_at'>) => {
     if (editingTask?.id) {
-      // Editar tarea existente
-      await createTask({ ...taskData });
+      await updateTask(editingTask.id, taskData);
     } else {
       await createTask(taskData);
     }
     setShowModal(false);
     setEditingTask(undefined);
     onCreate();
+  };
+
+  const confirmDelete = async () => {
+    if (!pendingDelete) return;
+    setDeleting(true);
+    try {
+      await onDelete(pendingDelete.id);
+      setPendingDelete(null);
+    } finally {
+      setDeleting(false);
+    }
   };
 
   return (
@@ -194,11 +268,20 @@ function TaskLibraryView({ tasks, onCreate, onDelete }: { tasks: TaskLibraryItem
         </button>
       </div>
 
-      <TaskModal 
-        isOpen={showModal} 
-        onClose={() => setShowModal(false)} 
+      <TaskModal
+        isOpen={showModal}
+        onClose={() => { setShowModal(false); setEditingTask(undefined); }}
         onSave={handleSave}
         initialData={editingTask}
+      />
+
+      <ConfirmDialog
+        open={!!pendingDelete}
+        busy={deleting}
+        title="Eliminar tarea de la librería"
+        message={<>Vas a eliminar <strong className="text-gray-700">«{pendingDelete?.title}»</strong> de la librería de forma permanente. Esta acción no se puede deshacer.</>}
+        onConfirm={confirmDelete}
+        onCancel={() => setPendingDelete(null)}
       />
 
       {tasks.length === 0 && <p className="text-sm text-gray-400">{t('trainingPage.noTasks')}</p>}
@@ -213,8 +296,8 @@ function TaskLibraryView({ tasks, onCreate, onDelete }: { tasks: TaskLibraryItem
                   </div>
                   <p className="font-extrabold text-gray-900 leading-snug">{tk.title}</p>
                 </div>
-                <button 
-                  onClick={() => onDelete(tk.id)} 
+                <button
+                  onClick={() => setPendingDelete(tk)}
                   className="text-gray-300 hover:text-red-500 p-1 rounded-lg transition-colors"
                 >
                   <Trash2 size={16} />
@@ -240,12 +323,22 @@ function TaskLibraryView({ tasks, onCreate, onDelete }: { tasks: TaskLibraryItem
   );
 }
 
-function SessionEditor({ session, tasks, onBack }: { session: TrainingSessionDB; tasks: TaskLibraryItem[]; onBack: () => void }) {
+function SessionEditor({ session, tasks, onBack, onTasksChange }: { session: TrainingSessionDB; tasks: TaskLibraryItem[]; onBack: () => void; onTasksChange: () => void }) {
   const [sessionTasks, setSessionTasks] = useState<SessionTask[]>([]);
   const [isLibraryModalOpen, setIsLibraryModalOpen] = useState(false);
+  // null = modal cerrado | { task: undefined } = crear | { task } = editar
+  const [taskModal, setTaskModal] = useState<{ task?: TaskLibraryItem } | null>(null);
+  const [sortMode, setSortMode] = useState(false);
+  const [pendingRemove, setPendingRemove] = useState<SessionTask | null>(null);
+  const [removing, setRemoving] = useState(false);
 
   const load = () => getSessionTasks(session.id).then(setSessionTasks).catch(() => setSessionTasks([]));
   useEffect(() => { load(); }, [session.id]);
+
+  // Sin al menos dos tareas no tiene sentido seguir en modo ordenar
+  useEffect(() => { if (sessionTasks.length < 2) setSortMode(false); }, [sessionTasks.length]);
+
+  const getTaskDetails = (id: string | null) => tasks.find((t) => t.id === id);
 
   const handleAdd = async (taskId: string) => {
     if (!taskId) return;
@@ -254,7 +347,57 @@ function SessionEditor({ session, tasks, onBack }: { session: TrainingSessionDB;
     setIsLibraryModalOpen(false);
   };
 
-  const getTaskDetails = (id: string | null) => tasks.find((t) => t.id === id);
+  // Guardar desde el modal: si venimos de "Nueva tarea" la creamos en la librería
+  // y la enganchamos a la sesión; si estamos editando, actualizamos la original.
+  const handleSaveTask = async (data: Omit<TaskLibraryItem, 'id' | 'created_at'>) => {
+    const editing = taskModal?.task;
+    if (editing) {
+      await updateTask(editing.id, data);
+    } else {
+      const created = await createTask(data);
+      await addSessionTask({ session_id: session.id, task_id: created.id, order: sessionTasks.length });
+    }
+    setTaskModal(null);
+    onTasksChange();
+    load();
+  };
+
+  const persistOrder = async (ordered: SessionTask[]) => {
+    setSessionTasks(ordered.map((st, i) => ({ ...st, order: i })));
+    try {
+      await reorderSessionTasks(ordered.map((st) => st.id));
+    } catch (e) {
+      console.error('Error reordenando tareas', e);
+      load(); // revertir al estado real si falla
+    }
+  };
+
+  const moveTask = (index: number, dir: -1 | 1) => {
+    const target = index + dir;
+    if (target < 0 || target >= sessionTasks.length) return;
+    const next = [...sessionTasks];
+    [next[index], next[target]] = [next[target], next[index]];
+    persistOrder(next);
+  };
+
+  const confirmRemove = async () => {
+    if (!pendingRemove) return;
+    setRemoving(true);
+    try {
+      await removeSessionTask(pendingRemove.id);
+      const rest = sessionTasks.filter((st) => st.id !== pendingRemove.id);
+      setPendingRemove(null);
+      await persistOrder(rest); // recolocar el orden de las restantes
+    } catch (e) {
+      console.error('Error eliminando tarea de la sesión', e);
+      load();
+      setPendingRemove(null);
+    } finally {
+      setRemoving(false);
+    }
+  };
+
+  const removeTitle = getTaskDetails(pendingRemove?.task_id ?? null)?.title || 'esta tarea';
 
   return (
     <div className="space-y-6">
@@ -321,7 +464,20 @@ function SessionEditor({ session, tasks, onBack }: { session: TrainingSessionDB;
               value={session.title}
               className="w-full sm:w-64 bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 outline-none"
             />
-            <div className="flex gap-2 w-full sm:w-auto">
+            <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+              {sessionTasks.length > 1 && (
+                <button
+                  onClick={() => setSortMode((v) => !v)}
+                  className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                    sortMode
+                      ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
+                      : 'bg-white border-gray-200 hover:border-gray-300 text-gray-700'
+                  }`}
+                  title={sortMode ? 'Terminar de ordenar' : 'Reordenar las tareas de la sesión'}
+                >
+                  {sortMode ? <><Check size={16} /> Hecho</> : <><ListOrdered size={16} /> Ordenar</>}
+                </button>
+              )}
               <button
                 onClick={() => setIsLibraryModalOpen(true)}
                 className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-white border border-gray-200 hover:border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
@@ -329,6 +485,7 @@ function SessionEditor({ session, tasks, onBack }: { session: TrainingSessionDB;
                 <FolderSearch size={16} /> Librería
               </button>
               <button
+                onClick={() => { setSortMode(false); setTaskModal({}); }}
                 className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-red-600/10 text-red-500 hover:bg-red-600 hover:text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
               >
                 <Plus size={16} /> Nueva Tarea
@@ -343,14 +500,36 @@ function SessionEditor({ session, tasks, onBack }: { session: TrainingSessionDB;
             <div className="flex flex-col items-center justify-center h-full text-gray-500 text-sm py-12">
               <FolderSearch size={48} className="opacity-20 mb-3" />
               <p>No hay tareas en esta sesión.</p>
-              <p>Añade tareas desde la librería o crea una nueva.</p>
+              <p className="mb-4">Añade tareas desde la librería o crea una nueva.</p>
+              <button
+                onClick={() => setTaskModal({})}
+                className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm"
+              >
+                <Plus size={16} /> Nueva Tarea
+              </button>
             </div>
           ) : (
             <div className="space-y-3">
+              {sortMode && (
+                <div className="flex items-center gap-2 text-xs font-bold text-blue-700 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2">
+                  <ListOrdered size={14} />
+                  Modo ordenar activo: usa las flechas para cambiar el orden de las tareas.
+                </div>
+              )}
               {sessionTasks.map((st, i) => {
                 const tInfo = getTaskDetails(st.task_id);
                 return (
-                  <div key={st.id} className="bg-white border border-gray-200 rounded-lg p-3 pl-8 sm:pl-4 flex flex-col sm:flex-row gap-4 sm:items-center relative shadow-sm">
+                  <div
+                    key={st.id}
+                    onClick={() => { if (!sortMode && tInfo) setTaskModal({ task: tInfo }); }}
+                    className={`bg-white border rounded-lg p-3 pl-8 sm:pl-4 flex flex-col sm:flex-row gap-4 sm:items-center relative shadow-sm transition-all ${
+                      sortMode
+                        ? 'border-blue-200 ring-1 ring-blue-100'
+                        : tInfo
+                          ? 'border-gray-200 cursor-pointer hover:border-blue-300 hover:shadow-md'
+                          : 'border-gray-200'
+                    }`}
+                  >
                     {/* Thumbnail */}
                     <div className="w-full sm:w-56 h-36 shrink-0 overflow-hidden relative rounded-lg border border-gray-200 bg-gray-50 flex items-center justify-center">
                       {tInfo?.board_data ? (
@@ -385,10 +564,45 @@ function SessionEditor({ session, tasks, onBack }: { session: TrainingSessionDB;
                       )}
                     </div>
                     {/* Acciones */}
-                    <div className="flex items-center gap-2 self-end sm:self-auto sm:border-l sm:border-gray-200 sm:pl-4">
-                      <button onClick={async () => { await removeSessionTask(st.id); load(); }} className="p-2 text-gray-500 hover:text-red-500 hover:bg-red-500/10 rounded transition-colors" title="Eliminar de la sesión">
-                        <Trash2 size={16} />
-                      </button>
+                    <div className="flex items-center gap-1.5 self-end sm:self-auto sm:border-l sm:border-gray-200 sm:pl-4" onClick={(e) => e.stopPropagation()}>
+                      {sortMode ? (
+                        <div className="flex flex-col gap-1">
+                          <button
+                            onClick={() => moveTask(i, -1)}
+                            disabled={i === 0}
+                            className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors disabled:opacity-25 disabled:hover:bg-transparent disabled:cursor-not-allowed"
+                            title="Subir"
+                          >
+                            <ArrowUp size={16} />
+                          </button>
+                          <button
+                            onClick={() => moveTask(i, 1)}
+                            disabled={i === sessionTasks.length - 1}
+                            className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors disabled:opacity-25 disabled:hover:bg-transparent disabled:cursor-not-allowed"
+                            title="Bajar"
+                          >
+                            <ArrowDown size={16} />
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => { if (tInfo) setTaskModal({ task: tInfo }); }}
+                            disabled={!tInfo}
+                            className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors disabled:opacity-30"
+                            title="Editar tarea"
+                          >
+                            <Edit2 size={16} />
+                          </button>
+                          <button
+                            onClick={() => setPendingRemove(st)}
+                            className="p-2 text-gray-500 hover:text-red-500 hover:bg-red-500/10 rounded transition-colors"
+                            title="Quitar de la sesión"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
                 );
@@ -397,6 +611,25 @@ function SessionEditor({ session, tasks, onBack }: { session: TrainingSessionDB;
           )}
         </div>
       </div>
+
+      {/* Crear / editar tarea desde la propia sesión */}
+      <TaskModal
+        isOpen={!!taskModal}
+        onClose={() => setTaskModal(null)}
+        onSave={handleSaveTask}
+        initialData={taskModal?.task}
+      />
+
+      {/* Confirmación antes de quitar una tarea de la sesión */}
+      <ConfirmDialog
+        open={!!pendingRemove}
+        busy={removing}
+        title="Quitar tarea de la sesión"
+        confirmLabel="Quitar de la sesión"
+        message={<>Se quitará <strong className="text-gray-700">«{removeTitle}»</strong> de esta sesión. La tarea seguirá disponible en la librería.</>}
+        onConfirm={confirmRemove}
+        onCancel={() => setPendingRemove(null)}
+      />
 
       {/* Modal Librería Simple */}
       {isLibraryModalOpen && (

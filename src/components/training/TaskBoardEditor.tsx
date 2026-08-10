@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { 
-  MousePointer2, 
-  RotateCw, Trash2, Copy, Type, ChevronDown, ChevronUp, Undo2, Redo2, Minus
+  MousePointer2,
+  RotateCw, Trash2, Copy, Type, ChevronDown, ChevronUp, Undo2, Redo2, Minus, X
 } from 'lucide-react';
 
 export type FieldType = 'full' | 'full-horizontal' | 'half' | 'half-top' | 'blank';
@@ -97,6 +97,29 @@ const TiroLeagueBall = ({ size = "100%", style = {} }: { size?: string | number,
   </svg>
 );
 
+// Los entrenadores se pintan siempre en gris, independientemente del color activo.
+const COACH_COLOR = '#6b7280';
+const COACH_NAMES_KEY = 'ct_coach_names';
+
+const readCoachNames = (): string[] => {
+  try {
+    const raw = localStorage.getItem(COACH_NAMES_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed.filter((n) => typeof n === 'string' && n.trim()) : [];
+  } catch {
+    return [];
+  }
+};
+
+// Iniciales para el círculo (el nombre completo se muestra en la etiqueta inferior).
+const coachInitials = (name?: string) => {
+  const clean = (name || '').trim();
+  if (!clean) return 'E';
+  const words = clean.split(/\s+/).filter(Boolean);
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+  return (words[0][0] + words[1][0]).toUpperCase();
+};
+
 export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({ value, onChange, initialData, readOnly, hideToolbar, printMode, rotateFullField, printWidth, limitedTools }) => {
   const [fieldType, setFieldType] = useState<FieldType>('half');
   const [elements, setElements] = useState<BoardElement[]>([]);
@@ -104,6 +127,29 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({ value, onChang
   
   const [activeTool, setActiveTool] = useState<ToolType>('select');
   const [activeColor, setActiveColor] = useState<string>('#000000');
+
+  // Nombre con el que se colocará el próximo entrenador + histórico reutilizable
+  const [coachName, setCoachName] = useState('');
+  const [savedCoachNames, setSavedCoachNames] = useState<string[]>(() => readCoachNames());
+
+  const rememberCoachName = (name: string) => {
+    const clean = name.trim();
+    if (!clean) return;
+    setSavedCoachNames((prev) => {
+      if (prev.some((n) => n.toLowerCase() === clean.toLowerCase())) return prev;
+      const next = [...prev, clean].sort((a, b) => a.localeCompare(b, 'es'));
+      try { localStorage.setItem(COACH_NAMES_KEY, JSON.stringify(next)); } catch { /* almacenamiento no disponible */ }
+      return next;
+    });
+  };
+
+  const forgetCoachName = (name: string) => {
+    setSavedCoachNames((prev) => {
+      const next = prev.filter((n) => n !== name);
+      try { localStorage.setItem(COACH_NAMES_KEY, JSON.stringify(next)); } catch { /* almacenamiento no disponible */ }
+      return next;
+    });
+  };
   
   const [selectedElementIds, setSelectedElementIds] = useState<string[]>([]);
   const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
@@ -250,19 +296,22 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({ value, onChang
     }
 
     if (['coach', 'player', 'cone', 'cone-tall', 'pole', 'goal', 'mini-goal', 'goal-f11', 'goal-f8', 'goal-f5', 'ball', 'hurdle', 'hurdle-high', 'ring', 'ladder', 'bosu', 'bosu-profile', 'text', 'shape-circle', 'shape-square'].includes(activeTool)) {
+      const isCoach = activeTool === 'coach';
       const newEl: BoardElement = {
         id: `el-${Date.now()}`,
         type: activeTool,
         x,
         y,
         rotation: 0,
-        color: activeColor,
+        // El entrenador siempre gris, no hereda el color activo
+        color: isCoach ? COACH_COLOR : activeColor,
         scale: 0.75, // Default elements smaller
-        text: (activeTool === 'text' || activeTool.startsWith('shape-')) ? (activeTool === 'text' ? 'Texto' : '') : (activeTool === 'coach' ? 'E' : undefined),
+        text: (activeTool === 'text' || activeTool.startsWith('shape-')) ? (activeTool === 'text' ? 'Texto' : '') : (isCoach ? (coachName.trim() || 'E') : undefined),
         filled: false,
         dashed: false
       };
       setElements([...elements, newEl]);
+      if (isCoach) rememberCoachName(coachName);
       // Seleccionamos automáticamente el texto para editarlo
       if (activeTool === 'text' || activeTool.startsWith('shape-')) {
         setSelectedElementIds([newEl.id]);
@@ -814,24 +863,42 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({ value, onChang
     let content = null;
     
     switch (el.type) {
-      case 'coach':
+      case 'coach': {
+        const coachLabel = (el.text || '').trim();
+        const showName = !!coachLabel && coachLabel !== 'E';
         content = (
           <div className="relative flex items-center justify-center" style={{ width: px(28), height: px(28) }}>
             <div className="z-10 relative" style={{
               width: px(18), height: px(18), borderRadius: '50%',
-              backgroundColor: displayColor,
+              backgroundColor: getPrintColor(COACH_COLOR),
               border: `${px(2)} solid #000`,
               boxShadow: printMode ? 'none' : '1px 1px 3px rgba(0,0,0,0.4)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: ['#ffffff', '#ffeb3b'].includes(el.color.toLowerCase()) ? '#000' : '#fff',
-              fontWeight: 'black', fontSize: px(10),
+              color: '#fff',
+              fontWeight: 'black', fontSize: px(9),
               fontFamily: 'sans-serif'
             }}>
-              {el.text}
+              {coachInitials(coachLabel)}
             </div>
+            {showName && (
+              <div style={{
+                position: 'absolute', top: '100%', left: '50%', transform: 'translate(-50%, 0)',
+                marginTop: px(1),
+                backgroundColor: printMode ? 'transparent' : 'rgba(255,255,255,0.9)',
+                border: printMode ? 'none' : `${px(1)} solid ${getPrintColor(COACH_COLOR)}`,
+                borderRadius: px(4),
+                padding: `0 ${px(3)}`,
+                color: '#1f2937', fontWeight: 700, fontSize: px(8),
+                fontFamily: 'sans-serif', whiteSpace: 'nowrap', lineHeight: 1.5,
+                pointerEvents: 'none'
+              }}>
+                {coachLabel}
+              </div>
+            )}
           </div>
         );
         break;
+      }
       case 'player':
         content = (
           <div className="relative flex items-center justify-center" style={{ width: px(28), height: px(28) }}>
@@ -1200,11 +1267,11 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({ value, onChang
     return (
       <button 
         onClick={() => setActiveTool(tool)} 
-        className={`p-1.5 rounded flex flex-col items-center justify-center gap-1 transition-colors ${isActive ? 'bg-blue-600 text-white shadow-md' : bg ? 'bg-gray-50 hover:bg-gray-100 text-gray-700' : 'text-gray-500 hover:text-gray-900'}`}
+        className={`p-1.5 rounded flex flex-col items-center justify-center gap-1 min-w-0 transition-colors ${isActive ? 'bg-blue-600 text-white shadow-md' : bg ? 'bg-gray-50 hover:bg-gray-100 text-gray-700' : 'text-gray-500 hover:text-gray-900'}`}
         title={label}
       >
         {icon}
-        {label && !hideLabel && <span className="text-[9px] uppercase font-bold tracking-wider hidden lg:block">{label}</span>}
+        {label && !hideLabel && <span className="text-[9px] uppercase font-bold tracking-tight leading-tight hidden lg:block w-full text-center truncate">{label}</span>}
       </button>
     );
   };
@@ -1331,8 +1398,8 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({ value, onChang
 
       {/* Sidebar Tools: franja lateral estrecha en móvil/tablet, panel ancho en escritorio */}
       {!hideToolbar && (
-        <div className="w-20 lg:w-80 shrink-0 bg-white border border-gray-200 shadow-sm rounded-xl p-2 flex flex-col gap-2 overflow-y-auto custom-scrollbar">
-        
+        <div className="w-20 lg:w-[22rem] xl:w-[25rem] shrink-0 bg-white border border-gray-200 shadow-sm rounded-xl p-2 flex flex-col gap-1.5 overflow-y-auto custom-scrollbar">
+
         <div className="grid grid-cols-3 gap-1">
           <ToolButton tool="select" icon={<MousePointer2 className="w-5 h-5" />} label="Mover" bg={true} />
           <button onClick={handleUndo} disabled={history.length === 0} className={`p-1.5 rounded flex flex-col items-center justify-center gap-1 transition-colors ${history.length === 0 ? 'opacity-50 cursor-not-allowed bg-gray-50 text-gray-400' : 'bg-gray-50 hover:bg-gray-100 text-gray-700'}`} title="Deshacer">
@@ -1366,7 +1433,7 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({ value, onChang
             {openSections.background ? <ChevronUp className="w-3 h-3 hidden lg:block" /> : <ChevronDown className="w-3 h-3 hidden lg:block" />}
           </button>
           {openSections.background && (
-            <div className="grid grid-cols-4 gap-1">
+            <div className="grid grid-cols-5 gap-1">
               <button onClick={() => setFieldType('full')} title="Fondo Entero" className={`p-1.5 rounded flex flex-col items-center gap-1 transition-colors ${fieldType === 'full' ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-50 border border-transparent text-gray-500 hover:text-gray-900 hover:bg-gray-100'}`}>
                 <svg className="w-6 h-6" viewBox="0 0 68 105">
                   <rect x="0" y="0" width="68" height="105" fill="currentColor" opacity="0.1" />
@@ -1440,7 +1507,7 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({ value, onChang
             {openSections.elements ? <ChevronUp className="w-3 h-3 hidden lg:block" /> : <ChevronDown className="w-3 h-3 hidden lg:block" />}
           </button>
           {openSections.elements && (
-            <div className={`grid ${limitedTools ? 'grid-cols-2' : 'grid-cols-2 lg:grid-cols-4'} gap-1`}>
+            <div className={`grid ${limitedTools ? 'grid-cols-2' : 'grid-cols-2 lg:grid-cols-4 xl:grid-cols-5'} gap-1`}>
               <ToolButton tool="player" label="Jugador" bg={true} icon={
                 <div className="relative flex items-center justify-center w-6 h-6">
                   <div className="absolute w-full h-[2px] bg-black rounded-full" style={{ bottom: '4px' }} />
@@ -1449,8 +1516,8 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({ value, onChang
               }/>
               <ToolButton tool="coach" label="Entrenador" bg={true} icon={
                 <div className="relative flex items-center justify-center w-6 h-6">
-                  <div className="w-[14px] h-[14px] rounded-full border-[1.5px] border-black flex items-center justify-center shadow-sm" style={{ backgroundColor: activeColor }}>
-                    <span className="text-[7px] font-black leading-none" style={{ color: ['#ffffff', '#ffeb3b'].includes(activeColor.toLowerCase()) ? '#000' : '#fff' }}>E</span>
+                  <div className="w-[14px] h-[14px] rounded-full border-[1.5px] border-black flex items-center justify-center shadow-sm" style={{ backgroundColor: COACH_COLOR }}>
+                    <span className="text-[7px] font-black leading-none text-white">{coachInitials(coachName)}</span>
                   </div>
                 </div>
               }/>
@@ -1496,6 +1563,68 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({ value, onChang
               )}
             </div>
           )}
+
+          {/* Nombre del entrenador: se aplica al siguiente que coloques */}
+          {openSections.elements && activeTool === 'coach' && (
+            <div className="mt-1.5 rounded-lg border border-gray-200 bg-gray-50 p-2 hidden lg:block">
+              <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Nombre del entrenador</label>
+              <div className="flex gap-1">
+                <input
+                  type="text"
+                  list="ct-coach-names"
+                  value={coachName}
+                  onChange={(e) => setCoachName(e.target.value)}
+                  onBlur={() => rememberCoachName(coachName)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); rememberCoachName(coachName); } }}
+                  placeholder="Ej. Víctor"
+                  className="flex-1 min-w-0 border border-gray-200 rounded-md px-2 py-1 text-xs font-semibold text-gray-800 bg-white outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                />
+                {coachName && (
+                  <button
+                    type="button"
+                    onClick={() => setCoachName('')}
+                    className="px-2 rounded-md bg-white border border-gray-200 text-gray-400 hover:text-gray-700 transition-colors"
+                    title="Limpiar nombre"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+              <datalist id="ct-coach-names">
+                {savedCoachNames.map((n) => <option key={n} value={n} />)}
+              </datalist>
+
+              {savedCoachNames.length > 0 && (
+                <div className="mt-1.5 flex flex-wrap gap-1">
+                  {savedCoachNames.map((n) => (
+                    <span
+                      key={n}
+                      className={`group inline-flex items-center gap-1 rounded-full border pl-2 pr-1 py-0.5 text-[10px] font-bold transition-colors ${
+                        n === coachName.trim()
+                          ? 'bg-gray-700 border-gray-700 text-white'
+                          : 'bg-white border-gray-200 text-gray-600 hover:border-gray-400'
+                      }`}
+                    >
+                      <button type="button" onClick={() => setCoachName(n)} className="max-w-[6.5rem] truncate" title={`Usar ${n}`}>
+                        {n}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { forgetCoachName(n); if (coachName.trim() === n) setCoachName(''); }}
+                        className="opacity-40 hover:opacity-100 transition-opacity"
+                        title={`Olvidar ${n}`}
+                      >
+                        <X className="w-2.5 h-2.5" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              <p className="mt-1.5 text-[9px] leading-tight text-gray-400">
+                Se guarda al colocarlo y estará disponible en las próximas tareas.
+              </p>
+            </div>
+          )}
         </div>
 
         {!limitedTools && (
@@ -1530,11 +1659,8 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({ value, onChang
             {openSections.drawing ? <ChevronUp className="w-3 h-3 hidden lg:block" /> : <ChevronDown className="w-3 h-3 hidden lg:block" />}
           </button>
           {openSections.drawing && (
-            <div className="flex flex-col gap-1">
-              <div className="flex justify-center mb-0.5">
+            <div className="grid grid-cols-3 gap-1">
                 <ToolButton tool="text" label="Texto" bg={true} icon={<Type className="w-5 h-5 text-gray-700" />} />
-              </div>
-              <div className="grid grid-cols-3 gap-1 mb-0.5">
                 <ToolButton tool="arrow" label="Pase" bg={true} icon={
                   <div className="flex items-center text-gray-700 w-1/2 mx-auto">
                      <div className="flex-1 h-0.5 bg-current" />
@@ -1552,11 +1678,8 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({ value, onChang
                      <div className="flex-1 border-t-2 border-dashed border-current" />
                   </div>
                 }/>
-              </div>
-              <div className="grid grid-cols-2 gap-1">
                 <ToolButton tool="shape-circle" label="Círculo" bg={true} icon={<div className="w-4 h-4 rounded-full border-2 border-current" style={{ color: activeColor === '#ffffff' ? '#9ca3af' : activeColor }} />} />
                 <ToolButton tool="shape-square" label="Zona" bg={true} icon={<div className="w-4 h-4 border-2 border-current rounded-sm" style={{ color: activeColor === '#ffffff' ? '#9ca3af' : activeColor }} />} />
-              </div>
             </div>
           )}
         </div>
@@ -1651,15 +1774,22 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({ value, onChang
             )}
 
             {/* Si es un único texto o forma, mostrar input de edición */}
-            {selectedElement && ['text', 'shape-circle', 'shape-square', 'player'].includes(selectedElement.type) ? (
+            {selectedElement && ['text', 'shape-circle', 'shape-square', 'player', 'coach'].includes(selectedElement.type) ? (
               <>
                 <input
                   type="text"
+                  list={selectedElement.type === 'coach' ? 'ct-coach-names-selected' : undefined}
                   value={selectedElement.text || ''}
                   onChange={(e) => updateElementText(selectedElementIds, e.target.value)}
-                  className="bg-black/50 border border-brand-black-border rounded px-2 py-1 text-sm text-white outline-none w-24 focus:border-brand-red-600"
-                  placeholder="Texto..."
+                  onBlur={() => { if (selectedElement.type === 'coach') rememberCoachName(selectedElement.text || ''); }}
+                  className={`bg-black/50 border border-brand-black-border rounded px-2 py-1 text-sm text-white outline-none focus:border-brand-red-600 ${selectedElement.type === 'coach' ? 'w-36' : 'w-24'}`}
+                  placeholder={selectedElement.type === 'coach' ? 'Nombre...' : 'Texto...'}
                 />
+                {selectedElement.type === 'coach' && (
+                  <datalist id="ct-coach-names-selected">
+                    {savedCoachNames.map((n) => <option key={n} value={n} />)}
+                  </datalist>
+                )}
                 <div className="w-px h-6 bg-brand-black-border mx-1" />
               </>
             ) : null}

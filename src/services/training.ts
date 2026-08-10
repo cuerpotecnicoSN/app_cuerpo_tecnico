@@ -73,3 +73,17 @@ export const removeSessionTask = async (id: string): Promise<void> => {
   const { error } = await supabase.from('session_tasks').delete().eq('id', id);
   if (error) throw error;
 };
+
+export const updateSessionTask = async (id: string, updates: Partial<SessionTask>): Promise<void> => {
+  const { error } = await supabase.from('session_tasks').update(updates).eq('id', id);
+  if (error) throw error;
+};
+
+// Reescribe el campo `order` según la posición en el array recibido.
+export const reorderSessionTasks = async (orderedIds: string[]): Promise<void> => {
+  const results = await Promise.all(
+    orderedIds.map((id, index) => supabase.from('session_tasks').update({ order: index }).eq('id', id))
+  );
+  const failed = results.find((r) => r.error);
+  if (failed?.error) throw failed.error;
+};

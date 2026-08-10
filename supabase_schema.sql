@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS public.players (
     season_id UUID REFERENCES public.seasons(id) ON DELETE CASCADE NOT NULL,
     first_name TEXT NOT NULL,
     last_name TEXT NOT NULL,
+    football_name TEXT,
     gender TEXT CHECK (gender IN ('masculino', 'femenino')),
     kit_number INTEGER,
     main_position TEXT,
@@ -62,6 +63,7 @@ CREATE TABLE IF NOT EXISTS public.players (
 ALTER TABLE public.players ADD COLUMN IF NOT EXISTS transfermarkt_url TEXT;
 ALTER TABLE public.players ADD COLUMN IF NOT EXISTS besoccer_url TEXT;
 ALTER TABLE public.players ADD COLUMN IF NOT EXISTS current_club TEXT;
+ALTER TABLE public.players ADD COLUMN IF NOT EXISTS football_name TEXT;
 ALTER TABLE public.players ADD COLUMN IF NOT EXISTS market_value TEXT;
 ALTER TABLE public.players ADD COLUMN IF NOT EXISTS rating NUMERIC;
 ALTER TABLE public.players ADD COLUMN IF NOT EXISTS public_injuries TEXT;

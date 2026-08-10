@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { X, Save, Dumbbell, Clock, AlignLeft, Layers } from 'lucide-react';
 import { TaskBoardEditor } from './TaskBoardEditor';
 import type { TaskLibraryItem } from '../types';
@@ -18,6 +18,21 @@ export function TaskModal({ isOpen, onClose, onSave, initialData }: TaskModalPro
   const [material, setMaterial] = useState(initialData?.material || '');
   const [boardData, setBoardData] = useState<string>(initialData?.board_data || '');
   const [isSaving, setIsSaving] = useState(false);
+
+  // El modal no se desmonta al cerrarse, así que sincronizamos el formulario cada
+  // vez que se abre: si no, al editar una tarea distinta (o crear una nueva
+  // después de editar) se arrastraban los datos y la pizarra de la anterior.
+  useEffect(() => {
+    if (!isOpen) return;
+    setTitle(initialData?.title || '');
+    setCategory(initialData?.category || 'Principal');
+    setDescription(initialData?.description || '');
+    setDurationMin(initialData?.duration_min ?? 15);
+    setMaterial(initialData?.material || '');
+    setBoardData(initialData?.board_data || '');
+    setIsSaving(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, initialData?.id]);
 
   if (!isOpen) return null;
 
@@ -44,11 +59,11 @@ export function TaskModal({ isOpen, onClose, onSave, initialData }: TaskModalPro
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[1400px] h-[92vh] flex flex-col overflow-hidden">
-        
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-1 sm:p-3 bg-black/60 backdrop-blur-sm animate-fade-in">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[1700px] h-[97vh] flex flex-col overflow-hidden">
+
         {/* Header del Modal */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50/80">
+        <div className="flex items-center justify-between px-5 py-2.5 border-b border-gray-100 bg-gray-50/80 shrink-0">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
               <Dumbbell size={20} />
@@ -72,7 +87,7 @@ export function TaskModal({ isOpen, onClose, onSave, initialData }: TaskModalPro
         <form onSubmit={handleSubmit} className="flex-1 flex flex-col md:flex-row overflow-hidden">
           
           {/* Columna Izquierda: Datos de la tarea */}
-          <div className="w-full md:w-64 shrink-0 p-4 lg:p-5 border-b md:border-b-0 md:border-r border-gray-100 overflow-y-auto space-y-4 bg-gray-50/30">
+          <div className="w-full md:w-56 lg:w-60 shrink-0 p-3 lg:p-4 border-b md:border-b-0 md:border-r border-gray-100 overflow-y-auto space-y-3 bg-gray-50/30">
             <div>
               <label className="flex items-center gap-2 text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">
                 <AlignLeft size={14} className="text-blue-500" />
@@ -150,9 +165,9 @@ export function TaskModal({ isOpen, onClose, onSave, initialData }: TaskModalPro
           </div>
 
           {/* Columna Derecha: Editor Táctico Interactivo */}
-          <div className="flex-1 flex flex-col p-4 bg-gray-50 overflow-hidden relative">
-            <div className="mb-2 flex items-center justify-between">
-              <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">Pizarra Táctica interactiva</span>
+          <div className="flex-1 flex flex-col p-2 lg:p-3 bg-gray-50 overflow-hidden relative">
+            <div className="mb-1.5 hidden lg:flex items-center justify-between shrink-0">
+              <span className="text-[11px] font-bold text-gray-700 uppercase tracking-wider">Pizarra Táctica interactiva</span>
               <span className="text-[11px] text-gray-500">Arrastra material, jugadores y dibuja líneas</span>
             </div>
             <div className="flex-1 rounded-xl overflow-hidden bg-white border border-gray-200 shadow-inner relative">
@@ -166,7 +181,7 @@ export function TaskModal({ isOpen, onClose, onSave, initialData }: TaskModalPro
         </form>
 
         {/* Footer del Modal */}
-        <div className="px-6 py-3 border-t border-gray-100 bg-gray-50 flex items-center justify-end gap-3 shrink-0">
+        <div className="px-5 py-2 border-t border-gray-100 bg-gray-50 flex items-center justify-end gap-3 shrink-0">
           <button
             type="button"
             onClick={onClose}

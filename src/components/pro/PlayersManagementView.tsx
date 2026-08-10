@@ -126,7 +126,7 @@ export default function PlayersManagementView({ players, onUpdatePlayer, onDelet
                       />
                       <div className="flex flex-col">
                         <span className="font-semibold text-gray-900 flex items-center gap-1.5">
-                          {player.name}
+                          {player.footballName || player.name}
                           {player.nationality && (
                             <span title={player.nationality} className="text-base leading-none">
                               {getFlagEmoji(player.nationality)}
@@ -228,7 +228,7 @@ export default function PlayersManagementView({ players, onUpdatePlayer, onDelet
           {/* Datos */}
           <div className="p-2 flex flex-col items-center justify-center text-center bg-white border-t border-gray-100">
             <div className="w-full flex items-center justify-center gap-1">
-              <h3 className="text-xs font-extrabold text-gray-900 truncate max-w-[85%]">{player.name}</h3>
+              <h3 className="text-xs font-extrabold text-gray-900 truncate max-w-[85%]">{player.footballName || player.name}</h3>
               {player.nationality && (
                 <span title={player.nationality} className="text-xs flex-shrink-0 leading-none">
                   {getFlagEmoji(player.nationality)}

@@ -3,6 +3,7 @@ export type UserRole = 'Míster' | 'Jugador' | 'Administrador' | 'Entrenador' | 
 export interface Player {
   id: string;
   name: string;
+  footballName?: string;
   gender?: 'masculino' | 'femenino';
   avatar: string;
   position: string;

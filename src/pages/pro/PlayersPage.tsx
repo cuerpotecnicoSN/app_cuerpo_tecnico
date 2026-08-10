@@ -36,6 +36,7 @@ export default function PlayersPage() {
     return dbPlayers.map(p => ({
       id: p.id,
       name: `${p.first_name || ''} ${p.last_name || ''}`.trim(),
+      footballName: p.football_name || '',
       position: p.main_position || 'Sin definir',
       age: p.birth_date ? new Date().getFullYear() - new Date(p.birth_date).getFullYear() : 0,
       weight: p.weight_kg || 0,
