@@ -88,7 +88,11 @@ def run():
                     data = match_page.evaluate('''() => {
                         const cleanTeamName = (name) => {
                             if (!name) return "";
-                            return name.replace(/\\s*\\([A-Za-z]{2,3}\\)\\s*$/g, "").trim();
+                            let cleaned = name.replace(/\\s*\\([A-Za-z0-9\\-]+\\)\\s*$/g, "").trim();
+                            if (cleaned.toLowerCase().includes("milan")) {
+                                return "Milan Futuro";
+                            }
+                            return cleaned;
                         };
 
                         const teams = Array.from(document.querySelectorAll('.participant__participantNameWrapper')).map(el => cleanTeamName(el.textContent.trim()));
@@ -120,7 +124,7 @@ def run():
                             compStr = compSpans[compSpans.length - 1].textContent.trim();
                             if (compStr.includes("Amistosos de Clubs") || compStr.includes("Amistoso")) {
                                 compStr = "Amistoso";
-                            } else if (compStr.toLowerCase().includes("jornada") || compStr.toLowerCase().includes("round") || compStr.toLowerCase().includes("liga")) {
+                            } else if (compStr.toLowerCase().includes("jornada") || compStr.toLowerCase().includes("round") || compStr.toLowerCase().includes("liga") || compStr.toLowerCase().includes("serie d")) {
                                 compStr = "Liga - " + compStr;
                             }
                         }
@@ -172,10 +176,6 @@ def run():
                         home_logo = MILAN_LOGO if is_home else data['homeLogo']
                         away_logo = MILAN_LOGO if not is_home else data['awayLogo']
                         
-                        if data['competition'] != "Amistoso":
-                            logging.info(f"Saltando {opponent}: no es amistoso ({data['competition']})")
-                            continue
-                            
                         existing = supabase.table("matches").select("id").eq("date", date_part).eq("opponent", opponent).execute() if supabase else None
                         
                         status = "Finished" if data['resultHome'] is not None else "Scheduled"
