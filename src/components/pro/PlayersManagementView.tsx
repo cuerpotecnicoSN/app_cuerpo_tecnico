@@ -133,6 +133,11 @@ export default function PlayersManagementView({ players, onUpdatePlayer, onDelet
                             </span>
                           )}
                         </span>
+                        {player.footballName && (
+                          <span className="text-[10px] text-gray-400 font-bold block mt-0.5">
+                            {player.name}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </td>
@@ -227,11 +232,20 @@ export default function PlayersManagementView({ players, onUpdatePlayer, onDelet
           
           {/* Datos */}
           <div className="p-2 flex flex-col items-center justify-center text-center bg-white border-t border-gray-100">
-            <div className="w-full flex items-center justify-center gap-1">
-              <h3 className="text-xs font-extrabold text-gray-900 truncate max-w-[85%]">{player.footballName || player.name}</h3>
-              {player.nationality && (
-                <span title={player.nationality} className="text-xs flex-shrink-0 leading-none">
-                  {getFlagEmoji(player.nationality)}
+            <div className="w-full flex flex-col items-center">
+              <div className="w-full flex items-center justify-center gap-1">
+                <h3 className="text-xs font-extrabold text-gray-900 truncate max-w-[85%]" title={player.footballName ? `${player.footballName} (${player.name})` : player.name}>
+                  {player.footballName || player.name}
+                </h3>
+                {player.nationality && (
+                  <span title={player.nationality} className="text-xs flex-shrink-0 leading-none">
+                    {getFlagEmoji(player.nationality)}
+                  </span>
+                )}
+              </div>
+              {player.footballName && (
+                <span className="text-[9px] text-gray-400 font-bold truncate max-w-[95%] block mt-0.5" title={player.name}>
+                  {player.name}
                 </span>
               )}
             </div>

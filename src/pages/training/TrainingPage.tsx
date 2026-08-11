@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
-import { Plus, Trash2, ChevronLeft, Dumbbell, MapPin, X, Download, Save, FolderSearch, ClipboardList, Edit2, ArrowUp, ArrowDown, ListOrdered, Check, AlertTriangle } from 'lucide-react';
+import { Plus, Trash2, ChevronLeft, Dumbbell, MapPin, X, Download, Save, FolderSearch, ClipboardList, Edit2, ArrowUp, ArrowDown, ListOrdered, AlertTriangle, Settings } from 'lucide-react';
 import type { TrainingSessionDB, TaskLibraryItem, SessionTask } from '../../components/types';
 import {
   getTrainingSessions, createTrainingSession, deleteTrainingSession, updateTrainingSession,
@@ -368,6 +368,21 @@ function SessionEditor({ session, tasks, onBack, onTasksChange }: { session: Tra
 
   const getTaskDetails = (id: string | null) => tasks.find((t) => t.id === id);
 
+  const getFieldAspectRatio = (boardDataStr?: string) => {
+    if (!boardDataStr) return '16 / 9';
+    try {
+      const parsed = JSON.parse(boardDataStr);
+      // If it has teams board it's 16/9
+      if (parsed.teamsBoard) return '16 / 9';
+      const fieldType = parsed.fieldType || 'half';
+      if (fieldType === 'full') return '68 / 105';
+      if (fieldType === 'full-horizontal') return '105 / 68';
+      return '16 / 9';
+    } catch {
+      return '16 / 9';
+    }
+  };
+
   const getBoardPreview = (boardDataStr?: string) => {
     if (!boardDataStr) return null;
     try {
@@ -594,32 +609,35 @@ function SessionEditor({ session, tasks, onBack, onTasksChange }: { session: Tra
               value={session.title}
               className="w-full sm:w-64 bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 outline-none"
             />
-            <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-              {sessionTasks.length > 1 && (
+            <div className="flex flex-wrap gap-2 w-full justify-between items-center">
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setIsLibraryModalOpen(true)}
+                  className="flex items-center justify-center gap-2 bg-white border border-gray-200 hover:border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                >
+                  <FolderSearch size={16} /> Librería
+                </button>
+                <button
+                  onClick={() => { setSortMode(false); setTaskModal({}); }}
+                  className="flex items-center justify-center gap-2 bg-red-600/10 text-red-500 hover:bg-red-600 hover:text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                >
+                  <Plus size={16} /> Nueva Tarea
+                </button>
+              </div>
+
+              {sessionTasks.length > 0 && (
                 <button
                   onClick={() => setSortMode((v) => !v)}
-                  className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                  className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
                     sortMode
                       ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
                       : 'bg-white border-gray-200 hover:border-gray-300 text-gray-700'
                   }`}
-                  title={sortMode ? 'Terminar de ordenar' : 'Reordenar las tareas de la sesión'}
+                  title="Ordenar y borrar tareas de la sesión"
                 >
-                  {sortMode ? <><Check size={16} /> Hecho</> : <><ListOrdered size={16} /> Ordenar</>}
+                  <Settings size={16} /> {sortMode ? 'Hecho' : 'Ordenar / Borrar'}
                 </button>
               )}
-              <button
-                onClick={() => setIsLibraryModalOpen(true)}
-                className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-white border border-gray-200 hover:border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-              >
-                <FolderSearch size={16} /> Librería
-              </button>
-              <button
-                onClick={() => { setSortMode(false); setTaskModal({}); }}
-                className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-red-600/10 text-red-500 hover:bg-red-600 hover:text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-              >
-                <Plus size={16} /> Nueva Tarea
-              </button>
             </div>
           </div>
         </div>
@@ -652,86 +670,105 @@ function SessionEditor({ session, tasks, onBack, onTasksChange }: { session: Tra
                   <div
                     key={st.id}
                     onClick={() => { if (!sortMode && tInfo) setTaskModal({ task: tInfo }); }}
-                    className={`bg-white border rounded-lg p-3 pl-8 sm:pl-4 flex flex-col sm:flex-row gap-4 sm:items-center relative shadow-sm transition-all ${
+                    className={`bg-white border rounded-2xl p-4 flex flex-row gap-5 items-stretch relative shadow-sm hover:shadow-md transition-all ${
                       sortMode
                         ? 'border-blue-200 ring-1 ring-blue-100'
                         : tInfo
-                          ? 'border-gray-200 cursor-pointer hover:border-blue-300 hover:shadow-md'
+                          ? 'border-gray-200 cursor-pointer hover:border-blue-300'
                           : 'border-gray-200'
                     }`}
                   >
-                    {/* Thumbnail */}
-                    <div className="w-full sm:w-56 h-36 shrink-0 overflow-hidden relative rounded-lg border border-gray-200 bg-gray-50 flex items-center justify-center">
-                      {tInfo?.board_data ? (
-                        <div style={{ width: '480px', height: '320px', transform: 'scale(0.45)', transformOrigin: 'center' }} className="flex flex-col justify-center shrink-0">
-                          <TaskBoardEditor value={tInfo.board_data} readOnly hideToolbar rotateFullField={true} />
-                        </div>
-                      ) : (
-                        <div className="w-full h-full flex flex-col items-center justify-center text-xs text-gray-600 opacity-50">
-                          <ClipboardList className="w-6 h-6 mb-1" /> Sin dibujo
-                        </div>
-                      )}
-                    </div>
-                    {/* Datos de la Tarea */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex justify-between items-start">
-                        <h3 className="text-base font-bold text-gray-900 truncate pr-2">
-                          {i + 1}. {tInfo?.title || 'Tarea'}
-                        </h3>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <span className="text-[10px] uppercase font-bold text-gray-600 bg-gray-100 px-2 py-1 rounded">
+                    {/* Columna Izquierda: Información de la Tarea */}
+                    <div className="flex-1 flex flex-col justify-between min-w-0 pr-2">
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2 mb-2">
+                          <span className="text-[10px] uppercase font-black tracking-wider text-red-600 bg-red-50 border border-red-100 px-2.5 py-0.5 rounded-lg">
                             {tInfo?.category || 'Principal'}
                           </span>
                           {tInfo?.duration_min && (
-                            <span className="text-xs font-bold text-red-500 bg-red-50 px-2 py-1 rounded">
-                              ⏱ {tInfo.duration_min}'
+                            <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-lg">
+                              ⏱️ {tInfo.duration_min} min
                             </span>
                           )}
                         </div>
+                        <h3 className="text-base font-black text-gray-900 leading-tight">
+                          {i + 1}. {tInfo?.title || 'Tarea'}
+                        </h3>
+                        {tInfo?.description && (
+                          <p className="mt-2 text-xs text-gray-500 line-clamp-4 leading-relaxed whitespace-pre-line">{tInfo.description}</p>
+                        )}
                       </div>
-                      {tInfo?.description && (
-                         <p className="mt-2 text-sm text-gray-500 line-clamp-3 leading-relaxed">{tInfo.description}</p>
+                      
+                      {tInfo?.material && (
+                        <div className="mt-3 text-[11px] text-gray-400 font-bold border-t border-gray-100 pt-2 shrink-0">
+                          🎒 Material: {tInfo.material}
+                        </div>
                       )}
                     </div>
-                    {/* Acciones */}
-                    <div className="flex items-center gap-1.5 self-end sm:self-auto sm:border-l sm:border-gray-200 sm:pl-4" onClick={(e) => e.stopPropagation()}>
-                      {sortMode ? (
-                        <div className="flex flex-col gap-1">
-                          <button
-                            onClick={() => moveTask(i, -1)}
-                            disabled={i === 0}
-                            className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors disabled:opacity-25 disabled:hover:bg-transparent disabled:cursor-not-allowed"
-                            title="Subir"
-                          >
-                            <ArrowUp size={16} />
-                          </button>
-                          <button
-                            onClick={() => moveTask(i, 1)}
-                            disabled={i === sessionTasks.length - 1}
-                            className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors disabled:opacity-25 disabled:hover:bg-transparent disabled:cursor-not-allowed"
-                            title="Bajar"
-                          >
-                            <ArrowDown size={16} />
-                          </button>
+
+                    {/* Columna Derecha: Previsualización de la Pizarra Táctica (Contenida por completo) */}
+                    <div className="w-40 sm:w-64 md:w-[350px] lg:w-[480px] h-32 sm:h-44 md:h-60 shrink-0 overflow-hidden relative rounded-xl border border-gray-200 bg-slate-900 flex items-center justify-center p-2 shadow-inner">
+                      {tInfo?.board_data ? (
+                        <div 
+                          className="relative"
+                          style={{
+                            aspectRatio: getFieldAspectRatio(tInfo.board_data),
+                            width: '100%',
+                            height: '100%',
+                            maxWidth: '100%',
+                            maxHeight: '100%'
+                          }}
+                        >
+                          <div className="absolute inset-0">
+                            <TaskBoardEditor value={tInfo.board_data} readOnly hideToolbar rotateFullField={true} />
+                          </div>
                         </div>
                       ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center text-xs text-gray-400 select-none">
+                          <ClipboardList className="w-8 h-8 mb-1.5 opacity-30" /> Sin dibujo táctico
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Acciones */}
+                    <div className="flex flex-row md:flex-col items-center justify-center gap-1.5 border-t md:border-t-0 md:border-l border-gray-100 pt-3 md:pt-0 md:pl-4 shrink-0" onClick={(e) => e.stopPropagation()}>
+                      {sortMode ? (
                         <>
-                          <button
-                            onClick={() => { if (tInfo) setTaskModal({ task: tInfo }); }}
-                            disabled={!tInfo}
-                            className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors disabled:opacity-30"
-                            title="Editar tarea"
-                          >
-                            <Edit2 size={16} />
-                          </button>
+                          <div className="flex flex-row md:flex-col gap-1">
+                            <button
+                              onClick={() => moveTask(i, -1)}
+                              disabled={i === 0}
+                              className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors disabled:opacity-25 disabled:hover:bg-transparent disabled:cursor-not-allowed"
+                              title="Subir"
+                            >
+                              <ArrowUp size={16} />
+                            </button>
+                            <button
+                              onClick={() => moveTask(i, 1)}
+                              disabled={i === sessionTasks.length - 1}
+                              className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors disabled:opacity-25 disabled:hover:bg-transparent disabled:cursor-not-allowed"
+                              title="Bajar"
+                            >
+                              <ArrowDown size={16} />
+                            </button>
+                          </div>
                           <button
                             onClick={() => setPendingRemove(st)}
                             className="p-2 text-gray-500 hover:text-red-500 hover:bg-red-500/10 rounded transition-colors"
-                            title="Quitar de la sesión"
+                            title="Quitar de la sesión (Borrar)"
                           >
                             <Trash2 size={16} />
                           </button>
                         </>
+                      ) : (
+                        <button
+                          onClick={() => { if (tInfo) setTaskModal({ task: tInfo }); }}
+                          disabled={!tInfo}
+                          className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors disabled:opacity-30"
+                          title="Editar tarea"
+                        >
+                          <Edit2 size={16} />
+                        </button>
                       )}
                     </div>
                   </div>

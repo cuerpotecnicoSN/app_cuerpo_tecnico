@@ -306,7 +306,7 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({ value, onChang
         rotation: 0,
         // El entrenador siempre gris, no hereda el color activo
         color: isCoach ? COACH_COLOR : activeColor,
-        scale: 0.75, // Default elements smaller
+        scale: 0.45, // Default elements smaller
         text: (activeTool === 'text' || activeTool.startsWith('shape-')) ? (activeTool === 'text' ? 'Texto' : '') : (isCoach ? (coachName.trim() || 'E') : undefined),
         filled: false,
         dashed: false
@@ -1740,7 +1740,7 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({ value, onChang
       )}
 
       {/* Main Canvas Area */}
-      <div ref={fitContainerRef} className={`flex-1 flex items-center justify-center relative ${printMode ? '' : 'bg-brand-black-card border border-brand-black-border rounded-xl shadow-inner p-2 sm:p-4'} overflow-hidden select-none`}>
+      <div ref={fitContainerRef} className={`flex-1 flex items-center justify-center relative ${printMode || readOnly ? '' : 'bg-brand-black-card border border-brand-black-border rounded-xl shadow-inner p-2 sm:p-4'} overflow-hidden select-none`}>
 
         {!readOnly && !printMode && (
           <div className="absolute top-2 left-2 z-20 pointer-events-none flex flex-col gap-1 items-start">
@@ -1756,8 +1756,8 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({ value, onChang
           style={{
             // Usamos el mismo cálculo (fittedW, fittedH) tanto para editor como impresión.
             aspectRatio: containerAspect,
-            width: fittedW ? `${fittedW}px` : '100%',
-            height: fittedW ? `${fittedH}px` : 'auto',
+            width: (readOnly || !fittedW) ? '100%' : `${fittedW}px`,
+            height: (readOnly || !fittedW) ? '100%' : `${fittedH}px`,
             maxWidth: '100%',
             maxHeight: '100%',
             containerType: 'normal'
