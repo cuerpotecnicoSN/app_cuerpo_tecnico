@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { X, Save, Dumbbell, Clock, AlignLeft, Layers } from 'lucide-react';
 import { TaskBoardEditor } from './TaskBoardEditor';
+import { TeamsAnnotationsBoard } from './TeamsAnnotationsBoard';
 import type { TaskLibraryItem } from '../types';
 
 interface TaskModalProps {
@@ -17,7 +18,22 @@ export function TaskModal({ isOpen, onClose, onSave, initialData }: TaskModalPro
   const [durationMin, setDurationMin] = useState<number | string>(initialData?.duration_min || 15);
   const [material, setMaterial] = useState(initialData?.material || '');
   const [boardData, setBoardData] = useState<string>(initialData?.board_data || '');
+  const [activeTab, setActiveTab] = useState<'drawing' | 'teams'>('drawing');
   const [isSaving, setIsSaving] = useState(false);
+
+  const handleBoardDataChange = (drawingData: string) => {
+    try {
+      const parsedDrawing = JSON.parse(drawingData);
+      const parsedCurrent = boardData ? JSON.parse(boardData) : {};
+      const merged = {
+        ...parsedCurrent,
+        ...parsedDrawing
+      };
+      setBoardData(JSON.stringify(merged));
+    } catch {
+      setBoardData(drawingData);
+    }
+  };
 
   // El modal no se desmonta al cerrarse, así que sincronizamos el formulario cada
   // vez que se abre: si no, al editar una tarea distinta (o crear una nueva
@@ -30,6 +46,7 @@ export function TaskModal({ isOpen, onClose, onSave, initialData }: TaskModalPro
     setDurationMin(initialData?.duration_min ?? 15);
     setMaterial(initialData?.material || '');
     setBoardData(initialData?.board_data || '');
+    setActiveTab('drawing');
     setIsSaving(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, initialData?.id]);
@@ -51,8 +68,9 @@ export function TaskModal({ isOpen, onClose, onSave, initialData }: TaskModalPro
         board_data: boardData,
       } as any);
       onClose();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error saving task:', err);
+      alert('Error al guardar la tarea: ' + (err.message || err.details || JSON.stringify(err)));
     } finally {
       setIsSaving(false);
     }
@@ -84,7 +102,7 @@ export function TaskModal({ isOpen, onClose, onSave, initialData }: TaskModalPro
         </div>
 
         {/* Formulario y Editor Táctico */}
-        <form onSubmit={handleSubmit} className="flex-1 flex flex-col md:flex-row overflow-hidden">
+        <form onSubmit={(e) => e.preventDefault()} className="flex-1 flex flex-col md:flex-row overflow-hidden">
           
           {/* Columna Izquierda: Datos de la tarea */}
           <div className="w-full md:w-56 lg:w-60 shrink-0 p-3 lg:p-4 border-b md:border-b-0 md:border-r border-gray-100 overflow-y-auto space-y-3 bg-gray-50/30">
@@ -164,17 +182,50 @@ export function TaskModal({ isOpen, onClose, onSave, initialData }: TaskModalPro
             </div>
           </div>
 
-          {/* Columna Derecha: Editor Táctico Interactivo */}
+          {/* Columna Derecha: Editor Táctico / Equipos */}
           <div className="flex-1 flex flex-col p-2 lg:p-3 bg-gray-50 overflow-hidden relative">
-            <div className="mb-1.5 hidden lg:flex items-center justify-between shrink-0">
-              <span className="text-[11px] font-bold text-gray-700 uppercase tracking-wider">Pizarra Táctica interactiva</span>
-              <span className="text-[11px] text-gray-500">Arrastra material, jugadores y dibuja líneas</span>
+            <div className="mb-3 flex items-center justify-between shrink-0">
+              <div className="flex gap-4">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('drawing')}
+                  className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-md active:scale-95 border-2 ${
+                    activeTab === 'drawing' 
+                      ? 'bg-blue-600 border-blue-700 text-white shadow-blue-500/20' 
+                      : 'bg-gray-200 border-gray-300 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  🎨 Pizarra Táctica
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('teams')}
+                  className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-md active:scale-95 border-2 ${
+                    activeTab === 'teams' 
+                      ? 'bg-blue-600 border-blue-700 text-white shadow-blue-500/20' 
+                      : 'bg-gray-200 border-gray-300 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  📋 Equipos / Anotaciones
+                </button>
+              </div>
+              <span className="text-[11px] text-gray-500 hidden sm:inline font-bold">
+                {activeTab === 'drawing' ? '🎨 Arrastra material, jugadores y dibuja líneas' : '📋 Organiza jugadores y escribe notas en columnas'}
+              </span>
             </div>
+            
             <div className="flex-1 rounded-xl overflow-hidden bg-white border border-gray-200 shadow-inner relative">
-              <TaskBoardEditor
-                value={boardData}
-                onChange={(data) => setBoardData(data)}
-              />
+              {activeTab === 'drawing' ? (
+                <TaskBoardEditor
+                  value={boardData}
+                  onChange={handleBoardDataChange}
+                />
+              ) : (
+                <TeamsAnnotationsBoard
+                  value={boardData}
+                  onChange={(newData) => setBoardData(newData)}
+                />
+              )}
             </div>
           </div>
 

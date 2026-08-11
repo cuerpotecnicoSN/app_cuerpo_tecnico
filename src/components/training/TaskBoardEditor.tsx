@@ -34,6 +34,7 @@ export interface BoardLine {
   color: string;
   thickness?: number;
   curve?: number;
+  dashed?: boolean;
 }
 
 interface TaskBoardEditorProps {
@@ -587,6 +588,11 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({ value, onChang
     setElements(elements.map(e => ids.includes(e.id) ? { ...e, text } : e));
   };
 
+  const updateElementColor = (ids: string[], color: string) => {
+    saveState();
+    setElements(elements.map(e => ids.includes(e.id) ? { ...e, color } : e));
+  };
+
   const duplicateElement = (ids: string[]) => {
     saveState();
     const elsToCopy = elements.filter(e => ids.includes(e.id));
@@ -658,20 +664,28 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({ value, onChang
         return;
       }
 
-      if (selectedElementIds.length === 0) return;
-
-      if (e.key === 'Delete' || e.key === 'Backspace') {
-        e.preventDefault();
-        removeElement(selectedElementIds);
-      } else if ((e.ctrlKey || e.metaKey) && (e.key === 'd' || e.key === 'D')) {
-        e.preventDefault();
-        duplicateElement(selectedElementIds);
+      if (selectedElementIds.length > 0) {
+        if (e.key === 'Delete' || e.key === 'Backspace') {
+          e.preventDefault();
+          removeElement(selectedElementIds);
+        } else if ((e.ctrlKey || e.metaKey) && (e.key === 'd' || e.key === 'D')) {
+          e.preventDefault();
+          duplicateElement(selectedElementIds);
+        }
+      } else if (selectedLineId) {
+        if (e.key === 'Delete' || e.key === 'Backspace') {
+          e.preventDefault();
+          removeLine(selectedLineId);
+        } else if ((e.ctrlKey || e.metaKey) && (e.key === 'd' || e.key === 'D')) {
+          e.preventDefault();
+          duplicateLine(selectedLineId);
+        }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedElementIds, elements]);
+  }, [selectedElementIds, selectedLineId, elements, lines]);
 
   // Modifiers - Lines
   const removeLine = (id: string) => {
@@ -689,6 +703,36 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({ value, onChang
 
   const updateLineThickness = (id: string, thickness: number) => {
     setLines(lines.map(l => l.id === id ? { ...l, thickness } : l));
+  };
+
+  const toggleLineDashed = (id: string) => {
+    saveState();
+    setLines(lines.map(l => {
+      if (l.id === id) {
+        const currentDashed = l.dashed !== undefined ? l.dashed : (l.type === 'dashed-arrow' || l.type === 'zone-line');
+        return { ...l, dashed: !currentDashed };
+      }
+      return l;
+    }));
+  };
+
+  const duplicateLine = (id: string) => {
+    saveState();
+    const lineToCopy = lines.find(l => l.id === id);
+    if (lineToCopy) {
+      const now = Date.now();
+      const newLine: BoardLine = {
+        ...lineToCopy,
+        id: `line-${now}`,
+        startX: Math.min(100, lineToCopy.startX + 5),
+        startY: Math.min(100, lineToCopy.startY + 5),
+        endX: Math.min(100, lineToCopy.endX + 5),
+        endY: Math.min(100, lineToCopy.endY + 5),
+      };
+      setLines([...lines, newLine]);
+      setSelectedLineId(newLine.id);
+      setSelectedElementIds([]);
+    }
   };
 
   const hexToRgba = (hex: string, alpha: number) => {
@@ -870,7 +914,7 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({ value, onChang
           <div className="relative flex items-center justify-center" style={{ width: px(28), height: px(28) }}>
             <div className="z-10 relative" style={{
               width: px(18), height: px(18), borderRadius: '50%',
-              backgroundColor: getPrintColor(COACH_COLOR),
+              backgroundColor: getPrintColor(el.color || COACH_COLOR),
               border: `${px(2)} solid #000`,
               boxShadow: printMode ? 'none' : '1px 1px 3px rgba(0,0,0,0.4)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -885,7 +929,7 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({ value, onChang
                 position: 'absolute', top: '100%', left: '50%', transform: 'translate(-50%, 0)',
                 marginTop: px(1),
                 backgroundColor: printMode ? 'transparent' : 'rgba(255,255,255,0.9)',
-                border: printMode ? 'none' : `${px(1)} solid ${getPrintColor(COACH_COLOR)}`,
+                border: printMode ? 'none' : `${px(1)} solid ${getPrintColor(el.color || COACH_COLOR)}`,
                 borderRadius: px(4),
                 padding: `0 ${px(3)}`,
                 color: '#1f2937', fontWeight: 700, fontSize: px(8),
@@ -1200,10 +1244,13 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({ value, onChang
           let filter = isSelected ? 'drop-shadow(0 0 3px red)' : 'drop-shadow(1px 2px 2px rgba(0,0,0,0.5))';
           if (printMode) filter = 'none'; // html2canvas drops shadows badly
 
-          if (line.type === 'dashed-arrow') {
-            strokeDasharray = "1.5, 1.5";
-          } else if (line.type === 'zone-line') {
-            strokeDasharray = "3, 2";
+          const isLineDashed = line.dashed !== undefined ? line.dashed : (line.type === 'dashed-arrow' || line.type === 'zone-line');
+
+          if (isLineDashed) {
+            strokeDasharray = line.type === 'zone-line' ? "3, 2" : "1.5, 1.5";
+          }
+
+          if (line.type === 'zone-line') {
             strokeWidth = (line.thickness || 1) * 0.8; 
             filter = 'none'; 
             markerEnd = 'none'; // Las zonas no llevan flecha por defecto
@@ -1337,20 +1384,24 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({ value, onChang
     const cropHeight = cropBox.maxY - cropBox.minY;
     const isRotated = (rotateFullField && fieldType === 'full') || fieldType === 'full-horizontal';
     
-    let containerAspect = (fieldType === 'full' || fieldType === 'full-horizontal') ? '68 / 105' : fieldType === 'half' || fieldType === 'half-top' ? '136 / 105' : '1 / 1';
-    if (isRotated) containerAspect = '105 / 68';
+    let containerAspect = (fieldType === 'full') 
+      ? '68 / 105' 
+      : (fieldType === 'half' || fieldType === 'half-top' || fieldType === 'blank')
+        ? '16 / 9'
+        : '105 / 68'; // For full-horizontal
+    if (isRotated && fieldType === 'full') containerAspect = '105 / 68';
     if (isCropped) containerAspect = `${cropWidth} / ${cropHeight}`;
 
     // Relación ancho/alto numérica del campo, para el ajuste "contain" en pantalla.
-    const aspectRatioNum = isRotated
+    const aspectRatioNum = (isRotated && fieldType === 'full')
       ? 105 / 68
       : isCropped
         ? cropWidth / cropHeight
         : (fieldType === 'full')
           ? 68 / 105
-          : (fieldType === 'half' || fieldType === 'half-top')
-            ? 136 / 105
-            : 1;
+          : (fieldType === 'half' || fieldType === 'half-top' || fieldType === 'blank')
+            ? 16 / 9
+            : 105 / 68; // For full-horizontal
 
     // Calcular el tamaño del campo que cabe entero dentro del espacio disponible,
     // conservando la proporción. Así el campo nunca se recorta ni se amplía, y la
@@ -1732,7 +1783,7 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({ value, onChang
           ) : isCropped ? (
              <div style={{
                 width: `${(100 / cropWidth) * 100}%`,
-                aspectRatio: '1 / 1', /* isCropped implies fieldType === 'blank' */
+                aspectRatio: '16 / 9', /* isCropped implies fieldType === 'blank' */
                 left: `${-(cropBox.minX / cropWidth) * 100}%`,
                 top: `${-(cropBox.minY / cropHeight) * 100}%`,
                 position: 'absolute',
@@ -1746,7 +1797,7 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({ value, onChang
           ) : (
              <div style={{ 
                 width: '100%', 
-                aspectRatio: fieldType === 'full' ? '68 / 105' : fieldType === 'half' || fieldType === 'half-top' ? '136 / 105' : '1 / 1', 
+                aspectRatio: fieldType === 'full' ? '68 / 105' : (fieldType === 'half' || fieldType === 'half-top' || fieldType === 'blank') ? '16 / 9' : '105 / 68', 
                 position: 'relative', 
                 containerType: 'inline-size' 
              }}>
@@ -1790,6 +1841,19 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({ value, onChang
                     {savedCoachNames.map((n) => <option key={n} value={n} />)}
                   </datalist>
                 )}
+                
+                {/* Controles de Color de Elemento */}
+                <div className="flex gap-1.5 items-center px-1">
+                   {['#16a34a', '#ef4444', '#3b82f6', '#f59e0b', '#000000', '#6b7280'].map(c => (
+                     <button 
+                        key={c}
+                        onClick={() => updateElementColor(selectedElementIds, c)}
+                        className={`w-4 h-4 rounded-full border-2 ${selectedElement.color === c ? 'border-brand-red-600 scale-125' : 'border-gray-500'}`}
+                        style={{ backgroundColor: c }}
+                     />
+                   ))}
+                </div>
+
                 <div className="w-px h-6 bg-brand-black-border mx-1" />
               </>
             ) : null}
@@ -1938,6 +2002,28 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({ value, onChang
                  />
                ))}
             </div>
+
+            {/* Alternar Discontinua / Continua */}
+            <button
+              onClick={() => toggleLineDashed(selectedLineId)}
+              className={`p-2 rounded-lg transition-colors font-bold text-xs flex items-center justify-center w-8 ${
+                (selectedLine.dashed !== undefined ? selectedLine.dashed : (selectedLine.type === 'dashed-arrow' || selectedLine.type === 'zone-line'))
+                  ? 'bg-brand-red-600 text-white'
+                  : 'text-brand-gray-light hover:text-white hover:bg-brand-black-hover'
+              }`}
+              title="Alternar discontinua/continua"
+            >
+              <div className="w-4 border-t-2 border-dashed border-current" />
+            </button>
+
+            {/* Duplicar Línea */}
+            <button
+              onClick={() => duplicateLine(selectedLineId)}
+              className="p-2 text-brand-gray-light hover:text-white hover:bg-brand-black-hover rounded-lg transition-colors flex items-center justify-center"
+              title="Duplicar Línea"
+            >
+              <Copy className="w-4 h-4" />
+            </button>
 
             <div className="w-px h-6 bg-brand-black-border mx-1" />
 

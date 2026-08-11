@@ -21,15 +21,50 @@ interface SessionFormModalProps {
   onClose: () => void;
   onSave: (session: Omit<TrainingSessionDB, 'id' | 'created_at' | 'season_id'>) => Promise<void>;
   initialData?: TrainingSessionDB;
+  suggestedTitle?: string;
 }
 
-export function SessionFormModal({ isOpen, onClose, onSave, initialData }: SessionFormModalProps) {
+export function SessionFormModal({ isOpen, onClose, onSave, initialData, suggestedTitle }: SessionFormModalProps) {
   const { t } = useTranslation();
-  const [title, setTitle] = useState(initialData?.title || '');
+  const [title, setTitle] = useState(initialData?.title || suggestedTitle || '');
   const [date, setDate] = useState(initialData?.date || '');
   const [time, setTime] = useState(initialData?.time || '');
   const [objective, setObjective] = useState(initialData?.objective || '');
   const [location, setLocation] = useState(initialData?.location || '');
+  
+  // Helper to parse notes JSON
+  const parseNotes = (rawNotes?: string) => {
+    if (!rawNotes) return { structure: '', observations: '' };
+    try {
+      const parsed = JSON.parse(rawNotes);
+      if (parsed && typeof parsed === 'object') {
+        return {
+          structure: parsed.structure || '',
+          observations: parsed.observations || parsed.notes || ''
+        };
+      }
+    } catch {
+      return { structure: '', observations: rawNotes };
+    }
+    return { structure: '', observations: '' };
+  };
+
+  const parsedNotes = parseNotes(initialData?.notes);
+  const [structure, setStructure] = useState(parsedNotes.structure);
+  const [observations, setObservations] = useState(parsedNotes.observations);
+
+  useEffect(() => {
+    if (isOpen) {
+      setTitle(initialData?.title || suggestedTitle || '');
+      setDate(initialData?.date || '');
+      setTime(initialData?.time || '');
+      setObjective(initialData?.objective || '');
+      setLocation(initialData?.location || '');
+      const p = parseNotes(initialData?.notes);
+      setStructure(p.structure);
+      setObservations(p.observations);
+    }
+  }, [isOpen, initialData, suggestedTitle]);
   
   const [mapCoordinates, setMapCoordinates] = useState<{lat: string, lon: string} | null>(null);
   const [isSearchingMap, setIsSearchingMap] = useState(false);
@@ -80,7 +115,11 @@ export function SessionFormModal({ isOpen, onClose, onSave, initialData }: Sessi
         date,
         time: time || undefined,
         objective: objective.trim(),
-        location: location.trim()
+        location: location.trim(),
+        notes: JSON.stringify({
+          structure: structure.trim(),
+          observations: observations.trim()
+        })
       });
       onClose();
     } catch (err) {
@@ -208,8 +247,36 @@ export function SessionFormModal({ isOpen, onClose, onSave, initialData }: Sessi
                   value={objective}
                   onChange={(e) => setObjective(e.target.value)}
                   placeholder="Ej. Mejora de la salida de balón..."
-                  rows={4}
-                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-gray-50 hover:bg-white focus:bg-white resize-none"
+                  rows={2}
+                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-gray-50 hover:bg-white focus:bg-white resize-none text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-1.5">
+                  <AlignLeft size={16} className="text-indigo-500" />
+                  Estructura del entrenamiento <span className="text-gray-400 font-normal text-xs">(Opcional)</span>
+                </label>
+                <textarea 
+                  value={structure}
+                  onChange={(e) => setStructure(e.target.value)}
+                  placeholder="Ej. Calentamiento (15 min) -> Rondo (20 min) -> Posesión (30 min)..."
+                  rows={2}
+                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-gray-50 hover:bg-white focus:bg-white resize-none text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-1.5">
+                  <AlignLeft size={16} className="text-amber-500" />
+                  Observaciones <span className="text-gray-400 font-normal text-xs">(Opcional)</span>
+                </label>
+                <textarea 
+                  value={observations}
+                  onChange={(e) => setObservations(e.target.value)}
+                  placeholder="Observaciones adicionales de la sesión..."
+                  rows={2}
+                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-gray-50 hover:bg-white focus:bg-white resize-none text-sm"
                 />
               </div>
             </div>

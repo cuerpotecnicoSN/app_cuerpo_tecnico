@@ -159,6 +159,7 @@ function SessionsList({ sessions, onCreate, onOpen, onDelete }: { sessions: Trai
         onClose={() => { setShowForm(false); setEditingSession(undefined); }} 
         onSave={handleSave}
         initialData={editingSession}
+        suggestedTitle={`Entrenamiento ${sessions.length + 1}`}
       />
       {sessions.length === 0 && <p className="text-sm text-gray-400">{t('trainingPage.noSessions')}</p>}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -220,6 +221,33 @@ function SessionsList({ sessions, onCreate, onOpen, onDelete }: { sessions: Trai
                   <p className="text-base text-gray-500 font-medium line-clamp-2 leading-snug">{s.objective}</p>
                 </div>
               )}
+
+              {(() => {
+                const parseNotes = (rawNotes?: string) => {
+                  if (!rawNotes) return { structure: '', observations: '' };
+                  try {
+                    const parsed = JSON.parse(rawNotes);
+                    if (parsed && typeof parsed === 'object') {
+                      return {
+                        structure: parsed.structure || '',
+                        observations: parsed.observations || parsed.notes || ''
+                      };
+                    }
+                  } catch {
+                    return { structure: '', observations: rawNotes };
+                  }
+                  return { structure: '', observations: '' };
+                };
+                const { structure, observations } = parseNotes(s.notes);
+                return (
+                  (structure || observations) && (
+                    <div className="mt-3 flex flex-wrap gap-2 text-xs text-gray-400 font-bold">
+                      {structure && <span className="bg-indigo-50 text-indigo-600 border border-indigo-100 px-2 py-0.5 rounded flex items-center gap-1">📋 Estructura</span>}
+                      {observations && <span className="bg-amber-50 text-amber-600 border border-amber-100 px-2 py-0.5 rounded flex items-center gap-1">✍️ Observaciones</span>}
+                    </div>
+                  )
+                );
+              })()}
             </div>
           </div>
         ))}
@@ -340,6 +368,58 @@ function SessionEditor({ session, tasks, onBack, onTasksChange }: { session: Tra
 
   const getTaskDetails = (id: string | null) => tasks.find((t) => t.id === id);
 
+  const getBoardPreview = (boardDataStr?: string) => {
+    if (!boardDataStr) return null;
+    try {
+      const parsed = JSON.parse(boardDataStr);
+      
+      // If it is a teams and annotations layout
+      if (parsed.teamsBoard && Array.isArray(parsed.teamsBoard.items) && parsed.teamsBoard.items.length > 0) {
+        const items = parsed.teamsBoard.items;
+        const config = parsed.teamsBoard.columnsConfig;
+        
+        if (config && config.count > 0) {
+          const names = config.names || [];
+          return (
+            <div className="w-28 h-20 bg-slate-900 border border-slate-800 rounded-lg p-1.5 flex flex-col justify-between overflow-hidden text-[8px] text-slate-400 select-none shrink-0">
+              <span className="font-bold text-[7px] text-slate-500 uppercase">📋 Equipos</span>
+              <div className="flex gap-1 overflow-hidden flex-1 items-start mt-1">
+                {Array.from({ length: config.count }).map((_, colIdx) => {
+                  const colColor = config.colors?.[colIdx] || '#3b82f6';
+                  const colName = names[colIdx] || `Eq ${colIdx + 1}`;
+                  return (
+                    <div key={colIdx} className="flex-1 flex flex-col items-center gap-0.5 border border-dashed rounded p-0.5 truncate" style={{ borderColor: `${colColor}30` }}>
+                      <span className="font-black text-[6px] truncate w-full text-center" style={{ color: colColor }}>{colName}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        }
+        return (
+          <div className="w-28 h-20 bg-slate-900 border border-slate-800 rounded-lg p-1.5 flex flex-col justify-between overflow-hidden text-[8px] text-slate-400 select-none shrink-0">
+            <span className="font-bold text-[7px] text-slate-500 uppercase">📋 Notas</span>
+            <div className="flex flex-wrap gap-0.5 overflow-hidden mt-1">
+              {items.slice(0, 3).map((it: any) => (
+                <span key={it.id} className="px-1 py-0.5 rounded truncate max-w-full text-[6px]" style={{ backgroundColor: `${it.color}20`, color: it.color }}>
+                  {it.text}
+                </span>
+              ))}
+            </div>
+          </div>
+        );
+      }
+    } catch {}
+    
+    // Default fallback to Tactical canvas editor
+    return (
+      <div className="w-28 h-20 bg-slate-900 border border-slate-700/30 rounded-lg overflow-hidden shrink-0 relative shadow-sm">
+        <TaskBoardEditor value={boardDataStr} readOnly hideToolbar rotateFullField={true} />
+      </div>
+    );
+  };
+
   const handleAdd = async (taskId: string) => {
     if (!taskId) return;
     await addSessionTask({ session_id: session.id, task_id: taskId, order: sessionTasks.length });
@@ -433,28 +513,78 @@ function SessionEditor({ session, tasks, onBack, onTasksChange }: { session: Tra
         </div>
 
         {/* Resumen de la Sesión */}
-        <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 flex flex-col gap-4">
-          <div className="flex items-center gap-2">
-            <img src="/escudo.png" alt="Escudo" className="w-6 h-6 object-contain" />
-            <h2 className="text-base font-bold text-gray-900">{session.title}</h2>
-          </div>
-          
-          <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-gray-600">
-            <span className="bg-white border border-gray-200 px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 text-gray-700">
-              📅 {new Date(session.date).toLocaleDateString()} {session.time ? `- ${session.time}` : ''}
-            </span>
-            {session.location && (
-              <span className="bg-white border border-gray-200 px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 text-gray-700">
-                📍 {session.location}
+        <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 flex flex-col gap-4">
+          <div className="flex justify-between items-start flex-wrap gap-4">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <img src="/escudo.png" alt="Escudo" className="w-6 h-6 object-contain" />
+                <h2 className="text-xl font-black text-gray-900 uppercase tracking-tight">{session.title}</h2>
+              </div>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-5">
+                <span className="text-base font-extrabold text-blue-700 flex items-center gap-1.5">
+                  📅 {new Date(session.date).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} {session.time ? `| ⏱ ${session.time}` : ''}
+                </span>
+                {session.location && (
+                  <span className="text-base font-extrabold text-gray-700 flex items-center gap-1.5">
+                    📍 {session.location}
+                  </span>
+                )}
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="bg-white border border-gray-200 px-3 py-1.5 rounded-xl text-xs font-bold text-gray-700 shadow-sm">
+                👥 Asistentes (0 POR / 0 JUG)
               </span>
-            )}
-            <span className="bg-white border border-gray-200 px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 text-gray-700">
-              👥 Asistentes (0 POR / 0 JUG)
-            </span>
-            <span className="bg-green-500/10 text-green-500 border border-green-500/20 px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 font-bold">
-              ⏱ Tareas: {sessionTasks.length}
-            </span>
+              <span className="bg-green-100 text-green-700 border border-green-200 px-3 py-1.5 rounded-xl text-xs font-bold shadow-sm">
+                ⏱ Tareas: {sessionTasks.length}
+              </span>
+            </div>
           </div>
+
+          {/* Estructura del entrenamiento y Observaciones */}
+          {(() => {
+            const parseNotes = (rawNotes?: string) => {
+              if (!rawNotes) return { structure: '', observations: '' };
+              try {
+                const parsed = JSON.parse(rawNotes);
+                if (parsed && typeof parsed === 'object') {
+                  return {
+                    structure: parsed.structure || '',
+                    observations: parsed.observations || parsed.notes || ''
+                  };
+                }
+              } catch {
+                return { structure: '', observations: rawNotes };
+              }
+              return { structure: '', observations: '' };
+            };
+            const { structure, observations } = parseNotes(session.notes);
+            return (
+              (structure || observations || session.objective) && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2 pt-3 border-t border-gray-200/60">
+                  {session.objective && (
+                    <div className="bg-white border border-gray-200 rounded-xl p-3 shadow-sm">
+                      <h4 className="text-xs font-bold text-purple-600 uppercase mb-1 flex items-center gap-1">🎯 Objetivo</h4>
+                      <p className="text-xs font-medium text-gray-700 whitespace-pre-wrap leading-relaxed">{session.objective}</p>
+                    </div>
+                  )}
+                  {structure && (
+                    <div className="bg-white border border-gray-200 rounded-xl p-3 shadow-sm">
+                      <h4 className="text-xs font-bold text-indigo-600 uppercase mb-1 flex items-center gap-1">📋 Estructura</h4>
+                      <p className="text-xs font-medium text-gray-700 whitespace-pre-wrap leading-relaxed">{structure}</p>
+                    </div>
+                  )}
+                  {observations && (
+                    <div className="bg-white border border-gray-200 rounded-xl p-3 shadow-sm">
+                      <h4 className="text-xs font-bold text-amber-600 uppercase mb-1 flex items-center gap-1">✍️ Observaciones</h4>
+                      <p className="text-xs font-medium text-gray-700 whitespace-pre-wrap leading-relaxed">{observations}</p>
+                    </div>
+                  )}
+                </div>
+              )
+            );
+          })()}
 
           {/* Barra de Controles Inferior del Resumen */}
           <div className="flex flex-col sm:flex-row items-center gap-3 pt-3 border-t border-gray-200">
@@ -632,33 +762,68 @@ function SessionEditor({ session, tasks, onBack, onTasksChange }: { session: Tra
       />
 
       {/* Modal Librería Simple */}
-      {isLibraryModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsLibraryModalOpen(false)} />
-          <div className="relative bg-white border border-gray-200 rounded-xl w-full max-w-3xl max-h-[80vh] flex flex-col shadow-2xl">
-            <div className="flex justify-between items-center p-5 border-b border-gray-200">
-              <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                <FolderSearch className="text-red-600" size={20} /> Librería de Tareas
-              </h2>
-              <button onClick={() => setIsLibraryModalOpen(false)} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-5 space-y-3 no-scrollbar">
-              {tasks.length === 0 ? <p className="text-gray-500 text-sm">No hay tareas en la librería.</p> : null}
-              {tasks.map(tk => (
-                <div key={tk.id} className="bg-gray-50 border border-gray-200 p-4 rounded-lg flex justify-between items-center hover:border-gray-300 transition-colors">
-                  <div>
-                    <h3 className="text-sm font-bold text-gray-900">{tk.title}</h3>
-                    <p className="text-xs text-gray-500 mt-1">{tk.category} {tk.duration_min ? `| ${tk.duration_min} min` : ''}</p>
-                  </div>
-                  <button onClick={() => handleAdd(tk.id)} className="text-xs font-bold bg-red-50 text-red-600 hover:bg-red-600 hover:text-white px-3 py-1.5 rounded transition-colors">
-                    Añadir a Sesión
-                  </button>
-                </div>
-              ))}
+      {isLibraryModalOpen && (() => {
+        // Group tasks by category
+        const groupedTasks = tasks.reduce((acc, tk) => {
+          const cat = tk.category || 'Otros';
+          if (!acc[cat]) acc[cat] = [];
+          acc[cat].push(tk);
+          return acc;
+        }, {} as Record<string, typeof tasks>);
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsLibraryModalOpen(false)} />
+            <div className="relative bg-white border border-gray-200 rounded-xl w-full max-w-3xl max-h-[80vh] flex flex-col shadow-2xl">
+              <div className="flex justify-between items-center p-5 border-b border-gray-200">
+                <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                  <FolderSearch className="text-red-600" size={20} /> Librería de Tareas
+                </h2>
+                <button onClick={() => setIsLibraryModalOpen(false)} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-5 space-y-6 no-scrollbar">
+                {tasks.length === 0 ? (
+                  <p className="text-gray-500 text-sm">No hay tareas en la librería.</p>
+                ) : (
+                  Object.keys(groupedTasks).sort().map(cat => (
+                    <div key={cat} className="space-y-3">
+                      <h3 className="text-xs font-black uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-1.5 flex items-center gap-1.5 select-none">
+                        📁 {cat} <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full text-[9px] font-black">{groupedTasks[cat].length}</span>
+                      </h3>
+                      <div className="grid gap-3">
+                        {groupedTasks[cat].map(tk => (
+                          <div key={tk.id} className="bg-gray-55 border border-gray-200 p-4 rounded-xl flex gap-4 items-center justify-between hover:border-blue-500/30 hover:bg-blue-50/5 transition-all">
+                            <div className="flex-1 min-w-0">
+                              <h3 className="text-sm font-bold text-gray-900">{tk.title}</h3>
+                              <p className="text-xs text-gray-500 mt-1 line-clamp-1">
+                                {tk.duration_min ? `⏱️ ${tk.duration_min} min` : ''} 
+                                {tk.material ? ` • 🎒 ${tk.material}` : ''}
+                              </p>
+                              {tk.description && (
+                                <p className="text-[11px] text-gray-400 mt-1 line-clamp-1 italic">{tk.description}</p>
+                              )}
+                            </div>
+                            
+                            {/* Tactical / Teams Board Preview */}
+                            {getBoardPreview(tk.board_data)}
+
+                            <button 
+                              onClick={() => handleAdd(tk.id)} 
+                              className="text-xs font-black bg-red-50 text-red-600 hover:bg-red-600 hover:text-white px-3 py-2 rounded-xl transition-all shadow-sm active:scale-95 shrink-0"
+                            >
+                              Añadir
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }
