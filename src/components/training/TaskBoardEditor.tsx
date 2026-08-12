@@ -450,6 +450,19 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({ value, onChang
           
         if (selectedIds.length > 0) {
           setSelectedElementIds(selectedIds);
+          setSelectedLineId(null);
+        } else {
+          // If no elements are selected, check if a line is within the box
+          const foundLine = lines.find(l => 
+            Math.min(l.startX, l.endX) >= minX && Math.max(l.startX, l.endX) <= maxX &&
+            Math.min(l.startY, l.endY) >= minY && Math.max(l.startY, l.endY) <= maxY
+          );
+          if (foundLine) {
+            setSelectedLineId(foundLine.id);
+            setSelectedElementIds([]);
+          } else {
+            setSelectedLineId(null);
+          }
         }
         setSelectionBox(null);
       }
@@ -1445,7 +1458,7 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({ value, onChang
   };
 
   return (
-    <div className={`flex flex-row gap-2 sm:gap-4 h-full min-h-[300px] lg:min-h-[500px] ${printMode ? 'w-full !h-full !min-h-0' : ''}`}>
+    <div className={`flex flex-row gap-2 sm:gap-4 h-full ${readOnly || printMode || hideToolbar ? 'w-full !h-full !min-h-0' : 'min-h-[300px] lg:min-h-[500px]'}`}>
 
       {/* Sidebar Tools: franja lateral estrecha en móvil/tablet, panel ancho en escritorio */}
       {!hideToolbar && (
@@ -1812,15 +1825,15 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({ value, onChang
 
         {/* Selected Element Controls */}
         {hasSelection && (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-brand-black/95 backdrop-blur-md border border-brand-black-border rounded-xl p-2 flex items-center gap-1 shadow-[0_10px_30px_rgba(0,0,0,0.8)] animate-fade-in z-50">
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-slate-900/95 backdrop-blur-md border border-slate-700 rounded-xl p-2 flex items-center gap-1 shadow-[0_10px_30px_rgba(0,0,0,0.8)] animate-fade-in z-50 text-white">
 
             {/* Contador cuando hay varios seleccionados */}
             {selectedElementIds.length > 1 && (
               <>
-                <span className="px-2 py-1 text-xs font-bold text-white bg-brand-red-600 rounded-lg whitespace-nowrap">
+                <span className="px-2 py-1 text-xs font-bold text-white bg-red-600 rounded-lg whitespace-nowrap">
                   {selectedElementIds.length} elementos
                 </span>
-                <div className="w-px h-6 bg-brand-black-border mx-1" />
+                <div className="w-px h-6 bg-slate-700 mx-1" />
               </>
             )}
 
@@ -1833,7 +1846,7 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({ value, onChang
                   value={selectedElement.text || ''}
                   onChange={(e) => updateElementText(selectedElementIds, e.target.value)}
                   onBlur={() => { if (selectedElement.type === 'coach') rememberCoachName(selectedElement.text || ''); }}
-                  className={`bg-black/50 border border-brand-black-border rounded px-2 py-1 text-sm text-white outline-none focus:border-brand-red-600 ${selectedElement.type === 'coach' ? 'w-36' : 'w-24'}`}
+                  className={`bg-black/50 border border-slate-700 rounded px-2 py-1 text-sm text-white outline-none focus:border-red-600 ${selectedElement.type === 'coach' ? 'w-36' : 'w-24'}`}
                   placeholder={selectedElement.type === 'coach' ? 'Nombre...' : 'Texto...'}
                 />
                 {selectedElement.type === 'coach' && (
@@ -1845,16 +1858,16 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({ value, onChang
                 {/* Controles de Color de Elemento */}
                 <div className="flex gap-1.5 items-center px-1">
                    {['#16a34a', '#ef4444', '#3b82f6', '#f59e0b', '#000000', '#6b7280'].map(c => (
-                     <button 
-                        key={c}
-                        onClick={() => updateElementColor(selectedElementIds, c)}
-                        className={`w-4 h-4 rounded-full border-2 ${selectedElement.color === c ? 'border-brand-red-600 scale-125' : 'border-gray-500'}`}
-                        style={{ backgroundColor: c }}
-                     />
+                      <button 
+                         key={c}
+                         onClick={() => updateElementColor(selectedElementIds, c)}
+                         className={`w-4 h-4 rounded-full border-2 ${selectedElement.color === c ? 'border-red-600 scale-125' : 'border-gray-500'}`}
+                         style={{ backgroundColor: c }}
+                      />
                    ))}
                 </div>
 
-                <div className="w-px h-6 bg-brand-black-border mx-1" />
+                <div className="w-px h-6 bg-slate-700 mx-1" />
               </>
             ) : null}
 
@@ -1863,31 +1876,31 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({ value, onChang
               <>
                 <button
                   onClick={() => toggleAbpMarking(selectedElementIds, selectedElement.abp_marking === 'Z' ? '' : 'Z')}
-                  className={`px-2 py-1 text-xs font-bold rounded transition-colors ${selectedElement.abp_marking === 'Z' ? 'bg-blue-500 text-white' : 'text-brand-gray-light hover:bg-brand-black-hover'}`}
+                  className={`px-2 py-1 text-xs font-bold rounded transition-colors ${selectedElement.abp_marking === 'Z' ? 'bg-blue-500 text-white' : 'text-slate-200 hover:bg-slate-800'}`}
                   title="Marcar en Zona"
                 >
                   Z
                 </button>
                 <button
                   onClick={() => toggleAbpMarking(selectedElementIds, selectedElement.abp_marking === 'H' ? '' : 'H')}
-                  className={`px-2 py-1 text-xs font-bold rounded transition-colors ${selectedElement.abp_marking === 'H' ? 'bg-red-500 text-white' : 'text-brand-gray-light hover:bg-brand-black-hover'}`}
+                  className={`px-2 py-1 text-xs font-bold rounded transition-colors ${selectedElement.abp_marking === 'H' ? 'bg-red-500 text-white' : 'text-slate-200 hover:bg-slate-800'}`}
                   title="Marcar al Hombre"
                 >
                   H
                 </button>
-                <div className="w-px h-6 bg-brand-black-border mx-1" />
+                <div className="w-px h-6 bg-slate-700 mx-1" />
               </>
             )}
 
             {/* Rotar */}
             <>
-              <button onClick={() => rotateElement(selectedElementIds, -15)} className="p-2 text-brand-gray-light hover:text-white hover:bg-brand-black-hover rounded-lg transition-colors" title="Rotar Izquierda">
+              <button onClick={() => rotateElement(selectedElementIds, -15)} className="p-2 text-slate-200 hover:text-white hover:bg-slate-800 rounded-lg transition-colors" title="Rotar Izquierda">
                 <RotateCw className="w-4 h-4 -scale-x-100" />
               </button>
-              <button onClick={() => rotateElement(selectedElementIds, 15)} className="p-2 text-brand-gray-light hover:text-white hover:bg-brand-black-hover rounded-lg transition-colors" title="Rotar Derecha">
+              <button onClick={() => rotateElement(selectedElementIds, 15)} className="p-2 text-slate-200 hover:text-white hover:bg-slate-800 rounded-lg transition-colors" title="Rotar Derecha">
                 <RotateCw className="w-4 h-4" />
               </button>
-              <div className="w-px h-6 bg-brand-black-border mx-1" />
+              <div className="w-px h-6 bg-slate-700 mx-1" />
             </>
 
             {/* Toggle Fill and Dashed solo para una forma única */}
@@ -1895,22 +1908,22 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({ value, onChang
               <>
                 <button
                   onClick={() => toggleElementFill(selectedElementIds)}
-                  className={`p-2 rounded-lg transition-colors font-bold text-xs flex items-center justify-center w-8 ${selectedElement.filled ? 'bg-brand-red-600 text-white' : 'text-brand-gray-light hover:text-white hover:bg-brand-black-hover'}`}
+                  className={`p-2 rounded-lg transition-colors font-bold text-xs flex items-center justify-center w-8 ${selectedElement.filled ? 'bg-red-600 text-white' : 'text-slate-200 hover:text-white hover:bg-slate-800'}`}
                   title="Alternar Relleno"
                 >
                   <div className={`w-3 h-3 border border-current ${selectedElement.filled ? 'bg-current' : 'bg-transparent'} ${selectedElement.type === 'shape-circle' ? 'rounded-full' : ''}`} />
                 </button>
                 <button
                   onClick={() => toggleElementDashed(selectedElementIds)}
-                  className={`p-2 rounded-lg transition-colors font-bold text-xs flex items-center justify-center w-8 ${selectedElement.dashed ? 'bg-brand-red-600 text-white' : 'text-brand-gray-light hover:text-white hover:bg-brand-black-hover'}`}
+                  className={`p-2 rounded-lg transition-colors font-bold text-xs flex items-center justify-center w-8 ${selectedElement.dashed ? 'bg-red-600 text-white' : 'text-slate-200 hover:text-white hover:bg-slate-800'}`}
                   title="Línea Discontinua"
                 >
                   <div className="w-4 border-t-2 border-dashed border-current" />
                 </button>
-                <div className="w-px h-6 bg-brand-black-border mx-1" />
+                <div className="w-px h-6 bg-slate-700 mx-1" />
                 
-                <div className="flex items-center gap-2 bg-black/50 rounded-lg border border-brand-black-border px-3 py-1.5 w-32">
-                  <span className="text-[10px] font-bold text-brand-gray-muted">Grosor</span>
+                <div className="flex items-center gap-2 bg-black/50 rounded-lg border border-slate-700 px-3 py-1.5 w-32">
+                  <span className="text-[10px] font-bold text-slate-400">Grosor</span>
                   <input 
                     type="range" 
                     min="1" 
@@ -1920,25 +1933,25 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({ value, onChang
                     className="w-full h-1 bg-gray-600 rounded-lg cursor-pointer accent-blue-500"
                   />
                 </div>
-                <div className="w-px h-6 bg-brand-black-border mx-1" />
+                <div className="w-px h-6 bg-slate-700 mx-1" />
               </>
             )}
 
-            <button onClick={() => scaleElement(selectedElementIds, 0.2)} className="p-2 text-brand-gray-light hover:text-white hover:bg-brand-black-hover rounded-lg transition-colors font-bold text-lg flex items-center justify-center w-8" title="Aumentar">
+            <button onClick={() => scaleElement(selectedElementIds, 0.2)} className="p-2 text-slate-200 hover:text-white hover:bg-slate-800 rounded-lg transition-colors font-bold text-lg flex items-center justify-center w-8" title="Aumentar">
               +
             </button>
-            <button onClick={() => scaleElement(selectedElementIds, -0.2)} className="p-2 text-brand-gray-light hover:text-white hover:bg-brand-black-hover rounded-lg transition-colors font-bold text-lg flex items-center justify-center w-8" title="Reducir">
+            <button onClick={() => scaleElement(selectedElementIds, -0.2)} className="p-2 text-slate-200 hover:text-white hover:bg-slate-800 rounded-lg transition-colors font-bold text-lg flex items-center justify-center w-8" title="Reducir">
               −
             </button>
             
             {/* Duplicar Elemento */}
-            <div className="w-px h-6 bg-brand-black-border mx-1" />
-            <button onClick={() => duplicateElement(selectedElementIds)} className="p-2 text-brand-gray-light hover:text-white hover:bg-brand-black-hover rounded-lg transition-colors" title="Duplicar">
+            <div className="w-px h-6 bg-slate-700 mx-1" />
+            <button onClick={() => duplicateElement(selectedElementIds)} className="p-2 text-slate-200 hover:text-white hover:bg-slate-800 rounded-lg transition-colors" title="Duplicar">
               <Copy className="w-4 h-4" />
             </button>
 
             {/* Secuencia */}
-            <button onClick={() => duplicateElementSequence(selectedElementIds)} className="p-2 text-brand-gray-light hover:text-white hover:bg-brand-black-hover rounded-lg transition-colors flex items-center justify-center" title="Crear Secuencia (x3)">
+            <button onClick={() => duplicateElementSequence(selectedElementIds)} className="p-2 text-slate-200 hover:text-white hover:bg-slate-800 rounded-lg transition-colors flex items-center justify-center" title="Crear Secuencia (x3)">
               <div className="flex gap-[2px]">
                 <div className="w-1.5 h-1.5 rounded-full bg-current"></div>
                 <div className="w-1.5 h-1.5 rounded-full bg-current opacity-70"></div>
@@ -1946,8 +1959,8 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({ value, onChang
               </div>
             </button>
 
-            <div className="w-px h-6 bg-brand-black-border mx-1" />
-            <button onClick={() => removeElement(selectedElementIds)} className="p-2 text-brand-red-600 hover:bg-brand-red-600/10 rounded-lg transition-colors" title="Eliminar">
+            <div className="w-px h-6 bg-slate-700 mx-1" />
+            <button onClick={() => removeElement(selectedElementIds)} className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors" title="Eliminar">
               <Trash2 className="w-4 h-4" />
             </button>
           </div>
@@ -1955,30 +1968,29 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({ value, onChang
 
         {/* Selected Line Controls */}
         {selectedLineId && selectedLine && (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-brand-black/95 backdrop-blur-md border border-brand-black-border rounded-xl p-2 flex items-center gap-2 shadow-[0_10px_30px_rgba(0,0,0,0.8)] animate-fade-in z-50">
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-slate-900/95 backdrop-blur-md border border-slate-700 rounded-xl p-2 flex items-center gap-2 shadow-[0_10px_30px_rgba(0,0,0,0.8)] animate-fade-in z-50 text-white">
             
             {/* Controles de Curva */}
             {(selectedLine.type === 'arrow' || selectedLine.type === 'dashed-arrow') && (
               <>
-                <div className="flex bg-black/50 rounded-lg border border-brand-black-border p-1 gap-1">
-                  <button onClick={() => updateLineCurve(selectedLineId, -1)} className="p-1 rounded text-brand-gray-muted hover:text-white hover:bg-white/10" title="Curvar Izquierda">
+                <div className="flex bg-black/50 rounded-lg border border-slate-700 p-1 gap-1">
+                  <button onClick={() => updateLineCurve(selectedLineId, -1)} className="p-1 rounded text-slate-400 hover:text-white hover:bg-white/10" title="Curvar Izquierda">
                     <Undo2 className="w-3.5 h-3.5" />
                   </button>
-                  <button onClick={() => setLines(lines.map(l => l.id === selectedLineId ? { ...l, curve: 0 } : l))} className={`p-1 rounded ${!selectedLine.curve ? 'text-white bg-white/20' : 'text-brand-gray-muted hover:text-white hover:bg-white/10'}`} title="Recta">
+                  <button onClick={() => setLines(lines.map(l => l.id === selectedLineId ? { ...l, curve: 0 } : l))} className={`p-1 rounded ${!selectedLine.curve ? 'text-white bg-white/20' : 'text-slate-400 hover:text-white hover:bg-white/10'}`} title="Recta">
                     <Minus className="w-3.5 h-3.5" />
                   </button>
-                  <button onClick={() => updateLineCurve(selectedLineId, 1)} className="p-1 rounded text-brand-gray-muted hover:text-white hover:bg-white/10" title="Curvar Derecha">
+                  <button onClick={() => updateLineCurve(selectedLineId, 1)} className="p-1 rounded text-slate-400 hover:text-white hover:bg-white/10" title="Curvar Derecha">
                     <Redo2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
-                <div className="w-px h-6 bg-brand-black-border mx-1" />
+                <div className="w-px h-6 bg-slate-700 mx-1" />
               </>
             )}
 
             {/* Controles de Grosor */}
-            {/* Controles de Grosor (Sin límites) */}
-            <div className="flex items-center gap-2 bg-black/50 rounded-lg border border-brand-black-border px-3 py-1.5 w-32">
-              <span className="text-[10px] font-bold text-brand-gray-muted">Grosor</span>
+            <div className="flex items-center gap-2 bg-black/50 rounded-lg border border-slate-700 px-3 py-1.5 w-32">
+              <span className="text-[10px] font-bold text-slate-400">Grosor</span>
               <input 
                 type="range" 
                 min="1" 
@@ -1989,17 +2001,17 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({ value, onChang
               />
             </div>
 
-            <div className="w-px h-6 bg-brand-black-border mx-1" />
+            <div className="w-px h-6 bg-slate-700 mx-1" />
 
             {/* Controles de Color de Línea */}
             <div className="flex gap-1.5 items-center px-1">
                {['#16a34a', '#ef4444', '#3b82f6', '#f59e0b', '#000000'].map(c => (
-                 <button 
-                    key={c}
-                    onClick={() => updateLineColor(selectedLineId, c)}
-                    className={`w-4 h-4 rounded-full border-2 ${selectedLine.color === c ? 'border-brand-red-600 scale-125' : 'border-gray-500'}`}
-                    style={{ backgroundColor: c }}
-                 />
+                  <button 
+                     key={c}
+                     onClick={() => updateLineColor(selectedLineId, c)}
+                     className={`w-4 h-4 rounded-full border-2 ${selectedLine.color === c ? 'border-red-600 scale-125' : 'border-gray-500'}`}
+                     style={{ backgroundColor: c }}
+                  />
                ))}
             </div>
 
@@ -2008,8 +2020,8 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({ value, onChang
               onClick={() => toggleLineDashed(selectedLineId)}
               className={`p-2 rounded-lg transition-colors font-bold text-xs flex items-center justify-center w-8 ${
                 (selectedLine.dashed !== undefined ? selectedLine.dashed : (selectedLine.type === 'dashed-arrow' || selectedLine.type === 'zone-line'))
-                  ? 'bg-brand-red-600 text-white'
-                  : 'text-brand-gray-light hover:text-white hover:bg-brand-black-hover'
+                  ? 'bg-red-600 text-white'
+                  : 'text-slate-200 hover:text-white hover:bg-slate-800'
               }`}
               title="Alternar discontinua/continua"
             >
@@ -2019,15 +2031,15 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({ value, onChang
             {/* Duplicar Línea */}
             <button
               onClick={() => duplicateLine(selectedLineId)}
-              className="p-2 text-brand-gray-light hover:text-white hover:bg-brand-black-hover rounded-lg transition-colors flex items-center justify-center"
+              className="p-2 text-slate-200 hover:text-white hover:bg-slate-800 rounded-lg transition-colors flex items-center justify-center"
               title="Duplicar Línea"
             >
               <Copy className="w-4 h-4" />
             </button>
 
-            <div className="w-px h-6 bg-brand-black-border mx-1" />
+            <div className="w-px h-6 bg-slate-700 mx-1" />
 
-            <button onClick={() => removeLine(selectedLineId)} className="p-2 text-brand-red-600 hover:bg-brand-red-600/10 rounded-lg transition-colors flex items-center gap-1 text-xs font-bold" title="Eliminar Línea">
+            <button onClick={() => removeLine(selectedLineId)} className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors flex items-center gap-1 text-xs font-bold" title="Eliminar Línea">
               <Trash2 className="w-4 h-4" />
             </button>
           </div>

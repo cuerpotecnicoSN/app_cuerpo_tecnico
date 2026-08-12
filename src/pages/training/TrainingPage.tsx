@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import { Plus, Trash2, ChevronLeft, Dumbbell, MapPin, X, Download, Save, FolderSearch, ClipboardList, Edit2, ArrowUp, ArrowDown, ListOrdered, AlertTriangle, Settings } from 'lucide-react';
-import type { TrainingSessionDB, TaskLibraryItem, SessionTask } from '../../components/types';
+import { TASK_TYPES, type TrainingSessionDB, type TaskLibraryItem, type SessionTask } from '../../components/types';
 import {
   getTrainingSessions, createTrainingSession, deleteTrainingSession, updateTrainingSession,
   getTasks, createTask, updateTask, deleteTask,
@@ -11,6 +11,11 @@ import {
 import { SessionFormModal } from '../../components/training/SessionFormModal';
 import { TaskModal } from '../../components/training/TaskModal';
 import { TaskBoardEditor } from '../../components/training/TaskBoardEditor';
+
+const stripHtml = (html?: string) => {
+  if (!html) return '';
+  return html.replace(/<[^>]*>/g, '').trim();
+};
 
 type View = 'sessions' | 'library';
 
@@ -262,6 +267,9 @@ function TaskLibraryView({ tasks, onCreate, onDelete }: { tasks: TaskLibraryItem
   const [editingTask, setEditingTask] = useState<TaskLibraryItem | undefined>(undefined);
   const [pendingDelete, setPendingDelete] = useState<TaskLibraryItem | null>(null);
   const [deleting, setDeleting] = useState(false);
+  
+  const [selectedTypeFilter, setSelectedTypeFilter] = useState<string>('todos');
+  const [groupByType, setGroupByType] = useState<boolean>(false);
 
   const handleSave = async (taskData: Omit<TaskLibraryItem, 'id' | 'created_at'>) => {
     if (editingTask?.id) {
@@ -285,9 +293,90 @@ function TaskLibraryView({ tasks, onCreate, onDelete }: { tasks: TaskLibraryItem
     }
   };
 
+  const filteredTasks = tasks.filter((tk) => {
+    if (selectedTypeFilter === 'todos') return true;
+    if (selectedTypeFilter === 'sin_tipo') return !tk.types || tk.types.length === 0;
+    return tk.types?.includes(selectedTypeFilter);
+  });
+
+  const renderTaskCard = (tk: TaskLibraryItem) => (
+    <div key={tk.id} className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+      <div>
+        <div className="flex justify-between items-start mb-2">
+          <div className="flex items-center gap-2">
+            <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+              <Dumbbell size={16} />
+            </div>
+            <p className="font-extrabold text-gray-900 leading-snug">{tk.title}</p>
+          </div>
+          <button
+            onClick={() => setPendingDelete(tk)}
+            className="text-gray-300 hover:text-red-500 p-1 rounded-lg transition-colors"
+          >
+            <Trash2 size={16} />
+          </button>
+        </div>
+        <div className="flex items-center gap-2 text-xs font-semibold text-gray-400 mt-2 flex-wrap">
+          <span className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded-md">{tk.category || 'Principal'}</span>
+          {tk.duration_min && <span>· {tk.duration_min} min</span>}
+          {tk.types && tk.types.length > 0 && (
+            <>
+              <span className="text-gray-300">·</span>
+              {tk.types.map((type) => (
+                <span key={type} className="bg-blue-50 text-blue-700 border border-blue-100 px-2 py-0.5 rounded-md text-[10px] font-bold">
+                  {type}
+                </span>
+              ))}
+            </>
+          )}
+        </div>
+        {tk.description && <p className="text-sm text-gray-500 mt-3 line-clamp-2 leading-relaxed">{stripHtml(tk.description)}</p>}
+      </div>
+
+      <span
+        onClick={() => { setEditingTask(tk); setShowModal(true); }}
+        className="mt-4 w-full py-2 bg-gray-50 hover:bg-blue-50 hover:text-blue-600 border border-gray-200 hover:border-blue-200 text-gray-600 rounded-xl text-xs font-bold transition-all text-center cursor-pointer select-none block"
+      >
+        Ver / Editar Tarea
+      </span>
+    </div>
+  );
+
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
+      {/* Barra de Filtros y Agrupamiento */}
+      <div className="flex flex-wrap items-center justify-between gap-4 bg-white border border-gray-200 p-4 rounded-2xl shadow-sm">
+        <div className="flex items-center gap-4 flex-wrap">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Filtrar por tipo:</span>
+            <select
+              value={selectedTypeFilter}
+              onChange={(e) => setSelectedTypeFilter(e.target.value)}
+              className="border border-gray-200 rounded-xl px-3 py-1.5 text-xs font-bold text-gray-700 bg-white outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+            >
+              <option value="todos">Todos los tipos</option>
+              <option value="sin_tipo">Sin tipo asignado</option>
+              {TASK_TYPES.map((type) => (
+                <option key={type} value={type}>{type}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Agrupar por tipo:</span>
+            <span
+              onClick={() => setGroupByType(!groupByType)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer select-none ${
+                groupByType
+                  ? 'bg-blue-50 border-blue-200 text-blue-700'
+                  : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              {groupByType ? 'Sí, agrupar' : 'No, listado simple'}
+            </span>
+          </div>
+        </div>
+
         <button 
           onClick={() => { setEditingTask(undefined); setShowModal(true); }} 
           className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold flex items-center gap-2 shadow-sm transition-all"
@@ -312,41 +401,46 @@ function TaskLibraryView({ tasks, onCreate, onDelete }: { tasks: TaskLibraryItem
         onCancel={() => setPendingDelete(null)}
       />
 
-      {tasks.length === 0 && <p className="text-sm text-gray-400">{t('trainingPage.noTasks')}</p>}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {tasks.map((tk) => (
-          <div key={tk.id} className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
-            <div>
-              <div className="flex justify-between items-start mb-2">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-                    <Dumbbell size={16} />
-                  </div>
-                  <p className="font-extrabold text-gray-900 leading-snug">{tk.title}</p>
+      {filteredTasks.length === 0 && <p className="text-sm text-gray-400">{t('trainingPage.noTasks')}</p>}
+      
+      {groupByType ? (
+        <div className="space-y-8">
+          {TASK_TYPES.map((type) => {
+            const typeTasks = filteredTasks.filter((tk) => tk.types?.includes(type));
+            if (typeTasks.length === 0) return null;
+            return (
+              <div key={type} className="space-y-3">
+                <h3 className="text-sm font-black uppercase tracking-wider text-gray-500 flex items-center gap-2 border-b border-gray-100 pb-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
+                  {type} ({typeTasks.length})
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {typeTasks.map((tk) => renderTaskCard(tk))}
                 </div>
-                <button
-                  onClick={() => setPendingDelete(tk)}
-                  className="text-gray-300 hover:text-red-500 p-1 rounded-lg transition-colors"
-                >
-                  <Trash2 size={16} />
-                </button>
               </div>
-              <div className="flex items-center gap-2 text-xs font-semibold text-gray-400 mt-2">
-                <span className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded-md">{tk.category || 'Principal'}</span>
-                {tk.duration_min && <span>· {tk.duration_min} min</span>}
+            );
+          })}
+          {(() => {
+            const untypedTasks = filteredTasks.filter((tk) => !tk.types || tk.types.length === 0);
+            if (untypedTasks.length === 0) return null;
+            return (
+              <div className="space-y-3">
+                <h3 className="text-sm font-black uppercase tracking-wider text-gray-500 flex items-center gap-2 border-b border-gray-100 pb-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-gray-400"></span>
+                  Otras tareas / Sin tipo ({untypedTasks.length})
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {untypedTasks.map((tk) => renderTaskCard(tk))}
+                </div>
               </div>
-              {tk.description && <p className="text-sm text-gray-500 mt-3 line-clamp-2 leading-relaxed">{tk.description}</p>}
-            </div>
-
-            <button
-              onClick={() => { setEditingTask(tk); setShowModal(true); }}
-              className="mt-4 w-full py-2 bg-gray-50 hover:bg-blue-50 hover:text-blue-600 border border-gray-200 hover:border-blue-200 text-gray-600 rounded-xl text-xs font-bold transition-all text-center"
-            >
-              Ver / Editar Tarea
-            </button>
-          </div>
-        ))}
-      </div>
+            );
+          })()}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredTasks.map((tk) => renderTaskCard(tk))}
+        </div>
+      )}
     </div>
   );
 }
@@ -695,7 +789,10 @@ function SessionEditor({ session, tasks, onBack, onTasksChange }: { session: Tra
                           {i + 1}. {tInfo?.title || 'Tarea'}
                         </h3>
                         {tInfo?.description && (
-                          <p className="mt-2 text-xs text-gray-500 line-clamp-4 leading-relaxed whitespace-pre-line">{tInfo.description}</p>
+                          <div 
+                            className="mt-2 text-xs text-gray-500 line-clamp-4 leading-relaxed rich-text-preview" 
+                            dangerouslySetInnerHTML={{ __html: tInfo.description }}
+                          />
                         )}
                       </div>
                       
@@ -837,7 +934,7 @@ function SessionEditor({ session, tasks, onBack, onTasksChange }: { session: Tra
                                 {tk.material ? ` • 🎒 ${tk.material}` : ''}
                               </p>
                               {tk.description && (
-                                <p className="text-[11px] text-gray-400 mt-1 line-clamp-1 italic">{tk.description}</p>
+                                <p className="text-[11px] text-gray-400 mt-1 line-clamp-1 italic">{stripHtml(tk.description)}</p>
                               )}
                             </div>
                             

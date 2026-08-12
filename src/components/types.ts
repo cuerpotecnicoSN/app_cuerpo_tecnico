@@ -178,7 +178,7 @@ export interface PlayerInjury {
   created_at?: string;
 }
 
-// ===== Entrenamientos =====
+export const TASK_TYPES = ['Rondo', 'Posesión', 'Partido reducido', 'Circuito', 'Finalización', 'Partido', 'Secuencia'];
 
 export interface TaskLibraryItem {
   id: string;
@@ -191,6 +191,7 @@ export interface TaskLibraryItem {
   material?: string;
   image_url?: string;
   board_data?: string;
+  types?: string[];
   created_at?: string;
 }
 
