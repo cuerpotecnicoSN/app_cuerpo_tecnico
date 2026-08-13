@@ -14,6 +14,7 @@
     "@imgly/background-removal": "^1.7.0",
     "@supabase/supabase-js": "^2.110.8",
     "dotenv": "^17.4.2",
+    "html2canvas": "^1.4.1",
     "i18next": "^26.3.6",
     "jsdom": "^30.0.0",
     "jspdf": "^4.2.1",

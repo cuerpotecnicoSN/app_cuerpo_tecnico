@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { ensureContext } from '../lib/dataService';
+import { withNetworkRetry } from '../lib/networkError';
 import type { TrainingSessionDB, TaskLibraryItem, SessionTask } from '../components/types';
 
 export const getTrainingSessions = async (): Promise<TrainingSessionDB[]> => {
@@ -49,7 +50,8 @@ export const createTask = async (task: Omit<TaskLibraryItem, 'id' | 'created_at'
 };
 
 export const updateTask = async (id: string, updates: Partial<TaskLibraryItem>): Promise<void> => {
-  const { error } = await supabase.from('tasks').update(updates).eq('id', id);
+  // PATCH por id es idempotente: si la red falla, reintentamos antes de dar error
+  const { error } = await withNetworkRetry(() => supabase.from('tasks').update(updates).eq('id', id));
   if (error) throw error;
 };
 

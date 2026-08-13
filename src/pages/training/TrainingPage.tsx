@@ -11,6 +11,7 @@ import {
 import { SessionFormModal } from '../../components/training/SessionFormModal';
 import { TaskModal } from '../../components/training/TaskModal';
 import { TaskBoardEditor } from '../../components/training/TaskBoardEditor';
+import { exportSessionToPdf } from '../../utils/sessionPdf';
 
 const stripHtml = (html?: string) => {
   if (!html) return '';
@@ -454,6 +455,13 @@ function SessionEditor({ session, tasks, onBack, onTasksChange }: { session: Tra
   const [pendingRemove, setPendingRemove] = useState<SessionTask | null>(null);
   const [removing, setRemoving] = useState(false);
 
+  // PDF Export States
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [pdfFormat, setPdfFormat] = useState<'full' | 'simplified'>('full');
+  const [pdfLang, setPdfLang] = useState<'es' | 'it' | 'en'>('es');
+  const [pdfWithPlayers, setPdfWithPlayers] = useState(false);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+
   const load = () => getSessionTasks(session.id).then(setSessionTasks).catch(() => setSessionTasks([]));
   useEffect(() => { load(); }, [session.id]);
 
@@ -461,6 +469,63 @@ function SessionEditor({ session, tasks, onBack, onTasksChange }: { session: Tra
   useEffect(() => { if (sessionTasks.length < 2) setSortMode(false); }, [sessionTasks.length]);
 
   const getTaskDetails = (id: string | null) => tasks.find((t) => t.id === id);
+
+  const handleExportPdf = async () => {
+    setIsGeneratingPdf(true);
+    try {
+      const taskDataList = sessionTasks
+        .map(st => {
+          const detail = getTaskDetails(st.task_id);
+          if (!detail) return null;
+          return {
+            id: detail.id,
+            title: detail.title,
+            category: detail.category,
+            duration_min: detail.duration_min,
+            material: detail.material,
+            description: detail.description,
+            board_data: detail.board_data
+          };
+        })
+        .filter((t): t is any => t !== null);
+
+      const parsedNotes = (() => {
+        const rawNotes = session.notes;
+        if (!rawNotes) return { structure: '', observations: '' };
+        try {
+          const parsed = JSON.parse(rawNotes);
+          if (parsed && typeof parsed === 'object') {
+            return {
+              structure: parsed.structure || '',
+              observations: parsed.observations || parsed.notes || ''
+            };
+          }
+        } catch {
+          return { structure: '', observations: rawNotes };
+        }
+        return { structure: '', observations: '' };
+      })();
+
+      await exportSessionToPdf({
+        sessionTitle: session.title,
+        date: session.date,
+        time: session.time,
+        location: session.location,
+        structure: parsedNotes.structure,
+        observations: parsedNotes.observations,
+        tasks: taskDataList,
+        format: pdfFormat,
+        lang: pdfLang,
+        includePlayerNames: pdfWithPlayers
+      });
+      setIsExportModalOpen(false);
+    } catch (err) {
+      console.error(err);
+      alert('Error al generar PDF');
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
 
   const getFieldAspectRatio = (boardDataStr?: string) => {
     if (!boardDataStr) return '16 / 9';
@@ -523,7 +588,7 @@ function SessionEditor({ session, tasks, onBack, onTasksChange }: { session: Tra
     
     // Default fallback to Tactical canvas editor
     return (
-      <div className="w-28 h-20 bg-slate-900 border border-slate-700/30 rounded-lg overflow-hidden shrink-0 relative shadow-sm">
+      <div className="w-28 h-20 bg-white border border-gray-200 rounded-lg overflow-hidden shrink-0 relative shadow-sm">
         <TaskBoardEditor value={boardDataStr} readOnly hideToolbar rotateFullField={true} />
       </div>
     );
@@ -615,7 +680,11 @@ function SessionEditor({ session, tasks, onBack, onTasksChange }: { session: Tra
             <button className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors shrink-0">
               <Save size={16} /> Guardar
             </button>
-            <button className="bg-gray-50 border border-gray-200 text-gray-500 hover:text-gray-900 hover:bg-gray-100 p-2 rounded-lg transition-colors shrink-0">
+            <button 
+              onClick={() => setIsExportModalOpen(true)}
+              className="bg-gray-50 border border-gray-200 text-gray-500 hover:text-gray-900 hover:bg-gray-100 p-2 rounded-lg transition-colors shrink-0"
+              title="Exportar PDF"
+            >
               <Download size={18} />
             </button>
           </div>
@@ -804,7 +873,10 @@ function SessionEditor({ session, tasks, onBack, onTasksChange }: { session: Tra
                     </div>
 
                     {/* Columna Derecha: Previsualización de la Pizarra Táctica (Contenida por completo) */}
-                    <div className="w-40 sm:w-64 md:w-[350px] lg:w-[480px] h-32 sm:h-44 md:h-60 shrink-0 overflow-hidden relative rounded-xl border border-gray-200 bg-slate-900 flex items-center justify-center p-2 shadow-inner">
+                    <div 
+                      id={tInfo ? `pdf-board-container-${tInfo.id}` : undefined}
+                      className="w-40 sm:w-64 md:w-[350px] lg:w-[480px] h-32 sm:h-44 md:h-60 shrink-0 overflow-hidden relative rounded-xl border border-gray-200 bg-white flex items-center justify-center p-2 shadow-inner"
+                    >
                       {tInfo?.board_data ? (
                         <div 
                           className="relative"
@@ -894,6 +966,119 @@ function SessionEditor({ session, tasks, onBack, onTasksChange }: { session: Tra
         onConfirm={confirmRemove}
         onCancel={() => setPendingRemove(null)}
       />
+
+      {/* Modal de Exportación a PDF */}
+      {isExportModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsExportModalOpen(false)} />
+          <div className="relative bg-white rounded-2xl w-full max-w-xl p-8 shadow-2xl flex flex-col gap-6 border border-gray-100 animate-scale-up">
+            <div className="flex justify-between items-center pb-4 border-b border-gray-100">
+              <h3 className="text-xl font-black text-gray-900 flex items-center gap-2">
+                📄 Exportar Sesión a PDF
+              </h3>
+              <button onClick={() => setIsExportModalOpen(false)} className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-lg hover:bg-gray-100">
+                <X size={22} />
+              </button>
+            </div>
+
+            {/* Formatos */}
+            <div className="space-y-2">
+              <label className="text-xs font-black uppercase text-gray-400 tracking-wider">Formato del PDF</label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setPdfFormat('full')}
+                  className={`p-4 rounded-2xl text-xs font-bold text-center transition-all cursor-pointer border ${
+                    pdfFormat === 'full'
+                      ? 'bg-red-600 text-white border-red-600 shadow-lg shadow-red-500/20'
+                      : 'bg-gray-50 text-gray-600 border-gray-100 hover:bg-gray-100 hover:text-gray-800'
+                  }`}
+                >
+                  <span className="block text-sm font-black mb-1">📝 Completo</span>
+                  <span className={`block text-[10px] font-normal ${pdfFormat === 'full' ? 'text-red-100' : 'text-gray-400'}`}>Estructura, Notas y Equipos</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPdfFormat('simplified')}
+                  className={`p-4 rounded-2xl text-xs font-bold text-center transition-all cursor-pointer border ${
+                    pdfFormat === 'simplified'
+                      ? 'bg-red-600 text-white border-red-600 shadow-lg shadow-red-500/20'
+                      : 'bg-gray-50 text-gray-600 border-gray-100 hover:bg-gray-100 hover:text-gray-800'
+                  }`}
+                >
+                  <span className="block text-sm font-black mb-1">🎨 Simplificado</span>
+                  <span className={`block text-[10px] font-normal ${pdfFormat === 'simplified' ? 'text-red-100' : 'text-gray-400'}`}>Solo Pizarras y Títulos</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Idiomas */}
+            <div className="space-y-2">
+              <label className="text-xs font-black uppercase text-gray-400 tracking-wider">Idioma de las Cabeceras</label>
+              <div className="grid grid-cols-3 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setPdfLang('es')}
+                  className={`p-3.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer border ${
+                    pdfLang === 'es'
+                      ? 'bg-red-600 text-white border-red-600 shadow-lg shadow-red-500/20'
+                      : 'bg-gray-50 text-gray-600 border-gray-100 hover:bg-gray-100 hover:text-gray-800'
+                  }`}
+                >
+                  <span className="text-base">🇪🇸</span> Español
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPdfLang('it')}
+                  className={`p-3.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer border ${
+                    pdfLang === 'it'
+                      ? 'bg-red-600 text-white border-red-600 shadow-lg shadow-red-500/20'
+                      : 'bg-gray-50 text-gray-600 border-gray-100 hover:bg-gray-100 hover:text-gray-800'
+                  }`}
+                >
+                  <span className="text-base">🇮🇹</span> Italiano
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPdfLang('en')}
+                  className={`p-3.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer border ${
+                    pdfLang === 'en'
+                      ? 'bg-red-600 text-white border-red-600 shadow-lg shadow-red-500/20'
+                      : 'bg-gray-50 text-gray-600 border-gray-100 hover:bg-gray-100 hover:text-gray-800'
+                  }`}
+                >
+                  <span className="text-base">🇬🇧</span> English
+                </button>
+              </div>
+            </div>
+
+            {/* Checkbox Player names */}
+            {pdfFormat === 'full' && (
+              <div className="flex items-center gap-3 py-3 border-t border-b border-gray-100">
+                <input
+                  type="checkbox"
+                  id="pdfWithPlayers"
+                  checked={pdfWithPlayers}
+                  onChange={(e) => setPdfWithPlayers(e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-300 text-red-600 focus:ring-red-500 cursor-pointer"
+                />
+                <label htmlFor="pdfWithPlayers" className="text-xs font-bold text-gray-700 cursor-pointer select-none">
+                  Incluir nombres de los jugadores en la distribución de equipos
+                </label>
+              </div>
+            )}
+
+            {/* Botón Exportar */}
+            <button
+              onClick={handleExportPdf}
+              disabled={isGeneratingPdf}
+              className="w-full py-4 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-black uppercase tracking-wider transition-all shadow-lg shadow-red-500/30 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+            >
+              {isGeneratingPdf ? 'Generando PDF...' : 'Generar PDF'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Modal Librería Simple */}
       {isLibraryModalOpen && (() => {

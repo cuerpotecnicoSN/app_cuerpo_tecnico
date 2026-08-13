@@ -47,6 +47,7 @@ interface TaskBoardEditorProps {
   rotateFullField?: boolean;
   printWidth?: number;
   limitedTools?: boolean;
+  undoTrigger?: number;
 }
 
 const TiroLeagueBall = ({ size = "100%", style = {} }: { size?: string | number, style?: React.CSSProperties }) => (
@@ -93,14 +94,26 @@ const TiroLeagueBall = ({ size = "100%", style = {} }: { size?: string | number,
     <path d="M 28 30 L 10 20" stroke="rgba(0,0,0,0.15)" strokeWidth="1" fill="none" />
     <path d="M 72 30 L 90 20" stroke="rgba(0,0,0,0.15)" strokeWidth="1" fill="none" />
     <path d="M 50 68 L 50 95" stroke="rgba(0,0,0,0.15)" strokeWidth="1" fill="none" />
-    <path d="M 28 30 L 15 55" stroke="rgba(0,0,0,0.15)" strokeWidth="1" fill="none" />
-    <path d="M 72 30 L 85 55" stroke="rgba(0,0,0,0.15)" strokeWidth="1" fill="none" />
+    <circle cx="50" cy="50" r="48" fill="#ffffff" stroke="#111" strokeWidth="2" />
+    <path d="M50,2 A48,48 0 0,0 2,50 L98,50 A48,48 0 0,0 50,2" fill="#222" opacity="0.1" />
+    {/* Pentagons */}
+    <polygon points="50,30 35,41 41,58 59,58 65,41" fill="#111" />
+    <polygon points="50,2 62,15 54,23 37,21 33,6" fill="#111" />
+    <polygon points="98,50 82,45 77,53 87,66 97,59" fill="#111" />
+    <polygon points="2,50 18,45 23,53 13,66 3,59" fill="#111" />
+    <polygon points="50,98 62,85 54,77 37,79 33,94" fill="#111" />
+    <polygon points="70,25 78,13 87,19 83,31 71,35" fill="#111" />
+    <polygon points="30,25 22,13 13,19 17,31 29,35" fill="#111" />
+    {/* Seams */}
+    <path d="M50,30 L50,2 M35,41 L22,35 M41,58 L30,70 M59,58 L70,70 M65,41 L78,35" stroke="#111" strokeWidth="2" strokeLinecap="round" />
+    <path d="M62,15 L70,25 M78,13 L82,45 M87,19 L98,50 M83,31 L77,53 M71,35 L87,66 M22,13 L18,45 M13,19 L2,50 M17,31 L23,53 M29,35 L13,66" stroke="#111" strokeWidth="2" strokeLinecap="round" />
+    <path d="M37,21 L35,41 M54,23 L65,41 M77,53 L59,58 M23,53 L41,58" stroke="#111" strokeWidth="2" strokeLinecap="round" />
   </svg>
 );
 
 // Los entrenadores se pintan siempre en gris, independientemente del color activo.
 const COACH_COLOR = '#6b7280';
-const COACH_NAMES_KEY = 'ct_coach_names';
+const COACH_NAMES_KEY = 'coaching_board_coach_names';
 
 const readCoachNames = (): string[] => {
   try {
@@ -121,7 +134,18 @@ const coachInitials = (name?: string) => {
   return (words[0][0] + words[1][0]).toUpperCase();
 };
 
-export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({ value, onChange, initialData, readOnly, hideToolbar, printMode, rotateFullField, printWidth, limitedTools }) => {
+export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({ 
+  value, 
+  onChange, 
+  initialData, 
+  readOnly, 
+  hideToolbar, 
+  printMode, 
+  rotateFullField, 
+  printWidth, 
+  limitedTools,
+  undoTrigger = 0
+}) => {
   const [fieldType, setFieldType] = useState<FieldType>('half');
   const [elements, setElements] = useState<BoardElement[]>([]);
   const [lines, setLines] = useState<BoardLine[]>([]);
@@ -179,6 +203,11 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({ value, onChang
      setHistory(history.slice(0, -1));
   };
 
+  useEffect(() => {
+    if (undoTrigger > 0) {
+      handleUndo();
+    }
+  }, [undoTrigger]);
   
   const boardRef = useRef<HTMLDivElement>(null);
   const [boardSize, setBoardSize] = useState({ width: 500, height: 500 });
@@ -1253,7 +1282,9 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({ value, onChang
           else markerEnd = 'url(#arrowhead-white)';
           
           let strokeDasharray = "none";
-          let strokeWidth = (line.thickness || 1) * 0.5; // Base visual scaling
+          let scaleFactor = boardSize.width ? (boardSize.width / 700) : 1;
+          let strokeWidth = (line.thickness || 1) * 0.5 * scaleFactor; // Base visual scaling with board size
+          strokeWidth = Math.max(0.6, strokeWidth);
           let filter = isSelected ? 'drop-shadow(0 0 3px red)' : 'drop-shadow(1px 2px 2px rgba(0,0,0,0.5))';
           if (printMode) filter = 'none'; // html2canvas drops shadows badly
 
@@ -1264,7 +1295,8 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({ value, onChang
           }
 
           if (line.type === 'zone-line') {
-            strokeWidth = (line.thickness || 1) * 0.8; 
+            strokeWidth = (line.thickness || 1) * 0.8 * scaleFactor;
+            strokeWidth = Math.max(0.8, strokeWidth);
             filter = 'none'; 
             markerEnd = 'none'; // Las zonas no llevan flecha por defecto
           }
@@ -1327,11 +1359,13 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({ value, onChang
     return (
       <button 
         onClick={() => setActiveTool(tool)} 
-        className={`p-1.5 rounded flex flex-col items-center justify-center gap-1 min-w-0 transition-colors ${isActive ? 'bg-blue-600 text-white shadow-md' : bg ? 'bg-gray-50 hover:bg-gray-100 text-gray-700' : 'text-gray-500 hover:text-gray-900'}`}
+        className={`p-2.5 lg:p-3.5 rounded-xl flex flex-col items-center justify-center gap-1.5 min-w-0 transition-all ${isActive ? 'bg-blue-600 text-white shadow-md scale-[1.03] font-bold' : bg ? 'bg-gray-50 border border-gray-100 hover:bg-gray-100 text-gray-700' : 'text-gray-500 hover:text-gray-900'}`}
         title={label}
       >
-        {icon}
-        {label && !hideLabel && <span className="text-[9px] uppercase font-bold tracking-tight leading-tight hidden lg:block w-full text-center truncate">{label}</span>}
+        <div className="transform scale-[1.25] lg:scale-[1.4] my-1 flex items-center justify-center">
+          {icon}
+        </div>
+        {label && !hideLabel && <span className="text-[9px] lg:text-[10px] xl:text-[11px] uppercase font-extrabold tracking-wider w-full text-center truncate">{label}</span>}
       </button>
     );
   };
@@ -1347,7 +1381,7 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({ value, onChang
             setElements(prev => prev.map(e => selectedElementIds.includes(e.id) ? { ...e, color } : e));
           }
         }}
-        className={`w-6 h-6 rounded-full border-2 transition-transform ${isActive ? 'scale-110 border-blue-600' : 'border-gray-200 hover:scale-105 shadow-sm'}`}
+        className={`w-8 h-8 lg:w-9 lg:h-9 rounded-full border-2 transition-transform ${isActive ? 'scale-110 border-blue-600' : 'border-gray-200 hover:scale-105 shadow-sm'}`}
         style={{ backgroundColor: color }}
       />
     );
@@ -1462,13 +1496,15 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({ value, onChang
 
       {/* Sidebar Tools: franja lateral estrecha en móvil/tablet, panel ancho en escritorio */}
       {!hideToolbar && (
-        <div className="w-20 lg:w-[22rem] xl:w-[25rem] shrink-0 bg-white border border-gray-200 shadow-sm rounded-xl p-2 flex flex-col gap-1.5 overflow-y-auto custom-scrollbar">
+        <div className="w-20 lg:w-[24rem] xl:w-[27rem] shrink-0 bg-white border border-gray-200 shadow-sm rounded-xl p-4 flex flex-col gap-6 overflow-y-auto custom-scrollbar">
 
-        <div className="grid grid-cols-3 gap-1">
+        <div className="grid grid-cols-3 gap-3">
           <ToolButton tool="select" icon={<MousePointer2 className="w-5 h-5" />} label="Mover" bg={true} />
-          <button onClick={handleUndo} disabled={history.length === 0} className={`p-1.5 rounded flex flex-col items-center justify-center gap-1 transition-colors ${history.length === 0 ? 'opacity-50 cursor-not-allowed bg-gray-50 text-gray-400' : 'bg-gray-50 hover:bg-gray-100 text-gray-700'}`} title="Deshacer">
-             <Undo2 className="w-5 h-5" />
-             <span className="text-[9px] uppercase font-bold tracking-wider hidden lg:block">Volver</span>
+          <button onClick={handleUndo} disabled={history.length === 0} className={`p-2.5 rounded-xl flex flex-col items-center justify-center gap-1.5 transition-all ${history.length === 0 ? 'opacity-50 cursor-not-allowed bg-gray-50 text-gray-400' : 'bg-gray-50 border border-gray-100 hover:bg-gray-100 text-gray-700'}`} title="Deshacer">
+             <div className="transform scale-[1.25] lg:scale-[1.4] my-1 flex items-center justify-center">
+               <Undo2 className="w-5 h-5" />
+             </div>
+             <span className="text-[9px] lg:text-[10px] xl:text-[11px] uppercase font-extrabold tracking-wider w-full text-center truncate">Volver</span>
           </button>
           <button 
             onClick={() => {
@@ -1479,63 +1515,75 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({ value, onChang
                 setSelectedLineId(null);
               }
             }}
-            className="p-1.5 rounded flex flex-col items-center justify-center gap-1 transition-colors bg-red-50 text-red-600 hover:bg-red-600 hover:text-white"
+            className="p-2.5 rounded-xl flex flex-col items-center justify-center gap-1.5 transition-all bg-red-50 text-red-600 border border-red-100 hover:bg-red-600 hover:text-white"
             title="Borrar Todo"
           >
-            <Trash2 className="w-5 h-5" />
-            <span className="text-[9px] uppercase font-bold tracking-wider hidden lg:block">Limpiar</span>
+            <div className="transform scale-[1.25] lg:scale-[1.4] my-1 flex items-center justify-center">
+              <Trash2 className="w-5 h-5" />
+            </div>
+            <span className="text-[9px] lg:text-[10px] xl:text-[11px] uppercase font-extrabold tracking-wider w-full text-center truncate">Limpiar</span>
           </button>
         </div>
 
         <hr className="border-gray-100" />
 
         {/* Section: Background */}
-        <div>
-          <button onClick={() => toggleSection('background')} className="flex items-center justify-between w-full text-[10px] font-bold text-gray-500 uppercase mb-1 hover:text-gray-900 transition-colors">
+        <div className="space-y-2">
+          <button onClick={() => toggleSection('background')} className="flex items-center justify-between w-full text-[11px] lg:text-xs font-black text-gray-500 uppercase mb-2 hover:text-gray-900 transition-colors">
             <span className="hidden lg:block">Fondo</span>
             <span className="lg:hidden mx-auto">Fondo</span>
-            {openSections.background ? <ChevronUp className="w-3 h-3 hidden lg:block" /> : <ChevronDown className="w-3 h-3 hidden lg:block" />}
+            {openSections.background ? <ChevronUp className="w-3.5 h-3.5 hidden lg:block" /> : <ChevronDown className="w-3.5 h-3.5 hidden lg:block" />}
           </button>
           {openSections.background && (
-            <div className="grid grid-cols-5 gap-1">
-              <button onClick={() => setFieldType('full')} title="Fondo Entero" className={`p-1.5 rounded flex flex-col items-center gap-1 transition-colors ${fieldType === 'full' ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-50 border border-transparent text-gray-500 hover:text-gray-900 hover:bg-gray-100'}`}>
-                <svg className="w-6 h-6" viewBox="0 0 68 105">
-                  <rect x="0" y="0" width="68" height="105" fill="currentColor" opacity="0.1" />
-                  <rect x="1" y="1" width="66" height="103" fill="none" stroke="currentColor" strokeWidth="2" />
-                  <line x1="1" y1="52.5" x2="67" y2="52.5" stroke="currentColor" strokeWidth="2" />
-                  <circle cx="34" cy="52.5" r="9" fill="none" stroke="currentColor" strokeWidth="2" />
-                  <rect x="14" y="1" width="40" height="16" fill="none" stroke="currentColor" strokeWidth="2" />
-                  <rect x="14" y="88" width="40" height="16" fill="none" stroke="currentColor" strokeWidth="2" />
-                </svg>
+            <div className="grid grid-cols-5 gap-2">
+              <button onClick={() => setFieldType('full')} title="Fondo Entero" className={`p-2.5 rounded-xl flex flex-col items-center justify-center gap-1 transition-colors ${fieldType === 'full' ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-50 border border-transparent text-gray-500 hover:text-gray-900 hover:bg-gray-100'}`}>
+                <div className="transform scale-[1.1] lg:scale-[1.2] flex items-center justify-center my-0.5">
+                  <svg className="w-6 h-6" viewBox="0 0 68 105">
+                    <rect x="0" y="0" width="68" height="105" fill="currentColor" opacity="0.1" />
+                    <rect x="1" y="1" width="66" height="103" fill="none" stroke="currentColor" strokeWidth="2" />
+                    <line x1="1" y1="52.5" x2="67" y2="52.5" stroke="currentColor" strokeWidth="2" />
+                    <circle cx="34" cy="52.5" r="9" fill="none" stroke="currentColor" strokeWidth="2" />
+                    <rect x="14" y="1" width="40" height="16" fill="none" stroke="currentColor" strokeWidth="2" />
+                    <rect x="14" y="88" width="40" height="16" fill="none" stroke="currentColor" strokeWidth="2" />
+                  </svg>
+                </div>
               </button>
-              <button onClick={() => setFieldType('full-horizontal')} title="Fondo Entero Horizontal" className={`p-1.5 rounded flex flex-col items-center gap-1 transition-colors ${fieldType === 'full-horizontal' ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-50 border border-transparent text-gray-500 hover:text-gray-900 hover:bg-gray-100'}`}>
-                <svg className="w-6 h-6 -rotate-90" viewBox="0 0 68 105">
-                  <rect x="0" y="0" width="68" height="105" fill="currentColor" opacity="0.1" />
-                  <rect x="1" y="1" width="66" height="103" fill="none" stroke="currentColor" strokeWidth="2" />
-                  <line x1="1" y1="52.5" x2="67" y2="52.5" stroke="currentColor" strokeWidth="2" />
-                  <circle cx="34" cy="52.5" r="9" fill="none" stroke="currentColor" strokeWidth="2" />
-                  <rect x="14" y="1" width="40" height="16" fill="none" stroke="currentColor" strokeWidth="2" />
-                  <rect x="14" y="88" width="40" height="16" fill="none" stroke="currentColor" strokeWidth="2" />
-                </svg>
+              <button onClick={() => setFieldType('full-horizontal')} title="Fondo Entero Horizontal" className={`p-2.5 rounded-xl flex flex-col items-center justify-center gap-1 transition-colors ${fieldType === 'full-horizontal' ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-50 border border-transparent text-gray-500 hover:text-gray-900 hover:bg-gray-100'}`}>
+                <div className="transform scale-[1.1] lg:scale-[1.2] flex items-center justify-center my-0.5">
+                  <svg className="w-6 h-6 -rotate-90" viewBox="0 0 68 105">
+                    <rect x="0" y="0" width="68" height="105" fill="currentColor" opacity="0.1" />
+                    <rect x="1" y="1" width="66" height="103" fill="none" stroke="currentColor" strokeWidth="2" />
+                    <line x1="1" y1="52.5" x2="67" y2="52.5" stroke="currentColor" strokeWidth="2" />
+                    <circle cx="34" cy="52.5" r="9" fill="none" stroke="currentColor" strokeWidth="2" />
+                    <rect x="14" y="1" width="40" height="16" fill="none" stroke="currentColor" strokeWidth="2" />
+                    <rect x="14" y="88" width="40" height="16" fill="none" stroke="currentColor" strokeWidth="2" />
+                  </svg>
+                </div>
               </button>
-              <button onClick={() => setFieldType('half-top')} title="Fondo Medio Arriba" className={`p-1.5 rounded flex flex-col items-center gap-1 transition-colors ${fieldType === 'half-top' ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-50 border border-transparent text-gray-500 hover:text-gray-900 hover:bg-gray-100'}`}>
-                <svg className="w-5 h-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <rect x="2" y="2" width="16" height="16" rx="1" />
-                  <rect x="6" y="2" width="8" height="4.5" />
-                  <path d="M 6.5 18 A 3.5 3.5 0 0 1 13.5 18" />
-                </svg>
+              <button onClick={() => setFieldType('half-top')} title="Fondo Medio Arriba" className={`p-2.5 rounded-xl flex flex-col items-center justify-center gap-1 transition-colors ${fieldType === 'half-top' ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-50 border border-transparent text-gray-500 hover:text-gray-900 hover:bg-gray-100'}`}>
+                <div className="transform scale-[1.1] lg:scale-[1.2] flex items-center justify-center my-0.5">
+                  <svg className="w-5 h-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <rect x="2" y="2" width="16" height="16" rx="1" />
+                    <rect x="6" y="2" width="8" height="4.5" />
+                    <path d="M 6.5 18 A 3.5 3.5 0 0 1 13.5 18" />
+                  </svg>
+                </div>
               </button>
-              <button onClick={() => setFieldType('half')} title="Fondo Medio Abajo" className={`p-1.5 rounded flex flex-col items-center gap-1 transition-colors ${fieldType === 'half' ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-50 border border-transparent text-gray-500 hover:text-gray-900 hover:bg-gray-100'}`}>
-                <svg className="w-5 h-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <rect x="2" y="2" width="16" height="16" rx="1" />
-                  <rect x="6" y="13.5" width="8" height="4.5" />
-                  <path d="M 6.5 2 A 3.5 3.5 0 0 0 13.5 2" />
-                </svg>
+              <button onClick={() => setFieldType('half')} title="Fondo Medio Abajo" className={`p-2.5 rounded-xl flex flex-col items-center justify-center gap-1 transition-colors ${fieldType === 'half' ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-50 border border-transparent text-gray-500 hover:text-gray-900 hover:bg-gray-100'}`}>
+                <div className="transform scale-[1.1] lg:scale-[1.2] flex items-center justify-center my-0.5">
+                  <svg className="w-5 h-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <rect x="2" y="2" width="16" height="16" rx="1" />
+                    <rect x="6" y="13.5" width="8" height="4.5" />
+                    <path d="M 6.5 2 A 3.5 3.5 0 0 0 13.5 2" />
+                  </svg>
+                </div>
               </button>
-              <button onClick={() => setFieldType('blank')} title="Fondo Liso" className={`p-1.5 rounded flex flex-col items-center gap-1 transition-colors ${fieldType === 'blank' ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-50 border border-transparent text-gray-500 hover:text-gray-900 hover:bg-gray-100'}`}>
-                <svg className="w-5 h-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <rect x="2" y="2" width="16" height="16" rx="1" />
-                </svg>
+              <button onClick={() => setFieldType('blank')} title="Fondo Liso" className={`p-2.5 rounded-xl flex flex-col items-center justify-center gap-1 transition-colors ${fieldType === 'blank' ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-50 border border-transparent text-gray-500 hover:text-gray-900 hover:bg-gray-100'}`}>
+                <div className="transform scale-[1.1] lg:scale-[1.2] flex items-center justify-center my-0.5">
+                  <svg className="w-5 h-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <rect x="2" y="2" width="16" height="16" rx="1" />
+                  </svg>
+                </div>
               </button>
             </div>
           )}
@@ -1544,14 +1592,14 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({ value, onChang
         <hr className="border-gray-100" />
 
         {/* Section: Colors */}
-        <div>
-          <button onClick={() => toggleSection('colors')} className="flex items-center justify-between w-full text-[10px] font-bold text-gray-500 uppercase mb-1 hover:text-gray-900 transition-colors">
+        <div className="space-y-2.5">
+          <button onClick={() => toggleSection('colors')} className="flex items-center justify-between w-full text-[11px] lg:text-xs font-black text-gray-500 uppercase mb-2 hover:text-gray-900 transition-colors">
             <span className="hidden lg:block">Color</span>
             <span className="lg:hidden mx-auto">Color</span>
-            {openSections.colors ? <ChevronUp className="w-3 h-3 hidden lg:block" /> : <ChevronDown className="w-3 h-3 hidden lg:block" />}
+            {openSections.colors ? <ChevronUp className="w-3.5 h-3.5 hidden lg:block" /> : <ChevronDown className="w-3.5 h-3.5 hidden lg:block" />}
           </button>
           {openSections.colors && (
-            <div className="flex justify-center gap-1 flex-wrap">
+            <div className="flex justify-center gap-3.5 flex-wrap p-1">
               <ColorButton color="#16a34a" />
               <ColorButton color="#ef4444" />
               <ColorButton color="#3b82f6" />
@@ -1564,14 +1612,14 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({ value, onChang
         <hr className="border-gray-100" />
 
         {/* Section: Elements */}
-        <div>
-          <button onClick={() => toggleSection('elements')} className="flex items-center justify-between w-full text-[10px] font-bold text-gray-500 uppercase mb-1 hover:text-gray-900 transition-colors">
+        <div className="space-y-2.5">
+          <button onClick={() => toggleSection('elements')} className="flex items-center justify-between w-full text-[11px] lg:text-xs font-black text-gray-500 uppercase mb-2 hover:text-gray-900 transition-colors">
             <span className="hidden lg:block">Elementos</span>
             <span className="lg:hidden mx-auto">Elementos</span>
-            {openSections.elements ? <ChevronUp className="w-3 h-3 hidden lg:block" /> : <ChevronDown className="w-3 h-3 hidden lg:block" />}
+            {openSections.elements ? <ChevronUp className="w-3.5 h-3.5 hidden lg:block" /> : <ChevronDown className="w-3.5 h-3.5 hidden lg:block" />}
           </button>
           {openSections.elements && (
-            <div className={`grid ${limitedTools ? 'grid-cols-2' : 'grid-cols-2 lg:grid-cols-4 xl:grid-cols-5'} gap-1`}>
+            <div className={`grid ${limitedTools ? 'grid-cols-2' : 'grid-cols-2 lg:grid-cols-3'} gap-x-2 gap-y-4`}>
               <ToolButton tool="player" label="Jugador" bg={true} icon={
                 <div className="relative flex items-center justify-center w-6 h-6">
                   <div className="absolute w-full h-[2px] bg-black rounded-full" style={{ bottom: '4px' }} />
@@ -1630,9 +1678,9 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({ value, onChang
 
           {/* Nombre del entrenador: se aplica al siguiente que coloques */}
           {openSections.elements && activeTool === 'coach' && (
-            <div className="mt-1.5 rounded-lg border border-gray-200 bg-gray-50 p-2 hidden lg:block">
-              <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Nombre del entrenador</label>
-              <div className="flex gap-1">
+            <div className="mt-2 rounded-lg border border-gray-200 bg-gray-50 p-2.5 hidden lg:block">
+              <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1.5">Nombre del entrenador</label>
+              <div className="flex gap-1.5">
                 <input
                   type="text"
                   list="ct-coach-names"
@@ -1696,14 +1744,14 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({ value, onChang
             <hr className="border-gray-100" />
 
             {/* Section: Goals */}
-            <div>
-              <button onClick={() => toggleSection('goals')} className="flex items-center justify-between w-full text-[10px] font-bold text-gray-500 uppercase mb-1 hover:text-gray-900 transition-colors">
+            <div className="space-y-2.5">
+              <button onClick={() => toggleSection('goals')} className="flex items-center justify-between w-full text-[11px] lg:text-xs font-black text-gray-500 uppercase mb-2 hover:text-gray-900 transition-colors">
                 <span className="hidden lg:block">Porterías</span>
                 <span className="lg:hidden mx-auto">Porterías</span>
-                {openSections.goals ? <ChevronUp className="w-3 h-3 hidden lg:block" /> : <ChevronDown className="w-3 h-3 hidden lg:block" />}
+                {openSections.goals ? <ChevronUp className="w-3.5 h-3.5 hidden lg:block" /> : <ChevronDown className="w-3.5 h-3.5 hidden lg:block" />}
               </button>
               {openSections.goals && (
-                <div className="grid grid-cols-3 gap-1">
+                <div className="grid grid-cols-3 gap-3">
                   <ToolButton tool="goal-f11" label="Portería F11" bg={true} hideLabel={true} icon={<div className="w-8 h-2 border-t-2 border-l-2 border-r-2 border-gray-800" />}/>
                   <ToolButton tool="goal-f8" label="Portería F8" bg={true} hideLabel={true} icon={<div className="w-6 h-2 border-t-2 border-l-2 border-r-2 border-gray-800" />}/>
                   <ToolButton tool="goal-f5" label="Portería F5" bg={true} hideLabel={true} icon={<div className="w-4 h-1.5 border-t-2 border-l-2 border-r-2 border-gray-800" />}/>
@@ -1716,14 +1764,14 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({ value, onChang
         <hr className="border-gray-100" />
 
         {/* Section: Drawing */}
-        <div>
-          <button onClick={() => toggleSection('drawing')} className="flex items-center justify-between w-full text-[10px] font-bold text-gray-500 uppercase mb-1 hover:text-gray-900 transition-colors">
+        <div className="space-y-2.5">
+          <button onClick={() => toggleSection('drawing')} className="flex items-center justify-between w-full text-[11px] lg:text-xs font-black text-gray-500 uppercase mb-2 hover:text-gray-900 transition-colors">
             <span className="hidden lg:block">Dibujo / Formas</span>
             <span className="lg:hidden mx-auto">Dibujo</span>
-            {openSections.drawing ? <ChevronUp className="w-3 h-3 hidden lg:block" /> : <ChevronDown className="w-3 h-3 hidden lg:block" />}
+            {openSections.drawing ? <ChevronUp className="w-3.5 h-3.5 hidden lg:block" /> : <ChevronDown className="w-3.5 h-3.5 hidden lg:block" />}
           </button>
           {openSections.drawing && (
-            <div className="grid grid-cols-3 gap-1">
+            <div className="grid grid-cols-3 gap-3">
                 <ToolButton tool="text" label="Texto" bg={true} icon={<Type className="w-5 h-5 text-gray-700" />} />
                 <ToolButton tool="arrow" label="Pase" bg={true} icon={
                   <div className="flex items-center text-gray-700 w-1/2 mx-auto">
@@ -1764,13 +1812,14 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({ value, onChang
         )}
 
         {/* Field container */}
-        <div 
-          className={`relative touch-none cursor-crosshair rounded shadow-lg border border-white/10 ${isCropped ? 'overflow-hidden' : 'overflow-hidden'} ${printMode ? 'mx-auto' : ''}`}
+        <div
+          data-board-field="true"
+          className={`relative touch-none cursor-crosshair rounded ${printMode ? 'mx-auto' : 'shadow-lg border border-white/10'} ${isCropped ? 'overflow-hidden' : 'overflow-hidden'}`}
           style={{
             // Usamos el mismo cálculo (fittedW, fittedH) tanto para editor como impresión.
             aspectRatio: containerAspect,
-            width: (readOnly || !fittedW) ? '100%' : `${fittedW}px`,
-            height: (readOnly || !fittedW) ? '100%' : `${fittedH}px`,
+            width: !fittedW ? '100%' : `${fittedW}px`,
+            height: !fittedH ? '100%' : `${fittedH}px`,
             maxWidth: '100%',
             maxHeight: '100%',
             containerType: 'normal'
