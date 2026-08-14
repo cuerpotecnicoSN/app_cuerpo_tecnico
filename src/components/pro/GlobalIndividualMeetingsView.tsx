@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Plus, Users2, MapPin, Search, Trash2, CalendarDays, Edit2, ChevronRight } from 'lucide-react';
+import { Plus, Users2, MapPin, Search, Trash2, CalendarDays, ChevronRight } from 'lucide-react';
 import DOMPurify from 'dompurify';
 import type { MeetingDB, Player } from '../types';
 import { getMeetings, createMeeting, updateMeeting, deleteMeeting, addMeetingPlayer } from '../../services/meetings';
