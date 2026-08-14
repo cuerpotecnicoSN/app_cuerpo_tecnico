@@ -19,6 +19,9 @@ export interface BoardElement {
   filled?: boolean;
   dashed?: boolean;
   abp_marking?: string;
+  width?: number;
+  height?: number;
+  thickness?: number;
 }
 
 export interface BoardLine {
@@ -29,6 +32,9 @@ export interface BoardLine {
   endX: number;
   endY: number;
   color: string;
+  curve?: number;
+  thickness?: number;
+  dashed?: boolean;
 }
 
 interface TaskBoardEditorProps {
@@ -352,7 +358,7 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({
       (e.target as Element).setPointerCapture(e.pointerId);
       setDrawingLine({
         id: `line-${Date.now()}`,
-        type: activeTool,
+        type: activeTool as 'arrow' | 'dashed-arrow' | 'zone-line',
         startX: x,
         startY: y,
         endX: x,

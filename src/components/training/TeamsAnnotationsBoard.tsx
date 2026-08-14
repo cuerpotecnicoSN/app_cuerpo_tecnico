@@ -676,7 +676,7 @@ export function TeamsAnnotationsBoard({ value, onChange, undoTrigger = 0, clearT
       setBoardItems([]);
       setTables([]);
       saveItems([], []);
-      setSelectedItemId(null);
+      setSelectedItemIds([]);
       setSelectedTableId(null);
     }
   };
@@ -944,13 +944,13 @@ export function TeamsAnnotationsBoard({ value, onChange, undoTrigger = 0, clearT
   };
 
   // Update item color (supports single or multi-selected items)
-  const updateItemColor = (id: string, color: string) => {
-    pushHistory();
-    const targets = selectedItemIds.includes(id) ? selectedItemIds : [id];
-    const updated = boardItems.map(item => targets.includes(item.id) ? { ...item, color, hasCustomColor: true } : item);
-    setBoardItems(updated);
-    saveItems(updated);
-  };
+  // const updateItemColor = (id: string, color: string) => {
+  //   pushHistory();
+  //   const targets = selectedItemIds.includes(id) ? selectedItemIds : [id];
+  //   const updated = boardItems.map(item => targets.includes(item.id) ? { ...item, color, hasCustomColor: true } : item);
+  //   setBoardItems(updated);
+  //   saveItems(updated);
+  // };
 
   const updateSelectedItemsColor = (color: string) => {
     pushHistory();
@@ -960,14 +960,14 @@ export function TeamsAnnotationsBoard({ value, onChange, undoTrigger = 0, clearT
   };
 
   // Remove item (supports single or multi-selected items)
-  const removeItem = (id: string) => {
-    pushHistory();
-    const targets = selectedItemIds.includes(id) ? selectedItemIds : [id];
-    const updated = boardItems.filter(item => !targets.includes(item.id));
-    setBoardItems(updated);
-    saveItems(updated);
-    setSelectedItemIds(prev => prev.filter(x => !targets.includes(x)));
-  };
+  // const removeItem = (id: string) => {
+  //   pushHistory();
+  //   const targets = selectedItemIds.includes(id) ? selectedItemIds : [id];
+  //   const updated = boardItems.filter(item => !targets.includes(item.id));
+  //   setBoardItems(updated);
+  //   saveItems(updated);
+  //   setSelectedItemIds(prev => prev.filter(x => !targets.includes(x)));
+  // };
 
   const removeSelectedItems = () => {
     pushHistory();
@@ -977,7 +977,7 @@ export function TeamsAnnotationsBoard({ value, onChange, undoTrigger = 0, clearT
     setSelectedItemIds([]);
   };
 
-  const selectedItem = boardItems.find(i => selectedItemIds.includes(i.id));
+  // const selectedItem = boardItems.find(i => selectedItemIds.includes(i.id));
   const selectedTable = tables.find(t => t.id === selectedTableId) || tables[0];
 
   return (

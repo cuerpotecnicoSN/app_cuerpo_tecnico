@@ -203,7 +203,7 @@ export function RichTextEditor({ value, onChange, placeholder, minHeight = "120p
         }}
         className="w-full px-4 py-3 outline-none text-sm text-gray-800 bg-white min-h-[100px] overflow-y-auto rich-text-content"
         style={{ minHeight }}
-        placeholder={placeholder}
+        {...({ placeholder } as any)}
       />
     </div>
   );

@@ -523,8 +523,6 @@ export const exportSessionToPdf = async (options: SessionPdfOptions) => {
   const {
     sessionTitle,
     date,
-    time,
-    location,
     structure,
     observations,
     tasks,
