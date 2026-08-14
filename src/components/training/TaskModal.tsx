@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { X, Save, Dumbbell, Clock, AlignLeft, Layers } from 'lucide-react';
+import { X, Save, Dumbbell, Clock, AlignLeft, Layers, Trash2 } from 'lucide-react';
 import { TaskBoardEditor } from './TaskBoardEditor';
 import { TeamsAnnotationsBoard } from './TeamsAnnotationsBoard';
 import { TASK_TYPES } from '../types';
@@ -11,9 +11,11 @@ interface TaskModalProps {
   onClose: () => void;
   onSave: (task: Omit<TaskLibraryItem, 'id' | 'created_at'>) => Promise<void>;
   initialData?: Partial<TaskLibraryItem>;
+  /** Si se pasa, aparece el botón de eliminar dentro de la tarea (sólo al editar) */
+  onDelete?: () => void;
 }
 
-export function TaskModal({ isOpen, onClose, onSave, initialData }: TaskModalProps) {
+export function TaskModal({ isOpen, onClose, onSave, initialData, onDelete }: TaskModalProps) {
   const [title, setTitle] = useState(initialData?.title || '');
   const [category, setCategory] = useState(initialData?.category || 'Principal');
   const [description, setDescription] = useState(initialData?.description || '');
@@ -246,6 +248,10 @@ export function TaskModal({ isOpen, onClose, onSave, initialData }: TaskModalPro
                     className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-base font-semibold text-gray-800 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all shadow-sm"
                   >
                     <option value="Calentamiento">Calentamiento</option>
+                    <option value="Rondo">Rondo</option>
+                    <option value="Posesión">Posesión</option>
+                    <option value="Partido Reducido">Partido Reducido</option>
+                    <option value="Partido">Partido</option>
                     <option value="Principal">Principal</option>
                     <option value="ABP">ABP / Táctica</option>
                     <option value="Física">Preparación Física</option>
@@ -396,6 +402,16 @@ export function TaskModal({ isOpen, onClose, onSave, initialData }: TaskModalPro
 
         {/* Footer del Modal */}
         <div className="px-5 py-2 border-t border-gray-100 bg-gray-50 flex items-center justify-end gap-3 shrink-0">
+          {onDelete && initialData?.id && (
+            <button
+              type="button"
+              onClick={onDelete}
+              className="mr-auto px-4 py-2 rounded-xl text-sm font-bold text-red-600 hover:text-white hover:bg-red-600 border border-red-200 hover:border-red-600 transition-colors flex items-center gap-2"
+            >
+              <Trash2 size={16} />
+              Eliminar tarea
+            </button>
+          )}
           <button
             type="button"
             onClick={onClose}
@@ -554,12 +570,11 @@ function RichTextModal({
   initialValue: string;
   onSave: (val: string) => void;
 }) {
-  const [val, setVal] = React.useState(initialValue);
   const editorRef = useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
-    if (isOpen) {
-      setVal(initialValue);
+    if (isOpen && editorRef.current) {
+      editorRef.current.innerHTML = initialValue;
     }
   }, [isOpen, initialValue]);
 
@@ -567,13 +582,10 @@ function RichTextModal({
 
   const execCommand = (command: string, value: string = '') => {
     document.execCommand(command, false, value);
-    if (editorRef.current) {
-      setVal(editorRef.current.innerHTML);
-    }
   };
 
   const handleSave = () => {
-    onSave(editorRef.current ? editorRef.current.innerHTML : val);
+    onSave(editorRef.current ? editorRef.current.innerHTML : initialValue);
     onClose();
   };
 
@@ -644,8 +656,6 @@ function RichTextModal({
             suppressContentEditableWarning
             className="w-full h-full min-h-[100%] outline-none text-gray-800 font-sans prose max-w-none"
             style={{ minHeight: '100%' }}
-            dangerouslySetInnerHTML={{ __html: val }}
-            onInput={(e) => setVal(e.currentTarget.innerHTML)}
           />
         </div>
 

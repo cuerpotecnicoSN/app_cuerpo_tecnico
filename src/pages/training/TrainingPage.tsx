@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
-import { Plus, Trash2, ChevronLeft, Dumbbell, MapPin, X, Download, Save, FolderSearch, ClipboardList, Edit2, ArrowUp, ArrowDown, ListOrdered, AlertTriangle, Settings } from 'lucide-react';
+import { Plus, Trash2, ChevronLeft, MapPin, X, Download, Save, FolderSearch, ClipboardList, Edit2, ArrowUp, ArrowDown, ListOrdered, AlertTriangle, Settings } from 'lucide-react';
 import { TASK_TYPES, type TrainingSessionDB, type TaskLibraryItem, type SessionTask } from '../../components/types';
 import {
   getTrainingSessions, createTrainingSession, deleteTrainingSession, updateTrainingSession,
@@ -16,6 +16,31 @@ import { exportSessionToPdf } from '../../utils/sessionPdf';
 const stripHtml = (html?: string) => {
   if (!html) return '';
   return html.replace(/<[^>]*>/g, '').trim();
+};
+
+// ¿La tarea tiene dibujo táctico? (la pizarra de equipos no cuenta)
+const hasTacticalDrawing = (boardDataStr?: string) => {
+  if (!boardDataStr) return false;
+  try {
+    const parsed = JSON.parse(boardDataStr);
+    return (Array.isArray(parsed.elements) && parsed.elements.length > 0)
+      || (Array.isArray(parsed.lines) && parsed.lines.length > 0);
+  } catch {
+    return false;
+  }
+};
+
+// Proporción del campo dibujado, ignorando la pizarra de equipos
+const drawingAspectRatio = (boardDataStr?: string) => {
+  if (!boardDataStr) return '16 / 9';
+  try {
+    const fieldType = JSON.parse(boardDataStr).fieldType || 'half';
+    if (fieldType === 'full') return '105 / 68'; // se muestra girado
+    if (fieldType === 'full-horizontal') return '105 / 68';
+    return '16 / 9';
+  } catch {
+    return '16 / 9';
+  }
 };
 
 type View = 'sessions' | 'library';
@@ -289,6 +314,7 @@ function TaskLibraryView({ tasks, onCreate, onDelete }: { tasks: TaskLibraryItem
     try {
       await onDelete(pendingDelete.id);
       setPendingDelete(null);
+      setEditingTask(undefined); // veníamos del botón de eliminar dentro de la tarea
     } finally {
       setDeleting(false);
     }
@@ -300,47 +326,76 @@ function TaskLibraryView({ tasks, onCreate, onDelete }: { tasks: TaskLibraryItem
     return tk.types?.includes(selectedTypeFilter);
   });
 
+  const openTask = (tk: TaskLibraryItem) => { setEditingTask(tk); setShowModal(true); };
+
   const renderTaskCard = (tk: TaskLibraryItem) => (
-    <div key={tk.id} className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
-      <div>
-        <div className="flex justify-between items-start mb-2">
-          <div className="flex items-center gap-2">
-            <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-              <Dumbbell size={16} />
-            </div>
-            <p className="font-extrabold text-gray-900 leading-snug">{tk.title}</p>
-          </div>
-          <button
-            onClick={() => setPendingDelete(tk)}
-            className="text-gray-300 hover:text-red-500 p-1 rounded-lg transition-colors"
+    <article
+      key={tk.id}
+      onClick={() => openTask(tk)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openTask(tk); } }}
+      className="group bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:border-blue-300 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition-all cursor-pointer flex flex-col"
+    >
+      {/* Dibujo táctico (la pizarra de equipos no se muestra aquí) */}
+      <div className="relative aspect-video bg-gray-50 border-b border-gray-100 flex items-center justify-center p-2 overflow-hidden">
+        {hasTacticalDrawing(tk.board_data) ? (
+          <div
+            className="relative h-full max-w-full pointer-events-none"
+            style={{ aspectRatio: drawingAspectRatio(tk.board_data) }}
           >
-            <Trash2 size={16} />
-          </button>
-        </div>
-        <div className="flex items-center gap-2 text-xs font-semibold text-gray-400 mt-2 flex-wrap">
-          <span className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded-md">{tk.category || 'Principal'}</span>
-          {tk.duration_min && <span>· {tk.duration_min} min</span>}
-          {tk.types && tk.types.length > 0 && (
-            <>
-              <span className="text-gray-300">·</span>
-              {tk.types.map((type) => (
-                <span key={type} className="bg-blue-50 text-blue-700 border border-blue-100 px-2 py-0.5 rounded-md text-[10px] font-bold">
-                  {type}
-                </span>
-              ))}
-            </>
-          )}
-        </div>
-        {tk.description && <p className="text-sm text-gray-500 mt-3 line-clamp-2 leading-relaxed">{stripHtml(tk.description)}</p>}
+            <div className="absolute inset-0">
+              <TaskBoardEditor value={tk.board_data} readOnly hideToolbar rotateFullField={true} />
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-1.5 text-gray-300 select-none">
+            <ClipboardList className="w-8 h-8" strokeWidth={1.5} />
+            <span className="text-[11px] font-bold uppercase tracking-wider">Sin dibujo</span>
+          </div>
+        )}
+
+        <span className="absolute top-2 left-2 bg-white/95 backdrop-blur border border-gray-200 text-gray-700 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-lg shadow-sm">
+          {tk.category || 'Principal'}
+        </span>
+        {tk.duration_min && (
+          <span className="absolute top-2 right-2 bg-blue-600 text-white text-[10px] font-black px-2 py-0.5 rounded-lg shadow-sm">
+            {tk.duration_min}′
+          </span>
+        )}
       </div>
 
-      <span
-        onClick={() => { setEditingTask(tk); setShowModal(true); }}
-        className="mt-4 w-full py-2 bg-gray-50 hover:bg-blue-50 hover:text-blue-600 border border-gray-200 hover:border-blue-200 text-gray-600 rounded-xl text-xs font-bold transition-all text-center cursor-pointer select-none block"
-      >
-        Ver / Editar Tarea
-      </span>
-    </div>
+      {/* Datos */}
+      <div className="p-4 flex flex-col gap-2 flex-1">
+        <h4 className="font-black text-gray-900 leading-snug line-clamp-2 group-hover:text-blue-700 transition-colors">
+          {tk.title}
+        </h4>
+        {tk.description && (
+          <p className="text-xs text-gray-500 leading-relaxed line-clamp-2">{stripHtml(tk.description)}</p>
+        )}
+        {tk.types && tk.types.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mt-auto pt-1">
+            {tk.types.map((type) => (
+              <span key={type} className="bg-blue-50 text-blue-700 border border-blue-100 px-2 py-0.5 rounded-md text-[10px] font-bold">
+                {type}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Pie */}
+      <div className="px-4 py-2.5 border-t border-gray-100 bg-gray-50/70 flex items-center justify-between gap-3">
+        <span className="text-xs font-bold text-gray-500 group-hover:text-blue-600 flex items-center gap-1.5 transition-colors shrink-0">
+          <Edit2 size={13} /> Abrir tarea
+        </span>
+        {tk.material && (
+          <span className="text-[11px] font-semibold text-gray-400 truncate" title={tk.material}>
+            🎒 {tk.material}
+          </span>
+        )}
+      </div>
+    </article>
   );
 
   return (
@@ -391,6 +446,7 @@ function TaskLibraryView({ tasks, onCreate, onDelete }: { tasks: TaskLibraryItem
         onClose={() => { setShowModal(false); setEditingTask(undefined); }}
         onSave={handleSave}
         initialData={editingTask}
+        onDelete={editingTask ? () => { setPendingDelete(editingTask); setShowModal(false); } : undefined}
       />
 
       <ConfirmDialog
@@ -415,7 +471,7 @@ function TaskLibraryView({ tasks, onCreate, onDelete }: { tasks: TaskLibraryItem
                   <span className="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
                   {type} ({typeTasks.length})
                 </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid gap-5 [grid-template-columns:repeat(auto-fill,minmax(255px,1fr))]">
                   {typeTasks.map((tk) => renderTaskCard(tk))}
                 </div>
               </div>
@@ -430,7 +486,7 @@ function TaskLibraryView({ tasks, onCreate, onDelete }: { tasks: TaskLibraryItem
                   <span className="w-2.5 h-2.5 rounded-full bg-gray-400"></span>
                   Otras tareas / Sin tipo ({untypedTasks.length})
                 </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid gap-5 [grid-template-columns:repeat(auto-fill,minmax(255px,1fr))]">
                   {untypedTasks.map((tk) => renderTaskCard(tk))}
                 </div>
               </div>
@@ -438,7 +494,7 @@ function TaskLibraryView({ tasks, onCreate, onDelete }: { tasks: TaskLibraryItem
           })()}
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid gap-5 [grid-template-columns:repeat(auto-fill,minmax(255px,1fr))]">
           {filteredTasks.map((tk) => renderTaskCard(tk))}
         </div>
       )}
@@ -449,6 +505,7 @@ function TaskLibraryView({ tasks, onCreate, onDelete }: { tasks: TaskLibraryItem
 function SessionEditor({ session, tasks, onBack, onTasksChange }: { session: TrainingSessionDB; tasks: TaskLibraryItem[]; onBack: () => void; onTasksChange: () => void }) {
   const [sessionTasks, setSessionTasks] = useState<SessionTask[]>([]);
   const [isLibraryModalOpen, setIsLibraryModalOpen] = useState(false);
+  const [selectedLibraryCategory, setSelectedLibraryCategory] = useState<string>('all');
   // null = modal cerrado | { task: undefined } = crear | { task } = editar
   const [taskModal, setTaskModal] = useState<{ task?: TaskLibraryItem } | null>(null);
   const [sortMode, setSortMode] = useState(false);
@@ -464,6 +521,46 @@ function SessionEditor({ session, tasks, onBack, onTasksChange }: { session: Tra
 
   const load = () => getSessionTasks(session.id).then(setSessionTasks).catch(() => setSessionTasks([]));
   useEffect(() => { load(); }, [session.id]);
+
+  // Library Modal Filtering Logic
+  const matchType = (taskTypes: string[] | undefined, filterType: string) => {
+    if (filterType === 'all') return true;
+    const cleanFilter = filterType.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+    
+    if (cleanFilter === 'otros') {
+      const standardTypes = ['rondo', 'posesion', 'partido reducido', 'partido', 'circuito', 'finalizacion', 'secuencia'];
+      const taskTypesClean = (taskTypes || []).map(t => t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim());
+      return !taskTypesClean.some(t => standardTypes.includes(t));
+    }
+    if (cleanFilter === 'fisica') {
+      const taskTypesClean = (taskTypes || []).map(t => t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim());
+      return taskTypesClean.some(t => t.includes('fisica') || t.includes('preparacion') || t.includes('circuito'));
+    }
+
+    const taskTypesClean = (taskTypes || []).map(t => t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim());
+    return taskTypesClean.includes(cleanFilter);
+  };
+
+  const filteredTasks = tasks.filter(tk => matchType(tk.types, selectedLibraryCategory));
+
+  const groupedTasks = filteredTasks.reduce((acc, tk) => {
+    const cat = tk.category || 'Otros';
+    if (!acc[cat]) acc[cat] = [];
+    acc[cat].push(tk);
+    return acc;
+  }, {} as Record<string, typeof tasks>);
+
+  const filterCategories = [
+    { key: 'all', label: 'Ver Todos' },
+    { key: 'rondo', label: 'Rondos' },
+    { key: 'posesion', label: 'Posesión' },
+    { key: 'partido reducido', label: 'Partidos Reducidos' },
+    { key: 'partido', label: 'Partidos' },
+    { key: 'circuito', label: 'Circuitos' },
+    { key: 'finalizacion', label: 'Finalización' },
+    { key: 'secuencia', label: 'Secuencias' },
+    { key: 'otros', label: 'Otros' }
+  ];
 
   // Sin al menos dos tareas no tiene sentido seguir en modo ordenar
   useEffect(() => { if (sessionTasks.length < 2) setSortMode(false); }, [sessionTasks.length]);
@@ -547,49 +644,76 @@ function SessionEditor({ session, tasks, onBack, onTasksChange }: { session: Tra
     try {
       const parsed = JSON.parse(boardDataStr);
       
-      // If it is a teams and annotations layout
-      if (parsed.teamsBoard && Array.isArray(parsed.teamsBoard.items) && parsed.teamsBoard.items.length > 0) {
-        const items = parsed.teamsBoard.items;
-        const config = parsed.teamsBoard.columnsConfig;
+      const hasDrawing = (parsed.elements && parsed.elements.length > 0) || (parsed.lines && parsed.lines.length > 0);
+
+      // If it is a teams and annotations layout and has no drawing elements
+      if (!hasDrawing && parsed.teamsBoard) {
+        let tbl = parsed.teamsBoard.tables?.[0];
+        if (!tbl && parsed.teamsBoard.columnsConfig) {
+          tbl = {
+            id: 'default',
+            count: parsed.teamsBoard.columnsConfig.count,
+            colors: parsed.teamsBoard.columnsConfig.colors,
+            names: parsed.teamsBoard.columnsConfig.names
+          };
+        }
         
-        if (config && config.count > 0) {
-          const names = config.names || [];
+        const items = Array.isArray(parsed.teamsBoard.items) ? parsed.teamsBoard.items : [];
+        
+        if (tbl && tbl.count > 0) {
           return (
-            <div className="w-28 h-20 bg-slate-900 border border-slate-800 rounded-lg p-1.5 flex flex-col justify-between overflow-hidden text-[8px] text-slate-400 select-none shrink-0">
-              <span className="font-bold text-[7px] text-slate-500 uppercase">📋 Equipos</span>
-              <div className="flex gap-1 overflow-hidden flex-1 items-start mt-1">
-                {Array.from({ length: config.count }).map((_, colIdx) => {
-                  const colColor = config.colors?.[colIdx] || '#3b82f6';
-                  const colName = names[colIdx] || `Eq ${colIdx + 1}`;
+            <div className="w-[336px] h-[240px] bg-white border border-gray-200 rounded-xl p-3 flex flex-col justify-between overflow-hidden select-none shrink-0 relative shadow-sm">
+              <span className="font-black text-[9px] text-slate-400 uppercase tracking-wider block mb-2">📋 Equipos</span>
+              <div className="flex-1 flex gap-2 overflow-hidden w-full items-stretch">
+                {Array.from({ length: tbl.count }).map((_, colIdx) => {
+                  const colName = tbl.names?.[colIdx] || `Eq ${colIdx + 1}`;
+                  const colColor = tbl.colors?.[colIdx] || '#000000';
+                  const colPlayers = items.filter((it: any) => it.type === 'player' && (it.tableId === tbl.id || !it.tableId) && it.colIndex === colIdx);
+                  
                   return (
-                    <div key={colIdx} className="flex-1 flex flex-col items-center gap-0.5 border border-dashed rounded p-0.5 truncate" style={{ borderColor: `${colColor}30` }}>
-                      <span className="font-black text-[6px] truncate w-full text-center" style={{ color: colColor }}>{colName}</span>
+                    <div key={colIdx} className="flex-1 min-w-0 flex flex-col border border-gray-150 rounded bg-slate-50/50 overflow-hidden">
+                      <div className="text-[9px] font-black text-center py-1 px-1 truncate text-white" style={{ backgroundColor: colColor }}>
+                        {colName || `Eq ${colIdx + 1}`}
+                      </div>
+                      <div className="flex-1 p-1 overflow-hidden flex flex-col gap-1">
+                        {colPlayers.slice(0, 5).map((pl: any) => (
+                          <div key={pl.id} className="text-[8.5px] font-bold leading-none truncate px-1 py-0.5 rounded text-gray-700 bg-white border border-gray-200">
+                            {pl.text}
+                          </div>
+                        ))}
+                        {colPlayers.length > 5 && (
+                          <div className="text-[7.5px] text-gray-400 font-bold text-center leading-none mt-0.5">
+                            +{colPlayers.length - 5}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   );
                 })}
               </div>
             </div>
           );
-        }
-        return (
-          <div className="w-28 h-20 bg-slate-900 border border-slate-800 rounded-lg p-1.5 flex flex-col justify-between overflow-hidden text-[8px] text-slate-400 select-none shrink-0">
-            <span className="font-bold text-[7px] text-slate-500 uppercase">📋 Notas</span>
-            <div className="flex flex-wrap gap-0.5 overflow-hidden mt-1">
-              {items.slice(0, 3).map((it: any) => (
-                <span key={it.id} className="px-1 py-0.5 rounded truncate max-w-full text-[6px]" style={{ backgroundColor: `${it.color}20`, color: it.color }}>
-                  {it.text}
-                </span>
-              ))}
+        } else {
+          return (
+            <div className="w-[336px] h-[240px] bg-white border border-gray-200 rounded-xl p-3 flex flex-col justify-between overflow-hidden select-none shrink-0 relative shadow-sm">
+              <span className="font-black text-[9px] text-slate-400 uppercase tracking-wider block mb-2">📋 Anotaciones</span>
+              <div className="flex-1 flex flex-wrap gap-1 overflow-hidden mt-1 content-start">
+                {items.slice(0, 12).map((it: any) => (
+                  <span key={it.id} className="px-2 py-1 rounded truncate max-w-full text-[8.5px] border border-gray-200 bg-gray-55 text-gray-750">
+                    {it.text}
+                  </span>
+                ))}
+              </div>
             </div>
-          </div>
-        );
+          );
+        }
       }
     } catch {}
     
-    // Default fallback to Tactical canvas editor
+    // Default fallback to Tactical canvas editor (renders the soccer field and elements)
     return (
-      <div className="w-28 h-20 bg-white border border-gray-200 rounded-lg overflow-hidden shrink-0 relative shadow-sm">
-        <TaskBoardEditor value={boardDataStr} readOnly hideToolbar rotateFullField={true} />
+      <div className="w-[336px] h-[240px] bg-white border border-gray-200 rounded-xl overflow-hidden shrink-0 relative shadow-sm">
+        <TaskBoardEditor value={boardDataStr} readOnly hideToolbar rotateFullField={true} printMode={true} printWidth={336} />
       </div>
     );
   };
@@ -740,23 +864,41 @@ function SessionEditor({ session, tasks, onBack, onTasksChange }: { session: Tra
             const { structure, observations } = parseNotes(session.notes);
             return (
               (structure || observations || session.objective) && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2 pt-3 border-t border-gray-200/60">
+                <div className="flex flex-col gap-4 mt-2 pt-3 border-t border-gray-200/60">
+                  <style>{`
+                    .rich-text-content ul { list-style-type: disc !important; padding-left: 1.25rem !important; margin-bottom: 0.5rem; }
+                    .rich-text-content ol { list-style-type: decimal !important; padding-left: 1.25rem !important; margin-bottom: 0.5rem; }
+                    .rich-text-content p { margin-bottom: 0.25rem; }
+                    .rich-text-content blockquote {
+                      margin-left: 2rem !important;
+                      border-left: 2px solid #cbd5e1;
+                      padding-left: 0.5rem;
+                      margin-top: 0.25rem;
+                      margin-bottom: 0.25rem;
+                    }
+                  `}</style>
+
                   {session.objective && (
-                    <div className="bg-white border border-gray-200 rounded-xl p-3 shadow-sm">
-                      <h4 className="text-xs font-bold text-purple-600 uppercase mb-1 flex items-center gap-1">🎯 Objetivo</h4>
+                    <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm w-full">
+                      <h4 className="text-xs font-bold text-purple-600 uppercase mb-1.5 flex items-center gap-1">🎯 Objetivo</h4>
                       <p className="text-xs font-medium text-gray-700 whitespace-pre-wrap leading-relaxed">{session.objective}</p>
                     </div>
                   )}
-                  {structure && (
-                    <div className="bg-white border border-gray-200 rounded-xl p-3 shadow-sm">
-                      <h4 className="text-xs font-bold text-indigo-600 uppercase mb-1 flex items-center gap-1">📋 Estructura</h4>
-                      <p className="text-xs font-medium text-gray-700 whitespace-pre-wrap leading-relaxed">{structure}</p>
-                    </div>
-                  )}
-                  {observations && (
-                    <div className="bg-white border border-gray-200 rounded-xl p-3 shadow-sm">
-                      <h4 className="text-xs font-bold text-amber-600 uppercase mb-1 flex items-center gap-1">✍️ Observaciones</h4>
-                      <p className="text-xs font-medium text-gray-700 whitespace-pre-wrap leading-relaxed">{observations}</p>
+
+                  {(structure || observations) && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+                      {structure && (
+                        <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm min-h-[100px]">
+                          <h4 className="text-xs font-bold text-indigo-600 uppercase mb-2 flex items-center gap-1">📋 Estructura</h4>
+                          <div className="text-xs font-medium text-gray-700 leading-relaxed rich-text-content" dangerouslySetInnerHTML={{ __html: structure }} />
+                        </div>
+                      )}
+                      {observations && (
+                        <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm min-h-[100px]">
+                          <h4 className="text-xs font-bold text-amber-600 uppercase mb-2 flex items-center gap-1">✍️ Observaciones</h4>
+                          <div className="text-xs font-medium text-gray-700 leading-relaxed rich-text-content" dangerouslySetInnerHTML={{ __html: observations }} />
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -1081,68 +1223,90 @@ function SessionEditor({ session, tasks, onBack, onTasksChange }: { session: Tra
       )}
 
       {/* Modal Librería Simple */}
-      {isLibraryModalOpen && (() => {
-        // Group tasks by category
-        const groupedTasks = tasks.reduce((acc, tk) => {
-          const cat = tk.category || 'Otros';
-          if (!acc[cat]) acc[cat] = [];
-          acc[cat].push(tk);
-          return acc;
-        }, {} as Record<string, typeof tasks>);
+      {isLibraryModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsLibraryModalOpen(false)} />
+          <div className="relative bg-white border border-gray-200 rounded-2xl w-full max-w-5xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+            <div className="flex justify-between items-center p-5 border-b border-gray-200">
+              <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <FolderSearch className="text-red-600" size={20} /> Librería de Tareas
+              </h2>
+              <button onClick={() => setIsLibraryModalOpen(false)} className="text-gray-400 hover:text-gray-600 cursor-pointer"><X size={20} /></button>
+            </div>
 
-        return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsLibraryModalOpen(false)} />
-            <div className="relative bg-white border border-gray-200 rounded-xl w-full max-w-3xl max-h-[80vh] flex flex-col shadow-2xl">
-              <div className="flex justify-between items-center p-5 border-b border-gray-200">
-                <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                  <FolderSearch className="text-red-600" size={20} /> Librería de Tareas
-                </h2>
-                <button onClick={() => setIsLibraryModalOpen(false)} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
+            {/* Filtro por Categorías */}
+            {tasks.length > 0 && (
+              <div className="px-5 py-3.5 bg-gray-50 border-b border-gray-100 flex flex-wrap gap-2 items-center shrink-0">
+                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 mr-2">Filtrar por:</span>
+                {filterCategories.map(cat => {
+                  const count = cat.key === 'all'
+                    ? tasks.length
+                    : tasks.filter(tk => matchType(tk.types, cat.key)).length;
+
+                  return (
+                    <button
+                      key={cat.key}
+                      onClick={() => setSelectedLibraryCategory(cat.key)}
+                      className={`px-3.5 py-1.5 rounded-xl text-xs font-black uppercase transition-all border cursor-pointer select-none ${
+                        selectedLibraryCategory === cat.key
+                          ? 'bg-red-600 border-red-600 text-white shadow-md shadow-red-500/25'
+                          : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-100 hover:text-gray-800'
+                      }`}
+                    >
+                      {cat.label} ({count})
+                    </button>
+                  );
+                })}
               </div>
-              <div className="flex-1 overflow-y-auto p-5 space-y-6 no-scrollbar">
-                {tasks.length === 0 ? (
-                  <p className="text-gray-500 text-sm">No hay tareas en la librería.</p>
-                ) : (
-                  Object.keys(groupedTasks).sort().map(cat => (
-                    <div key={cat} className="space-y-3">
-                      <h3 className="text-xs font-black uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-1.5 flex items-center gap-1.5 select-none">
-                        📁 {cat} <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full text-[9px] font-black">{groupedTasks[cat].length}</span>
-                      </h3>
-                      <div className="grid gap-3">
-                        {groupedTasks[cat].map(tk => (
-                          <div key={tk.id} className="bg-gray-55 border border-gray-200 p-4 rounded-xl flex gap-4 items-center justify-between hover:border-blue-500/30 hover:bg-blue-50/5 transition-all">
-                            <div className="flex-1 min-w-0">
-                              <h3 className="text-sm font-bold text-gray-900">{tk.title}</h3>
-                              <p className="text-xs text-gray-500 mt-1 line-clamp-1">
-                                {tk.duration_min ? `⏱️ ${tk.duration_min} min` : ''} 
-                                {tk.material ? ` • 🎒 ${tk.material}` : ''}
-                              </p>
-                              {tk.description && (
-                                <p className="text-[11px] text-gray-400 mt-1 line-clamp-1 italic">{stripHtml(tk.description)}</p>
-                              )}
-                            </div>
-                            
-                            {/* Tactical / Teams Board Preview */}
-                            {getBoardPreview(tk.board_data)}
+            )}
 
-                            <button 
-                              onClick={() => handleAdd(tk.id)} 
-                              className="text-xs font-black bg-red-50 text-red-600 hover:bg-red-600 hover:text-white px-3 py-2 rounded-xl transition-all shadow-sm active:scale-95 shrink-0"
-                            >
-                              Añadir
-                            </button>
+            <div className="flex-1 overflow-y-auto p-5 space-y-6 no-scrollbar">
+              {tasks.length === 0 ? (
+                <p className="text-gray-500 text-sm">No hay tareas en la librería.</p>
+              ) : filteredTasks.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-gray-450">
+                  <FolderSearch size={40} className="opacity-20 mb-2" />
+                  <p className="text-xs font-bold">No hay tareas en esta categoría.</p>
+                </div>
+              ) : (
+                Object.keys(groupedTasks).sort().map(cat => (
+                  <div key={cat} className="space-y-3">
+                    <h3 className="text-xs font-black uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-1.5 flex items-center gap-1.5 select-none">
+                      📁 {cat} <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full text-[9px] font-black">{groupedTasks[cat].length}</span>
+                    </h3>
+                    <div className="grid gap-3">
+                      {groupedTasks[cat].map(tk => (
+                        <div key={tk.id} className="bg-gray-55 border border-gray-200 p-4 rounded-xl flex gap-4 items-center justify-between hover:border-blue-500/30 hover:bg-blue-50/5 transition-all">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-sm font-bold text-gray-900">{tk.title}</h3>
+                            <p className="text-xs text-gray-500 mt-1 line-clamp-1">
+                              {tk.duration_min ? `⏱️ ${tk.duration_min} min` : ''} 
+                              {tk.material ? ` • 🎒 ${tk.material}` : ''}
+                            </p>
+                            {tk.description && (
+                              <p className="text-[11px] text-gray-400 mt-1 line-clamp-1 italic">{stripHtml(tk.description)}</p>
+                            )}
                           </div>
-                        ))}
-                      </div>
+                          
+                          {/* Tactical / Teams Board Preview */}
+                          {getBoardPreview(tk.board_data)}
+
+                          <button 
+                            onClick={() => handleAdd(tk.id)} 
+                            className="text-xs font-black bg-red-50 text-red-600 hover:bg-red-600 hover:text-white px-3 py-2 rounded-xl transition-all shadow-sm active:scale-95 shrink-0 cursor-pointer"
+                          >
+                            Añadir
+                          </button>
+                        </div>
+                      ))}
                     </div>
-                  ))
-                )}
-              </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
-        );
-      })()}
+        </div>
+      )}
     </div>
   );
 }

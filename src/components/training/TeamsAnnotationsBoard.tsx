@@ -50,7 +50,8 @@ export function TeamsAnnotationsBoard({ value, onChange, undoTrigger = 0, clearT
   useEffect(() => {
     boardItemsRef.current = boardItems;
   }, [boardItems]);
-  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
+  const [selectionBox, setSelectionBox] = useState<{ startX: number; startY: number; endX: number; endY: number } | null>(null);
   
   // History stack for Undo
   const [history, setHistory] = useState<{ items: BoardItem[]; tables: TableConfig[] }[]>([]);
@@ -60,10 +61,19 @@ export function TeamsAnnotationsBoard({ value, onChange, undoTrigger = 0, clearT
   const [activeAssignColIndex, setActiveAssignColIndex] = useState<number | null>(null);
   
   const [customText, setCustomText] = useState('');
+  const [isPasteModalOpen, setIsPasteModalOpen] = useState(false);
+  const [pasteText, setPasteText] = useState('');
   const activeColor = '#3b82f6'; // default blue
   
   const boardRef = useRef<HTMLDivElement>(null);
-  const dragItemRef = useRef<{ id: string; startX: number; startY: number; itemX: number; itemY: number } | null>(null);
+  const dragItemRef = useRef<{ 
+    id: string; 
+    startX: number; 
+    startY: number; 
+    itemX: number; 
+    itemY: number;
+    items?: { id: string; initX: number; initY: number }[];
+  } | null>(null);
   const tableActionRef = useRef<{ type: 'drag' | 'resize'; tableId: string; startX: number; startY: number; initX: number; initY: number; initW: number; initH: number } | null>(null);
 
   const pushHistory = (currentItems = boardItems, currentTables = tables) => {
@@ -193,11 +203,24 @@ export function TeamsAnnotationsBoard({ value, onChange, undoTrigger = 0, clearT
 
   const formatPlayerName = (player: any) => {
     if (!player) return '';
-    const nameToUse = player.football_name || player.footballName || `${player.first_name || ''} ${player.last_name || ''}`.trim() || player.name || '';
+    const nameToUse = player.football_name || player.footballName || player.last_name || player.lastName || player.name || '';
     const clean = nameToUse.trim();
     if (!clean) return '';
-    const firstWord = clean.split(/\s+/)[0];
-    return firstWord.toUpperCase();
+    
+    const words = clean.split(/\s+/);
+    const particles = ['di', 'de', 'da', 'la', 'el', 'le', 'van', 'del', 'dos', 'von', 'der', 'san', 'al'];
+    
+    const resultWords = [];
+    if (words.length > 0) {
+      resultWords.push(words[0]);
+      let i = 0;
+      while (i < words.length - 1 && (particles.includes(words[i].toLowerCase()) || words[i].length <= 3)) {
+        resultWords.push(words[i + 1]);
+        i++;
+      }
+    }
+    
+    return resultWords.join(' ').toUpperCase();
   };
 
   // Add player to board
@@ -248,6 +271,171 @@ export function TeamsAnnotationsBoard({ value, onChange, undoTrigger = 0, clearT
       setBoardItems(aligned);
       boardItemsRef.current = aligned;
       saveItems(aligned, currentTables);
+    }
+  };
+
+  const handlePasteTeams = (text: string, mode: 'replace' | 'add') => {
+    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    if (lines.length === 0) return;
+
+    pushHistory();
+
+    let newTables: TableConfig[] = [];
+    let newItems: BoardItem[] = [];
+
+    // Check if it is Excel-style (tab-separated columns)
+    const hasTabs = lines.some(line => line.includes('\t'));
+
+    if (hasTabs) {
+      const grid = lines.map(line => line.split('\t').map(cell => cell.trim()));
+      const colCount = Math.max(...grid.map(row => row.length));
+      
+      const colNames: string[] = [];
+      const colPlayers: string[][] = Array.from({ length: colCount }).map(() => []);
+
+      let startRow = 0;
+      if (grid.length > 1 && grid[0].every(cell => !!cell && cell.length < 25)) {
+        grid[0].forEach(cell => colNames.push(cell.toUpperCase()));
+        startRow = 1;
+      } else {
+        for (let i = 0; i < colCount; i++) {
+          colNames.push(`EQUIPO ${i + 1}`);
+        }
+      }
+
+      for (let r = startRow; r < grid.length; r++) {
+        grid[r].forEach((cell, colIdx) => {
+          if (cell) {
+            colPlayers[colIdx].push(cell);
+          }
+        });
+      }
+
+      const tableId = `table-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+      const tableWidth = Math.min(80, colCount * 22);
+      const newTable: TableConfig = {
+        id: tableId,
+        count: colCount,
+        width: tableWidth,
+        height: 50,
+        x: 10,
+        y: 15,
+        colors: Array.from({ length: colCount }).map(() => '#000000'),
+        names: colNames
+      };
+      newTables.push(newTable);
+
+      colPlayers.forEach((playersInCol, colIdx) => {
+        playersInCol.forEach((pName, pIdx) => {
+          newItems.push({
+            id: `pl-${Date.now()}-${colIdx}-${pIdx}-${Math.random().toString(36).substr(2, 5)}`,
+            type: 'player',
+            text: pName.toUpperCase(),
+            x: newTable.x + colIdx * (tableWidth / colCount) + (tableWidth / colCount) / 2,
+            y: newTable.y + 11 + pIdx * 5.2,
+            color: '#000000',
+            tableId: tableId,
+            colIndex: colIdx
+          });
+        });
+      });
+
+    } else {
+      const columns: { name: string; players: string[] }[] = [];
+      let currentColumn: { name: string; players: string[] } | null = null;
+
+      const headerRegex = /^(equipo|grupo|squad|team|peto|rojos|azules|verdes|amarillos|blancos|negros|gris|sin peto|con peto|petos)\b|:$/i;
+
+      lines.forEach(line => {
+        const isHeader = headerRegex.test(line) || line.endsWith(':');
+        if (isHeader) {
+          const name = line.replace(/:$/, '').trim();
+          currentColumn = { name: name.toUpperCase(), players: [] };
+          columns.push(currentColumn);
+        } else {
+          const splitByComma = line.split(',').map(p => p.trim()).filter(Boolean);
+          if (splitByComma.length > 1) {
+            if (!currentColumn) {
+              currentColumn = { name: 'JUGADORES', players: [] };
+              columns.push(currentColumn);
+            }
+            currentColumn.players.push(...splitByComma);
+          } else {
+            if (!currentColumn) {
+              currentColumn = { name: 'JUGADORES', players: [] };
+              columns.push(currentColumn);
+            }
+            currentColumn.players.push(line);
+          }
+        }
+      });
+
+      if (columns.length > 0) {
+        const colCount = columns.length;
+        const tableId = `table-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+        const tableWidth = Math.min(80, colCount * 22);
+        const newTable: TableConfig = {
+          id: tableId,
+          count: colCount,
+          width: tableWidth,
+          height: 50,
+          x: 10,
+          y: 15,
+          colors: Array.from({ length: colCount }).map(() => '#000000'),
+          names: columns.map(c => c.name)
+        };
+        newTables.push(newTable);
+
+        columns.forEach((col, colIdx) => {
+          col.players.forEach((pName, pIdx) => {
+            newItems.push({
+              id: `pl-${Date.now()}-${colIdx}-${pIdx}-${Math.random().toString(36).substr(2, 5)}`,
+              type: 'player',
+              text: pName.toUpperCase(),
+              x: newTable.x + colIdx * (tableWidth / colCount) + (tableWidth / colCount) / 2,
+              y: newTable.y + 11 + pIdx * 5.2,
+              color: '#000000',
+              tableId: tableId,
+              colIndex: colIdx
+            });
+          });
+        });
+      }
+    }
+
+    if (newTables.length === 0) return;
+
+    if (mode === 'replace') {
+      setTables(newTables);
+      setBoardItems(newItems);
+      saveItems(newItems, newTables);
+      setSelectedTableId(newTables[0].id);
+    } else {
+      const shiftedTables = newTables.map((t, idx) => ({
+        ...t,
+        x: Math.min(80, 10 + tables.length * 15 + idx * 10),
+        y: Math.min(60, 15 + tables.length * 10)
+      }));
+      
+      const shiftedItems = newItems.map(item => {
+        const tbl = shiftedTables.find(t => t.id === item.tableId);
+        if (tbl && item.colIndex !== undefined) {
+          const colWidth = tbl.width / tbl.count;
+          const pIdx = Math.round((item.y - 15 - 11) / 5.2);
+          return {
+            ...item,
+            x: tbl.x + item.colIndex * colWidth + colWidth / 2,
+            y: tbl.y + 11 + (pIdx >= 0 ? pIdx : 0) * 5.2
+          };
+        }
+        return item;
+      });
+
+      const nextTables = [...tables, ...shiftedTables];
+      const nextItems = [...boardItems, ...shiftedItems];
+      setTables(nextTables);
+      setBoardItems(nextItems);
+      saveItems(nextItems, nextTables);
     }
   };
 
@@ -534,16 +722,72 @@ export function TeamsAnnotationsBoard({ value, onChange, undoTrigger = 0, clearT
     boardRef.current.setPointerCapture(e.pointerId);
   };
 
+  // Selection marquee box pointer handler on background
+  const handleBoardPointerDown = (e: React.PointerEvent) => {
+    if (!boardRef.current) return;
+    
+    // Only start selection box if clicked directly on the canvas background
+    if (e.target !== boardRef.current) return;
+    
+    e.preventDefault();
+    pushHistory();
+    
+    if (!e.shiftKey && !e.metaKey && !e.ctrlKey) {
+      setSelectedItemIds([]);
+      setSelectedTableId(null);
+    }
+    
+    const rect = boardRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    setSelectionBox({
+      startX: x,
+      startY: y,
+      endX: x,
+      endY: y
+    });
+    
+    boardRef.current.setPointerCapture(e.pointerId);
+  };
+
   // Drag handlers for items
   const handlePointerDown = (e: React.PointerEvent, id: string) => {
     pushHistory();
     e.stopPropagation();
-    setSelectedItemId(id);
+    
+    let nextSelected = [...selectedItemIds];
+    if (e.shiftKey || e.ctrlKey || e.metaKey) {
+      if (selectedItemIds.includes(id)) {
+        nextSelected = selectedItemIds.filter(x => x !== id);
+      } else {
+        nextSelected = [...selectedItemIds, id];
+      }
+    } else {
+      if (!selectedItemIds.includes(id)) {
+        nextSelected = [id];
+      }
+    }
+    setSelectedItemIds(nextSelected);
+
     const item = boardItemsRef.current.find(i => i.id === id);
     if (!item || !boardRef.current) return;
 
+    // Record start positions for all items that will be dragged together
+    const dragStartItems = boardItemsRef.current
+      .filter(i => nextSelected.includes(i.id))
+      .map(i => ({
+        id: i.id,
+        initX: i.x,
+        initY: i.y
+      }));
+
     // Clear table assignments during drag so it can be recalculated on drop
-    const nextItems = boardItemsRef.current.map(i => i.id === id ? { ...i, tableId: undefined, colIndex: undefined } : i);
+    const nextItems = boardItemsRef.current.map(i => 
+      nextSelected.includes(i.id) 
+        ? { ...i, tableId: undefined, colIndex: undefined } 
+        : i
+    );
     setBoardItems(nextItems);
     boardItemsRef.current = nextItems;
 
@@ -552,7 +796,8 @@ export function TeamsAnnotationsBoard({ value, onChange, undoTrigger = 0, clearT
       startX: e.clientX,
       startY: e.clientY,
       itemX: item.x,
-      itemY: item.y
+      itemY: item.y,
+      items: dragStartItems
     };
     
     boardRef.current.setPointerCapture(e.pointerId);
@@ -560,6 +805,16 @@ export function TeamsAnnotationsBoard({ value, onChange, undoTrigger = 0, clearT
 
   const handlePointerMove = (e: React.PointerEvent) => {
     if (!boardRef.current) return;
+
+    // Handle background selection marquee box
+    if (selectionBox) {
+      e.preventDefault();
+      const rect = boardRef.current.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      setSelectionBox(prev => prev ? { ...prev, endX: x, endY: y } : null);
+      return;
+    }
 
     // Handle table dragging/resizing
     if (tableActionRef.current) {
@@ -615,13 +870,16 @@ export function TeamsAnnotationsBoard({ value, onChange, undoTrigger = 0, clearT
     const deltaX = ((e.clientX - dragItemRef.current.startX) / w) * 100;
     const deltaY = ((e.clientY - dragItemRef.current.startY) / h) * 100;
 
-    const newX = Math.max(0, Math.min(95, dragItemRef.current.itemX + deltaX));
-    const newY = Math.max(0, Math.min(95, dragItemRef.current.itemY + deltaY));
+    const draggedItemsInfo = dragItemRef.current.items || [{ id: dragItemRef.current.id, initX: dragItemRef.current.itemX, initY: dragItemRef.current.itemY }];
 
-    const itemId = dragItemRef.current.id;
     const nextItems = boardItemsRef.current.map(item => {
-      if (item.id === itemId) {
-        return { ...item, x: newX, y: newY };
+      const dragInfo = draggedItemsInfo.find(di => di.id === item.id);
+      if (dragInfo) {
+        return {
+          ...item,
+          x: Math.max(0, Math.min(95, dragInfo.initX + deltaX)),
+          y: Math.max(0, Math.min(95, dragInfo.initY + deltaY))
+        };
       }
       return item;
     });
@@ -630,8 +888,38 @@ export function TeamsAnnotationsBoard({ value, onChange, undoTrigger = 0, clearT
   };
 
   const handlePointerUp = (e: React.PointerEvent) => {
+    if (!boardRef.current) return;
+
+    // Handle selection marquee box finish
+    if (selectionBox) {
+      boardRef.current.releasePointerCapture(e.pointerId);
+      const rect = boardRef.current.getBoundingClientRect();
+      const w = rect.width || 1;
+      const h = rect.height || 1;
+      
+      const leftPct = (Math.min(selectionBox.startX, selectionBox.endX) / w) * 100;
+      const rightPct = (Math.max(selectionBox.startX, selectionBox.endX) / w) * 100;
+      const topPct = (Math.min(selectionBox.startY, selectionBox.endY) / h) * 100;
+      const bottomPct = (Math.max(selectionBox.startY, selectionBox.endY) / h) * 100;
+      
+      const newlySelectedIds: string[] = [];
+      boardItems.forEach(item => {
+        if (item.x >= leftPct && item.x <= rightPct && item.y >= topPct && item.y <= bottomPct) {
+          newlySelectedIds.push(item.id);
+        }
+      });
+      
+      if (e.shiftKey || e.metaKey || e.ctrlKey) {
+        setSelectedItemIds(prev => Array.from(new Set([...prev, ...newlySelectedIds])));
+      } else {
+        setSelectedItemIds(newlySelectedIds);
+      }
+      setSelectionBox(null);
+      return;
+    }
+
     if (tableActionRef.current) {
-      if (boardRef.current) boardRef.current.releasePointerCapture(e.pointerId);
+      boardRef.current.releasePointerCapture(e.pointerId);
       tableActionRef.current = null;
       
       const currentItems = boardItemsRef.current;
@@ -643,7 +931,7 @@ export function TeamsAnnotationsBoard({ value, onChange, undoTrigger = 0, clearT
       return;
     }
 
-    if (!dragItemRef.current || !boardRef.current) return;
+    if (!dragItemRef.current) return;
     boardRef.current.releasePointerCapture(e.pointerId);
     dragItemRef.current = null;
 
@@ -655,24 +943,41 @@ export function TeamsAnnotationsBoard({ value, onChange, undoTrigger = 0, clearT
     saveItems(aligned, currentTables);
   };
 
-  // Update item color
+  // Update item color (supports single or multi-selected items)
   const updateItemColor = (id: string, color: string) => {
     pushHistory();
-    const updated = boardItems.map(item => item.id === id ? { ...item, color, hasCustomColor: true } : item);
+    const targets = selectedItemIds.includes(id) ? selectedItemIds : [id];
+    const updated = boardItems.map(item => targets.includes(item.id) ? { ...item, color, hasCustomColor: true } : item);
     setBoardItems(updated);
     saveItems(updated);
   };
 
-  // Remove item
+  const updateSelectedItemsColor = (color: string) => {
+    pushHistory();
+    const updated = boardItems.map(item => selectedItemIds.includes(item.id) ? { ...item, color, hasCustomColor: true } : item);
+    setBoardItems(updated);
+    saveItems(updated);
+  };
+
+  // Remove item (supports single or multi-selected items)
   const removeItem = (id: string) => {
     pushHistory();
-    const updated = boardItems.filter(item => item.id !== id);
+    const targets = selectedItemIds.includes(id) ? selectedItemIds : [id];
+    const updated = boardItems.filter(item => !targets.includes(item.id));
     setBoardItems(updated);
     saveItems(updated);
-    if (selectedItemId === id) setSelectedItemId(null);
+    setSelectedItemIds(prev => prev.filter(x => !targets.includes(x)));
   };
 
-  const selectedItem = boardItems.find(i => i.id === selectedItemId);
+  const removeSelectedItems = () => {
+    pushHistory();
+    const updated = boardItems.filter(item => !selectedItemIds.includes(item.id));
+    setBoardItems(updated);
+    saveItems(updated);
+    setSelectedItemIds([]);
+  };
+
+  const selectedItem = boardItems.find(i => selectedItemIds.includes(i.id));
   const selectedTable = tables.find(t => t.id === selectedTableId) || tables[0];
 
   return (
@@ -812,9 +1117,16 @@ export function TeamsAnnotationsBoard({ value, onChange, undoTrigger = 0, clearT
           <button
             type="button"
             onClick={addAllPlayersToBoard}
-            className="w-full py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-[10px] font-black border border-slate-700 transition-colors block mt-2 text-center"
+            className="w-full py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-[10px] font-black border border-slate-700 transition-colors block mt-2 text-center cursor-pointer"
           >
             ➕ Añadir Todos los Jugadores
+          </button>
+          <button
+            type="button"
+            onClick={() => { setPasteText(''); setIsPasteModalOpen(true); }}
+            className="w-full py-1.5 rounded bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 text-[10px] font-black border border-blue-500/30 transition-colors block mt-2 text-center cursor-pointer"
+          >
+            📋 Pegar Equipos / Tabla
           </button>
         </div>
 
@@ -831,26 +1143,20 @@ export function TeamsAnnotationsBoard({ value, onChange, undoTrigger = 0, clearT
             <div className="space-y-1 pt-1.5">
               {players.map(p => {
                 const formattedName = formatPlayerName(p);
-                const isAlreadyAdded = boardItems.some(item => item.type === 'player' && item.text === formattedName);
                 
                 return (
                   <button
                     key={p.id}
                     type="button"
                     onClick={() => addPlayerToBoard(p)}
-                    disabled={isAlreadyAdded}
-                    draggable={!isAlreadyAdded}
+                    draggable={true}
                     onDragStart={(e) => {
                       e.dataTransfer.setData("text/plain", formattedName);
                     }}
-                    className={`w-full text-left px-2 py-1.5 rounded text-xs font-bold transition-all flex items-center justify-between cursor-grab active:cursor-grabbing ${
-                      isAlreadyAdded
-                        ? 'bg-slate-900/40 text-slate-600 cursor-not-allowed border border-transparent'
-                        : 'bg-slate-800 hover:bg-blue-600/20 text-slate-200 border border-slate-700/50 hover:border-blue-500/50'
-                    }`}
+                    className="w-full text-left px-2 py-1.5 rounded text-xs font-bold transition-all flex items-center justify-between cursor-grab active:cursor-grabbing bg-slate-800 hover:bg-blue-600/20 text-slate-200 border border-slate-700/50 hover:border-blue-500/50 cursor-pointer"
                   >
                     <span>{formattedName}</span>
-                    {!isAlreadyAdded && <span className="text-[10px] text-blue-400">➕</span>}
+                    <span className="text-[10px] text-blue-400">➕</span>
                   </button>
                 );
               })}
@@ -882,6 +1188,7 @@ export function TeamsAnnotationsBoard({ value, onChange, undoTrigger = 0, clearT
             backgroundSize: '20px 20px',
             backgroundColor: '#ffffff'
           }}
+          onPointerDown={handleBoardPointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onPointerLeave={handlePointerUp}
@@ -914,6 +1221,19 @@ export function TeamsAnnotationsBoard({ value, onChange, undoTrigger = 0, clearT
             saveItems(finalAligned, currentTables);
           }}
         >
+          {/* Selection Box overlay */}
+          {selectionBox && (
+            <div 
+              className="absolute border border-blue-500 bg-blue-500/10 pointer-events-none z-50 border-dashed"
+              style={{
+                left: `${Math.min(selectionBox.startX, selectionBox.endX)}px`,
+                top: `${Math.min(selectionBox.startY, selectionBox.endY)}px`,
+                width: `${Math.abs(selectionBox.endX - selectionBox.startX)}px`,
+                height: `${Math.abs(selectionBox.endY - selectionBox.startY)}px`
+              }}
+            />
+          )}
+
           {/* Render all tables */}
           {tables.map((t) => (
             <div
@@ -1026,7 +1346,7 @@ export function TeamsAnnotationsBoard({ value, onChange, undoTrigger = 0, clearT
 
           {/* Render board items (players & annotations) */}
           {boardItems.map(item => {
-            const isSelected = selectedItemId === item.id;
+            const isSelected = selectedItemIds.includes(item.id);
             
             // Limit width if inside a table column to prevent name spilling
             let colWidthPercent = 90;
@@ -1047,13 +1367,13 @@ export function TeamsAnnotationsBoard({ value, onChange, undoTrigger = 0, clearT
                 onPointerDown={(e) => handlePointerDown(e, item.id)}
                 className={`absolute select-none text-[11px] font-extrabold tracking-wide transition-all text-center truncate ${
                   item.type === 'player'
-                    ? 'cursor-grab active:cursor-grabbing font-mono uppercase whitespace-nowrap overflow-hidden'
+                    ? 'cursor-grab active:cursor-grabbing font-mono uppercase whitespace-nowrap overflow-hidden px-1.5 py-0.5 rounded'
                     : 'cursor-grab active:cursor-grabbing font-sans max-w-[200px] whitespace-pre-wrap px-2 py-1 bg-slate-900/80 border border-slate-700 rounded-xl shadow-lg'
                 }`}
                 style={{
                   left: `${item.x}%`,
                   top: `${item.y}%`,
-                  width: item.type === 'player' ? `calc(${colWidthPercent}% - 4px)` : undefined,
+                  width: undefined,
                   maxWidth: item.type === 'player' ? `calc(${colWidthPercent}% - 4px)` : '250px',
                   backgroundColor: item.type === 'player' ? (isSelected ? 'rgba(59, 130, 246, 0.15)' : 'transparent') : undefined,
                   borderColor: item.type === 'player' ? (isSelected ? '#3b82f6' : 'transparent') : undefined,
@@ -1073,9 +1393,9 @@ export function TeamsAnnotationsBoard({ value, onChange, undoTrigger = 0, clearT
         </div>
 
         {/* Barra de Controles de Elemento Seleccionado */}
-        {selectedItem && (
+        {selectedItemIds.length > 0 && (
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-slate-950/95 backdrop-blur border border-slate-800 rounded-xl p-2.5 flex items-center gap-3 shadow-[0_15px_40px_rgba(0,0,0,0.8)] z-[60] animate-fade-in">
-            <span className="text-[10px] font-black uppercase text-slate-400">Edición</span>
+            <span className="text-[10px] font-black uppercase text-slate-400">Edición ({selectedItemIds.length})</span>
             
             {/* Cambiar Color */}
             <div className="flex gap-1.5 items-center">
@@ -1083,10 +1403,10 @@ export function TeamsAnnotationsBoard({ value, onChange, undoTrigger = 0, clearT
                 <button
                   key={c}
                   type="button"
-                  onClick={() => updateItemColor(selectedItem.id, c)}
-                  className={`w-4 h-4 rounded-full border ${selectedItem.color === c ? 'border-blue-500 scale-125' : 'border-slate-700 hover:scale-105 transition-transform'}`}
+                  onClick={() => updateSelectedItemsColor(c)}
+                  className="w-4 h-4 rounded-full border border-slate-700 hover:scale-110 transition-transform"
                   style={{ backgroundColor: c }}
-                  title="Cambiar Color"
+                  title="Cambiar Color de Selección"
                 />
               ))}
             </div>
@@ -1096,16 +1416,16 @@ export function TeamsAnnotationsBoard({ value, onChange, undoTrigger = 0, clearT
             {/* Eliminar Elemento */}
             <button
               type="button"
-              onClick={() => removeItem(selectedItem.id)}
+              onClick={removeSelectedItems}
               className="p-1.5 text-red-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors flex items-center gap-1 text-[10px] font-bold"
-              title="Quitar de la pizarra"
+              title="Quitar seleccionados de la pizarra"
             >
               <Trash2 className="w-3.5 h-3.5" /> Quitar
             </button>
 
             <button
               type="button"
-              onClick={() => setSelectedItemId(null)}
+              onClick={() => setSelectedItemIds([])}
               className="p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition-colors"
               title="Deseleccionar"
             >
@@ -1118,17 +1438,17 @@ export function TeamsAnnotationsBoard({ value, onChange, undoTrigger = 0, clearT
       {/* Pop up Player Assignment Selector */}
       {activeAssignTableId !== null && activeAssignColIndex !== null && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm pointer-events-auto">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-4 shadow-2xl flex flex-col max-h-[80vh] text-white">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl p-5 shadow-2xl flex flex-col max-h-[85vh] text-white">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800 shrink-0">
               <h3 className="text-sm font-black uppercase tracking-wider">
                 Asignar a {(tables.find(tbl => tbl.id === activeAssignTableId)?.names?.[activeAssignColIndex]) || `Grupo ${activeAssignColIndex + 1}`}
               </h3>
-              <button type="button" onClick={() => { setActiveAssignTableId(null); setActiveAssignColIndex(null); }} className="text-slate-400 hover:text-white">
+              <button type="button" onClick={() => { setActiveAssignTableId(null); setActiveAssignColIndex(null); }} className="text-slate-400 hover:text-white cursor-pointer">
                 <X size={16} />
               </button>
             </div>
             
-            <div className="flex-1 overflow-y-auto py-3 space-y-1 pr-1 custom-scrollbar">
+            <div className="flex-1 overflow-y-auto py-3 pr-1 custom-scrollbar grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               {players.map(p => {
                 const formattedName = formatPlayerName(p);
                 
@@ -1190,14 +1510,14 @@ export function TeamsAnnotationsBoard({ value, onChange, undoTrigger = 0, clearT
                         saveItems(updated, currentTables);
                       }
                     }}
-                    className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-between border ${
+                    className={`w-full text-left px-4 py-3 rounded-xl text-sm font-extrabold transition-all flex items-center justify-between border cursor-pointer ${
                       isInThisCol
                         ? 'bg-blue-600 border-blue-500 text-white shadow-sm'
-                        : 'bg-slate-800 border-slate-700/50 text-slate-200 hover:bg-slate-700 hover:border-slate-600'
+                        : 'bg-slate-800 border-slate-700/50 text-slate-200 hover:bg-slate-750 hover:border-slate-600'
                     }`}
                   >
                     <span>{formattedName}</span>
-                    <span>{isInThisCol ? '✅' : '⬜'}</span>
+                    <span className="text-xs">{isInThisCol ? '✅' : '⬜'}</span>
                   </button>
                 );
               })}
@@ -1210,6 +1530,69 @@ export function TeamsAnnotationsBoard({ value, onChange, undoTrigger = 0, clearT
             >
               Cerrar
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Pop up Paste Teams Modal */}
+      {isPasteModalOpen && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm pointer-events-auto">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-5 shadow-2xl flex flex-col text-white">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800 shrink-0">
+              <h3 className="text-sm font-black uppercase tracking-wider flex items-center gap-2">
+                📋 Pegar Equipos y Jugadores
+              </h3>
+              <button type="button" onClick={() => setIsPasteModalOpen(false)} className="text-slate-400 hover:text-white cursor-pointer">
+                <X size={16} />
+              </button>
+            </div>
+            
+            <div className="py-4 space-y-3">
+              <p className="text-[11px] text-slate-400">
+                Puedes pegar columnas directamente de un Excel, o copiar un texto del tipo:
+              </p>
+              <div className="bg-slate-950 p-2.5 rounded-lg font-mono text-[9px] text-slate-300 space-y-1.5 border border-slate-800">
+                <div><strong>Opción A (Excel):</strong> Copia celdas/columnas de tu hoja y pégalas aquí.</div>
+                <div><strong>Opción B (Lista con encabezados):</strong><br/>
+                EQUIPO ROJO:<br/>
+                Valeri, Silvano, Eletu<br/>
+                EQUIPO AZUL:<br/>
+                Pagliei, Zukic</div>
+              </div>
+
+              <textarea
+                value={pasteText}
+                onChange={(e) => setPasteText(e.target.value)}
+                placeholder="Pega aquí tu lista o celdas de Excel..."
+                rows={8}
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white outline-none focus:border-blue-500 resize-none font-mono"
+              />
+            </div>
+            
+            <div className="flex gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  handlePasteTeams(pasteText, 'replace');
+                  setIsPasteModalOpen(false);
+                }}
+                disabled={!pasteText.trim()}
+                className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-md cursor-pointer disabled:opacity-50"
+              >
+                Reemplazar Pizarra
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  handlePasteTeams(pasteText, 'add');
+                  setIsPasteModalOpen(false);
+                }}
+                disabled={!pasteText.trim()}
+                className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer disabled:opacity-50"
+              >
+                Añadir al lado
+              </button>
+            </div>
           </div>
         </div>
       )}

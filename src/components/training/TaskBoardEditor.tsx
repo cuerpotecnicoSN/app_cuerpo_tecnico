@@ -14,44 +14,39 @@ export interface BoardElement {
   y: number;
   rotation: number;
   color: string;
-  scale?: number;
-  width?: number;
-  height?: number;
+  scale: number;
   text?: string;
   filled?: boolean;
   dashed?: boolean;
-  thickness?: number;
-  abp_marking?: 'Z' | 'H' | '';
+  abp_marking?: string;
 }
 
 export interface BoardLine {
   id: string;
-  type: ToolType;
+  type: 'arrow' | 'dashed-arrow' | 'zone-line';
   startX: number;
   startY: number;
   endX: number;
   endY: number;
   color: string;
-  thickness?: number;
-  curve?: number;
-  dashed?: boolean;
 }
 
 interface TaskBoardEditorProps {
   value?: string;
-  onChange?: (value: string) => void;
+  onChange?: (val: string) => void;
   initialData?: string;
   readOnly?: boolean;
   hideToolbar?: boolean;
   printMode?: boolean;
   rotateFullField?: boolean;
   printWidth?: number;
-  limitedTools?: boolean;
+  limitedTools?: string[];
   undoTrigger?: number;
 }
 
 const TiroLeagueBall = ({ size = "100%", style = {} }: { size?: string | number, style?: React.CSSProperties }) => (
   <svg 
+    xmlns="http://www.w3.org/2000/svg"
     width={size} height={size} 
     viewBox="0 0 100 100" 
     style={{ 
@@ -213,7 +208,12 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({
   const [boardSize, setBoardSize] = useState({ width: 500, height: 500 });
   // Espacio disponible del contenedor del campo (para calcular un ajuste "contain" exacto)
   const fitContainerRef = useRef<HTMLDivElement>(null);
-  const [availSize, setAvailSize] = useState({ width: 0, height: 0 });
+  const [availSize, setAvailSize] = useState(() => {
+    if (printMode && printWidth) {
+      return { width: printWidth, height: Math.round(printWidth * 9 / 16) };
+    }
+    return { width: 0, height: 0 };
+  });
   const hasDraggedRef = useRef(false);
   const lastLoadedValueRef = useRef<string | null>(null);
   const internalChangeRef = useRef(false);
@@ -235,6 +235,7 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({
   // Medir el espacio disponible del contenedor del campo para ajustar el tablero sin
   // depender de que el padre tenga una altura definida (evita que se colapse o se amplíe).
   useEffect(() => {
+    if (printMode) return;
     if (!fitContainerRef.current) return;
     const observer = new ResizeObserver((entries) => {
       if (entries[0]) {
@@ -246,7 +247,7 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({
     });
     observer.observe(fitContainerRef.current);
     return () => observer.disconnect();
-  }, []);
+  }, [printMode]);
 
   const [openSections, setOpenSections] = useState({
     background: true,
@@ -812,10 +813,12 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({
         <div className="absolute inset-0 bg-white">
         </div>
         
-        <div className="absolute inset-0 border border-gray-200" />
+        {/* En impresión no pintamos el marco gris: ocuparía el borde exacto de la
+            imagen e impediría recortar el blanco sobrante alrededor del dibujo. */}
+        {!printMode && <div className="absolute inset-0 border border-gray-200" />}
 
         {fieldType !== 'blank' && (
-          <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox={viewBox} preserveAspectRatio="xMidYMid meet">
+          <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" className="absolute inset-0 w-full h-full pointer-events-none" viewBox={viewBox} preserveAspectRatio="xMidYMid meet">
             <g {...lineProps}>
               {(fieldType === 'full' || fieldType === 'full-horizontal') && (
               <>
@@ -902,7 +905,9 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({
     // Solo si aún no hay medida (p.ej. impresión del navegador con display:none)
     // recurrimos al printWidth fijo como aproximación, y en último caso a cqw.
     let baseW = fittedW;
-    if (baseW === 0 && printMode && printWidth) baseW = printWidth;
+    if (baseW === 0 && printMode) {
+      baseW = printWidth || 800;
+    }
     if (baseW === 0) return `${(val / 5)}cqw`;
 
     // Si el campo está rotado, el baseW (que es el ancho del contenedor horizontal)
@@ -1020,7 +1025,7 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({
         break;
       case 'cone':
         content = (
-          <svg width={px(14)} height={px(14)} viewBox="0 0 20 20" style={{ filter: 'drop-shadow(1px 2px 3px rgba(0,0,0,0.5))' }}>
+          <svg xmlns="http://www.w3.org/2000/svg" width={px(14)} height={px(14)} viewBox="0 0 20 20" style={{ filter: 'drop-shadow(1px 2px 3px rgba(0,0,0,0.5))' }}>
             <path d="M 1 10 A 9 9 0 1 0 19 10 A 9 9 0 1 0 1 10 Z M 8 10 A 2 2 0 1 1 12 10 A 2 2 0 1 1 8 10 Z" fill={displayColor} fillRule="evenodd" />
             <circle cx="10" cy="10" r="9" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="0.5" />
             <circle cx="10" cy="10" r="2" fill="none" stroke="rgba(0,0,0,0.3)" strokeWidth="0.5" />
@@ -1029,7 +1034,7 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({
         break;
       case 'cone-tall':
         content = (
-          <svg width={px(20)} height={px(24)} viewBox="0 0 20 24" style={{ filter: printMode ? 'none' : 'drop-shadow(2px 2px 2px rgba(0,0,0,0.4))' }}>
+          <svg xmlns="http://www.w3.org/2000/svg" width={px(20)} height={px(24)} viewBox="0 0 20 24" style={{ filter: printMode ? 'none' : 'drop-shadow(2px 2px 2px rgba(0,0,0,0.4))' }}>
             <rect x="1" y="20" width="18" height="3" rx="1" fill={displayColor} filter={printMode ? undefined : "brightness(0.8)"} />
             <ellipse cx="10" cy="20" rx="7" ry="2" fill={displayColor} filter={printMode ? undefined : "brightness(0.9)"} />
             <path d="M 4 20 L 8 2 L 12 2 L 16 20 Z" fill={displayColor} />
@@ -1065,7 +1070,7 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({
         break;
       case 'goal':
         content = (
-          <svg width={px(60)} height={px(22)} viewBox="0 0 60 22" style={{ filter: printMode ? 'none' : 'drop-shadow(0px 3px 3px rgba(0,0,0,0.5))' }}>
+          <svg xmlns="http://www.w3.org/2000/svg" width={px(60)} height={px(22)} viewBox="0 0 60 22" style={{ filter: printMode ? 'none' : 'drop-shadow(0px 3px 3px rgba(0,0,0,0.5))' }}>
             <path d="M 5 3 L 55 3 L 57 19 L 3 19 Z" fill="url(#net-pattern)" stroke="black" strokeWidth="2" strokeLinejoin="round" />
             <path d="M 1 20 L 59 20" stroke="black" strokeWidth="4" strokeLinecap="round" />
           </svg>
@@ -1073,7 +1078,7 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({
         break;
       case 'mini-goal':
         content = (
-          <svg width={px(24)} height={px(16)} viewBox="0 0 24 16" style={{ filter: printMode ? 'none' : 'drop-shadow(0px 2px 2px rgba(0,0,0,0.5))' }}>
+          <svg xmlns="http://www.w3.org/2000/svg" width={px(24)} height={px(16)} viewBox="0 0 24 16" style={{ filter: printMode ? 'none' : 'drop-shadow(0px 2px 2px rgba(0,0,0,0.5))' }}>
             <path d="M 3 2 L 21 2 L 22 11 L 2 11 Z" fill="url(#net-pattern)" stroke="black" strokeWidth="1.5" strokeLinejoin="round" />
             <path d="M 1 12 L 23 12" stroke="black" strokeWidth="2.5" strokeLinecap="round" />
           </svg>
@@ -1081,7 +1086,7 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({
         break;
       case 'goal-f11':
         content = (
-          <svg width={px(73.2)} height={px(20)} viewBox="0 0 73.2 20" style={{ filter: 'drop-shadow(0px 2px 4px rgba(0,0,0,0.5))' }}>
+          <svg xmlns="http://www.w3.org/2000/svg" width={px(73.2)} height={px(20)} viewBox="0 0 73.2 20" style={{ filter: 'drop-shadow(0px 2px 4px rgba(0,0,0,0.5))' }}>
             <path d="M 4 2 L 69.2 2 L 71 16 L 2 16 Z" fill="url(#net-pattern)" stroke="black" strokeWidth="1.5" strokeLinejoin="round" />
             <path d="M 1 17 L 72.2 17" stroke="black" strokeWidth="3" strokeLinecap="round" />
           </svg>
@@ -1089,7 +1094,7 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({
         break;
       case 'goal-f8':
         content = (
-          <svg width={px(40)} height={px(16)} viewBox="0 0 40 16" style={{ filter: 'drop-shadow(0px 2px 3px rgba(0,0,0,0.5))' }}>
+          <svg xmlns="http://www.w3.org/2000/svg" width={px(40)} height={px(16)} viewBox="0 0 40 16" style={{ filter: 'drop-shadow(0px 2px 3px rgba(0,0,0,0.5))' }}>
             <path d="M 3 2 L 37 2 L 38 12 L 2 12 Z" fill="url(#net-pattern)" stroke="black" strokeWidth="1.5" strokeLinejoin="round" />
             <path d="M 1 13 L 39 13" stroke="black" strokeWidth="3" strokeLinecap="round" />
           </svg>
@@ -1097,7 +1102,7 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({
         break;
       case 'goal-f5':
         content = (
-          <svg width={px(30)} height={px(12)} viewBox="0 0 30 12" style={{ filter: 'drop-shadow(0px 2px 2px rgba(0,0,0,0.5))' }}>
+          <svg xmlns="http://www.w3.org/2000/svg" width={px(30)} height={px(12)} viewBox="0 0 30 12" style={{ filter: 'drop-shadow(0px 2px 2px rgba(0,0,0,0.5))' }}>
             <path d="M 2 2 L 28 2 L 29 9 L 1 9 Z" fill="url(#net-pattern)" stroke="black" strokeWidth="1.5" strokeLinejoin="round" />
             <path d="M 1 10 L 29 10" stroke="black" strokeWidth="2.5" strokeLinecap="round" />
           </svg>
@@ -1164,7 +1169,7 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({
         break;
       case 'ladder':
         content = (
-          <svg width={px(24)} height={px(120)} viewBox="0 0 24 120" style={{ filter: 'drop-shadow(1px 2px 2px rgba(0,0,0,0.5))' }}>
+          <svg xmlns="http://www.w3.org/2000/svg" width={px(24)} height={px(120)} viewBox="0 0 24 120" style={{ filter: 'drop-shadow(1px 2px 2px rgba(0,0,0,0.5))' }}>
             <rect x="0" y="0" width="3" height="120" fill={displayColor} />
             <rect x="21" y="0" width="3" height="120" fill={displayColor} />
             <rect x="3" y="10" width="18" height="2" fill={displayColor} />
@@ -1246,9 +1251,12 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({
   const renderLines = () => {
     const allLines = [...lines];
     if (drawingLine) allLines.push(drawingLine);
+    
+    const activeBoardW = fittedW > 0 ? fittedW : boardSize.width;
+    const activeBoardH = fittedH > 0 ? fittedH : boardSize.height;
 
     return (
-      <svg viewBox={`0 0 ${boardSize.width} ${boardSize.height}`} preserveAspectRatio="none" className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 20, overflow: 'visible' }}>
+      <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox={`0 0 ${activeBoardW} ${activeBoardH}`} preserveAspectRatio="none" className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 20, overflow: 'visible' }}>
         <defs>
           <pattern id="net-pattern" width="4" height="4" patternUnits="userSpaceOnUse">
             <path d="M 4 0 L 4 4 L 0 4" fill="none" stroke="rgba(0,0,0,0.6)" strokeWidth="0.5" />
@@ -1282,7 +1290,7 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({
           else markerEnd = 'url(#arrowhead-white)';
           
           let strokeDasharray = "none";
-          let scaleFactor = boardSize.width ? (boardSize.width / 700) : 1;
+          let scaleFactor = activeBoardW ? (activeBoardW / 700) : 1;
           let strokeWidth = (line.thickness || 1) * 0.5 * scaleFactor; // Base visual scaling with board size
           strokeWidth = Math.max(0.6, strokeWidth);
           let filter = isSelected ? 'drop-shadow(0 0 3px red)' : 'drop-shadow(1px 2px 2px rgba(0,0,0,0.5))';
@@ -1302,10 +1310,10 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({
           }
 
           const isCurved = !!line.curve && line.curve !== 0;
-          const px1 = (line.startX / 100) * boardSize.width;
-          const py1 = (line.startY / 100) * boardSize.height;
-          const px2 = (line.endX / 100) * boardSize.width;
-          const py2 = (line.endY / 100) * boardSize.height;
+          const px1 = (line.startX / 100) * activeBoardW;
+          const py1 = (line.startY / 100) * activeBoardH;
+          const px2 = (line.endX / 100) * activeBoardW;
+          const py2 = (line.endY / 100) * activeBoardH;
 
           let d = `M ${px1} ${py1} L ${px2} ${py2}`;
 
@@ -1822,7 +1830,7 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({
             height: !fittedH ? '100%' : `${fittedH}px`,
             maxWidth: '100%',
             maxHeight: '100%',
-            containerType: 'normal'
+            containerType: printMode ? undefined : 'normal'
           }}
           ref={boardRef}
           onPointerDown={handleBoardPointerDown}
@@ -1835,7 +1843,7 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({
                 position: 'absolute',
                 top: '50%',
                 left: '50%',
-                containerType: 'inline-size'
+                containerType: printMode ? undefined : 'inline-size'
              }}>
                 {renderFieldBackground()}
                 {elements.map(renderElement)}
@@ -1849,7 +1857,7 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({
                 left: `${-(cropBox.minX / cropWidth) * 100}%`,
                 top: `${-(cropBox.minY / cropHeight) * 100}%`,
                 position: 'absolute',
-                containerType: 'inline-size'
+                containerType: printMode ? undefined : 'inline-size'
              }}>
                 {renderFieldBackground()}
                 {elements.map(renderElement)}
@@ -1861,7 +1869,7 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({
                 width: '100%', 
                 aspectRatio: fieldType === 'full' ? '68 / 105' : (fieldType === 'half' || fieldType === 'half-top' || fieldType === 'blank') ? '16 / 9' : '105 / 68', 
                 position: 'relative', 
-                containerType: 'inline-size' 
+                containerType: printMode ? undefined : 'inline-size' 
              }}>
                 {renderFieldBackground()}
                 {elements.map(renderElement)}

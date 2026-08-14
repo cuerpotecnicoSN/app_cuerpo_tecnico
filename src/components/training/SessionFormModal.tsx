@@ -3,6 +3,7 @@ import { X, MapPin, Calendar as CalendarIcon, AlignLeft, Target, Loader2, Clock 
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import { RichTextEditor } from './RichTextEditor';
 
 // Fix Leaflet default icon issues in React
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -257,12 +258,11 @@ export function SessionFormModal({ isOpen, onClose, onSave, initialData, suggest
                   <AlignLeft size={16} className="text-indigo-500" />
                   Estructura del entrenamiento <span className="text-gray-400 font-normal text-xs">(Opcional)</span>
                 </label>
-                <textarea 
+                <RichTextEditor 
                   value={structure}
-                  onChange={(e) => setStructure(e.target.value)}
+                  onChange={setStructure}
                   placeholder="Ej. Calentamiento (15 min) -> Rondo (20 min) -> Posesión (30 min)..."
-                  rows={2}
-                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-gray-50 hover:bg-white focus:bg-white resize-none text-sm"
+                  minHeight="100px"
                 />
               </div>
 
@@ -271,12 +271,11 @@ export function SessionFormModal({ isOpen, onClose, onSave, initialData, suggest
                   <AlignLeft size={16} className="text-amber-500" />
                   Observaciones <span className="text-gray-400 font-normal text-xs">(Opcional)</span>
                 </label>
-                <textarea 
+                <RichTextEditor 
                   value={observations}
-                  onChange={(e) => setObservations(e.target.value)}
+                  onChange={setObservations}
                   placeholder="Observaciones adicionales de la sesión..."
-                  rows={2}
-                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-gray-50 hover:bg-white focus:bg-white resize-none text-sm"
+                  minHeight="100px"
                 />
               </div>
             </div>
