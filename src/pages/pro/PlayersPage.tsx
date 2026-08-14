@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react';
 import type { Player, DevTask, MedicalRecord, SportsStats } from '../../components/types';
 import PlayersManagementView from '../../components/pro/PlayersManagementView';
-
+import GlobalIndividualMeetingsView from '../../components/pro/GlobalIndividualMeetingsView';
+import { useSearchParams } from 'react-router-dom';
 
 import { useSupabaseData } from '../../hooks/useSupabaseData';
 import PlayerImportModal from '../../components/pro/PlayerImportModal';
@@ -27,6 +28,9 @@ export default function PlayersPage() {
   const [ageRange, setAgeRange] = useState<[number, number]>([15, 45]);
   const [showFilters, setShowFilters] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [searchParams] = useSearchParams();
+  const currentView = searchParams.get('view') || 'roster';
+  
   const { data: dbPlayers, loading } = useSupabaseData<any>('players');
 
   const thumbStyles = 'age-range-thumb';
@@ -268,10 +272,12 @@ export default function PlayersPage() {
         <div>
           <p className="staff-breadcrumb">Jugadores</p>
           <h1 className="staff-title">
-            Plantilla {loading && <span className="text-sm text-muted" style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 'normal' }}>(Cargando datos reales...)</span>}
+            {currentView === 'meetings' ? 'Reuniones Individuales' : 'Plantilla'} {loading && <span className="text-sm text-muted" style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 'normal' }}>(Cargando datos reales...)</span>}
           </h1>
         </div>
-        <div className="staff-actions">
+        
+        {currentView === 'roster' && (
+          <div className="staff-actions">
           {players.length > 0 && (
             <div className="flex gap-2 mr-4">
               <button
@@ -313,9 +319,10 @@ export default function PlayersPage() {
             Añadir jugador
           </button>
         </div>
+        )}
       </div>
 
-      {players.length > 0 && (
+      {players.length > 0 && currentView === 'roster' && (
         <div className="grid grid-cols-3 gap-4 overflow-x-auto pb-2">
           <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
             <div className="p-3 bg-blue-50 text-blue-600 rounded-lg">
@@ -349,7 +356,7 @@ export default function PlayersPage() {
         </div>
       )}
 
-      {players.length > 0 && showFilters && (
+      {players.length > 0 && currentView === 'roster' && showFilters && (
         <div className="flex flex-wrap items-center gap-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm mt-4 animate-fade-in">
           <div className="flex items-center gap-2 text-gray-500">
             <Filter size={18} />
@@ -490,7 +497,7 @@ export default function PlayersPage() {
         />
       )}
 
-      {players.length > 0 && (
+      {players.length > 0 && currentView === 'roster' && (
         <>
           {filteredPlayers.length === 0 ? (
             <div className="card staff-empty mt-6">
@@ -525,6 +532,10 @@ export default function PlayersPage() {
             />
           )}
         </>
+      )}
+
+      {currentView === 'meetings' && (
+        <GlobalIndividualMeetingsView players={players} />
       )}
     </div>
   );

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import { ensureContext } from '../../lib/dataService';
 import { Plus, Trash2, Columns, LayoutGrid, X } from 'lucide-react';
+import { TaskBoardEditor } from './TaskBoardEditor';
 
 interface TeamsAnnotationsBoardProps {
   value: string;
@@ -39,6 +40,7 @@ export function TeamsAnnotationsBoard({ value, onChange, undoTrigger = 0, clearT
   const [boardItems, setBoardItems] = useState<BoardItem[]>([]);
   const [tables, setTables] = useState<TableConfig[]>([]);
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
+  const [showTacticalBg, setShowTacticalBg] = useState(false);
 
   const tablesRef = useRef<TableConfig[]>([]);
   const boardItemsRef = useRef<BoardItem[]>([]);
@@ -1116,8 +1118,15 @@ export function TeamsAnnotationsBoard({ value, onChange, undoTrigger = 0, clearT
 
           <button
             type="button"
+            onClick={() => setShowTacticalBg(!showTacticalBg)}
+            className={`w-full py-1.5 rounded text-[10px] font-black transition-colors block mt-2 text-center cursor-pointer border ${showTacticalBg ? 'bg-indigo-600/20 text-indigo-600 border-indigo-500/30' : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200'}`}
+          >
+            {showTacticalBg ? '👁️ Ocultar Tarea de Fondo' : '👁️ Poner Nombres sobre Tarea'}
+          </button>
+          <button
+            type="button"
             onClick={addAllPlayersToBoard}
-            className="w-full py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-[10px] font-black border border-slate-700 transition-colors block mt-2 text-center cursor-pointer"
+            className="w-full py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-[10px] font-black border border-slate-700 transition-colors block mt-2 text-center cursor-pointer text-white"
           >
             ➕ Añadir Todos los Jugadores
           </button>
@@ -1184,8 +1193,8 @@ export function TeamsAnnotationsBoard({ value, onChange, undoTrigger = 0, clearT
           ref={boardRef}
           className="flex-1 w-full h-full relative cursor-default border border-slate-100"
           style={{
-            backgroundImage: 'radial-gradient(circle, rgba(0,0,0,0.04) 1px, transparent 1px)',
-            backgroundSize: '20px 20px',
+            backgroundImage: showTacticalBg ? 'none' : 'radial-gradient(circle, rgba(0,0,0,0.04) 1px, transparent 1px)',
+            backgroundSize: showTacticalBg ? 'auto' : '20px 20px',
             backgroundColor: '#ffffff'
           }}
           onPointerDown={handleBoardPointerDown}
@@ -1221,6 +1230,17 @@ export function TeamsAnnotationsBoard({ value, onChange, undoTrigger = 0, clearT
             saveItems(finalAligned, currentTables);
           }}
         >
+          {/* Tactical Background overlay */}
+          {showTacticalBg && (
+            <div className="absolute inset-0 pointer-events-none opacity-50">
+              <TaskBoardEditor
+                value={value}
+                readOnly
+                hideToolbar
+              />
+            </div>
+          )}
+
           {/* Selection Box overlay */}
           {selectionBox && (
             <div 
@@ -1381,6 +1401,7 @@ export function TeamsAnnotationsBoard({ value, onChange, undoTrigger = 0, clearT
                   borderWidth: isSelected ? '1.5px' : '0px',
                   borderStyle: isSelected ? 'dashed' : 'none',
                   boxShadow: item.type === 'player' ? 'none' : undefined,
+                  textShadow: item.type === 'player' ? '0 1px 3px rgba(255,255,255,0.9), 0 -1px 3px rgba(255,255,255,0.9)' : undefined,
                   transform: 'translate(-50%, -50%)',
                   zIndex: isSelected ? 50 : 10
                 }}

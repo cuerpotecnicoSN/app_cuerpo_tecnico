@@ -351,12 +351,67 @@ const trimCanvasWhitespace = (
   return trimmed;
 };
 
-// Mount and render TaskBoardEditor off-screen, then capture it
-const renderTaskBoardToImage = async (boardData: string): Promise<RenderedHtmlImage | null> => {
-  if (!boardData) return null;
+const TaskBoardWithAnnotations = ({ boardData, width, hideAnnotations }: { boardData: string, width: number, hideAnnotations?: boolean }) => {
+  let freeItems: any[] = [];
+  try {
+    if (!hideAnnotations) {
+      const parsed = JSON.parse(boardData);
+      const teamsBoard = parsed?.teamsBoard;
+      if (teamsBoard && Array.isArray(teamsBoard.items)) {
+        const tables = Array.isArray(teamsBoard.tables) ? teamsBoard.tables : [];
+        freeItems = teamsBoard.items.filter((item: any) => {
+          if (item.tableId) return false;
+          if (item.type === 'player') {
+            for (const t of tables) {
+              if (item.x >= t.x && item.x <= t.x + t.width && item.y >= t.y && item.y <= t.y + t.height) {
+                return false;
+              }
+            }
+          }
+          return true;
+        });
+      }
+    }
+  } catch {}
 
-  // El campo completo se imprime girado (rotateFullField), así que en los dos casos
-  // el lienzo de captura es apaisado: así se aprovecha toda la resolución disponible.
+  return (
+    <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+      <TaskBoardEditor value={boardData} readOnly hideToolbar printMode={true} printWidth={width} />
+      {freeItems.map(item => {
+        const isPlayer = item.type === 'player';
+        return (
+          <div
+            key={item.id}
+            style={{
+              position: 'absolute',
+              left: `${item.x}%`,
+              top: `${item.y}%`,
+              transform: 'translate(-50%, -50%)',
+              color: isPlayer ? (item.color || '#000000') : '#ffffff',
+              fontSize: isPlayer ? '14px' : '12px',
+              fontWeight: isPlayer ? '900' : 'normal',
+              fontFamily: isPlayer ? 'monospace' : 'sans-serif',
+              textTransform: isPlayer ? 'uppercase' : 'none',
+              whiteSpace: isPlayer ? 'nowrap' : 'pre-wrap',
+              textShadow: isPlayer ? '0 1px 3px rgba(255,255,255,0.9), 0 -1px 3px rgba(255,255,255,0.9)' : 'none',
+              backgroundColor: isPlayer ? 'transparent' : 'rgba(15, 23, 42, 0.8)',
+              border: isPlayer ? 'none' : '1px solid #334155',
+              borderRadius: isPlayer ? '0' : '12px',
+              padding: isPlayer ? '0' : '4px 8px',
+              maxWidth: isPlayer ? 'none' : '200px',
+              textAlign: 'center',
+              zIndex: 50
+            }}
+          >
+            {item.text}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+const renderTaskBoardToImage = async (boardData: string, hideAnnotations: boolean = false): Promise<{ dataUrl: string, ratio: number } | null> => {
   let width = 800;
   let height = 450;
   try {
@@ -364,28 +419,25 @@ const renderTaskBoardToImage = async (boardData: string): Promise<RenderedHtmlIm
     const fieldType = parsed.fieldType || 'half';
     if (fieldType === 'full' || fieldType === 'full-horizontal') {
       width = 900;
-      height = 583; // 900 / (105 / 68)
+      height = 583;
     }
   } catch {}
-  
+
   const container = document.createElement('div');
   container.style.position = 'absolute';
   container.style.left = '-9999px';
   container.style.top = '-9999px';
   container.style.width = `${width}px`;
   container.style.height = `${height}px`;
-  container.style.backgroundColor = '#ffffff';
   document.body.appendChild(container);
 
   const root = createRoot(container);
   root.render(
-    <TaskBoardEditor value={boardData} readOnly hideToolbar rotateFullField={true} printMode={true} printWidth={width} />
+    <TaskBoardWithAnnotations boardData={boardData} width={width} hideAnnotations={hideAnnotations} />
   );
 
-  // Wait for React rendering cycles and canvas paints
   await new Promise(resolve => setTimeout(resolve, 250));
 
-  // Fix SVG dimension attributes for html2canvas
   const svgs = container.querySelectorAll('svg');
   svgs.forEach(svg => {
     if (!svg.getAttribute('width')) {
@@ -440,33 +492,7 @@ const getTeamTables = (boardDataStr?: string): PdfTeamColumn[] => {
     }
 
     const items = Array.isArray(teamsBoard.items) ? teamsBoard.items : [];
-    const playersOnly = items.filter((item: any) => item.type === 'player');
 
-    // Fallback: If no tables are defined but player items exist on the board, group them by color dynamically
-    if (tables.length === 0 && playersOnly.length > 0) {
-      const colorsMap: { [color: string]: any[] } = {};
-      playersOnly.forEach((p: any) => {
-        const c = p.color || '#000000';
-        if (!colorsMap[c]) colorsMap[c] = [];
-        colorsMap[c].push(p);
-      });
-      const uniqueColors = Object.keys(colorsMap);
-
-      const columns: PdfTeamColumn[] = [];
-      uniqueColors.forEach((color, c) => {
-        columns.push({
-          name: `GRUPO ${c + 1}`,
-          color,
-          players: colorsMap[color]
-            .sort((a: any, b: any) => (a.y ?? 0) - (b.y ?? 0))
-            .map((item: any) => ({
-              text: item.text,
-              color: item.color || '#000000'
-            }))
-        });
-      });
-      return columns;
-    }
 
     if (tables.length === 0) return [];
 
@@ -791,7 +817,8 @@ export const exportSessionToPdf = async (options: SessionPdfOptions) => {
     const teamRows = teamTables.length ? teamsPanelRows(teamTables) : 0;
 
     // RASTER DRAWING IF EXISTS (Off-screen rendering root capture)
-    const drawingImg = await renderTaskBoardToImage(task.board_data || '');
+    const hideAnnotations = format === 'simplified' || !options.includePlayerNames;
+    const drawingImg = await renderTaskBoardToImage(task.board_data || '', hideAnnotations);
 
     // Description text block (Rendered as HTML Image to preserve Bold, Colors, Lists)
     const descY = y + 11 * s;

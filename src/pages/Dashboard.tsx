@@ -1,9 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Calendar, Users, Activity, Target, TrendingUp, AlertTriangle, Video } from 'lucide-react';
-import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { Calendar, Users, Activity, Target, TrendingUp, AlertTriangle, Video, Shield, Award } from 'lucide-react';
 import { useSupabaseData } from '../hooks/useSupabaseData';
-import WeeklyCalendar, { CalendarEvent } from '../components/dashboard/WeeklyCalendar';
 import { getMatches } from '../services/matches';
 import { getTrainingSessions } from '../services/training';
 import type { MatchDB, TrainingSessionDB } from '../components/types';
@@ -15,10 +13,9 @@ const Dashboard: React.FC = () => {
   const { t } = useTranslation();
   const [currentRole, setCurrentRole] = useState<UserRole>('Entrenador');
 
-  // Fetch real data from Supabase
   const { data: players = [] } = useSupabaseData<any>('players');
   const { data: profiles = [] } = useSupabaseData<any>('profiles');
-  const { data: physicalStats = [] } = useSupabaseData<any>('physical_metrics_history');
+
   const [matches, setMatches] = useState<MatchDB[]>([]);
   const [sessions, setSessions] = useState<TrainingSessionDB[]>([]);
 
@@ -27,36 +24,15 @@ const Dashboard: React.FC = () => {
     getTrainingSessions().then(setSessions).catch(() => setSessions([]));
   }, []);
 
-  // Calcular métricas reales
   const totalPlayers = players.length;
   const injuredPlayers = players.filter(p => p.medical_status === 'Baja' || p.medical_status === 'Lesionado').length;
   const availablePlayers = totalPlayers - injuredPlayers;
-
-  // Generar datos para el gráfico a partir de datos reales (o cero si no hay)
-  const performanceData = useMemo(() => {
-    if (!physicalStats || physicalStats.length === 0) {
-      return [
-        { name: t('dashboard.days.mon'), load: 0, intensity: 0 },
-        { name: t('dashboard.days.tue'), load: 0, intensity: 0 },
-        { name: t('dashboard.days.wed'), load: 0, intensity: 0 },
-        { name: t('dashboard.days.thu'), load: 0, intensity: 0 },
-        { name: t('dashboard.days.fri'), load: 0, intensity: 0 },
-        { name: t('dashboard.days.sat'), load: 0, intensity: 0 },
-      ];
-    }
-    // Lógica básica para mapear datos reales (se puede expandir)
-    return physicalStats.slice(0, 6).map((stat: any, i: number) => ({
-      name: `${t('dashboard.dayLabel')} ${i+1}`,
-      load: stat.fatigue_level * 100 || 0,
-      intensity: stat.stress_level * 100 || 0
-    }));
-  }, [physicalStats, t]);
 
   const getStatsByRole = () => {
     switch(currentRole) {
       case 'Preparador Físico':
         return [
-          { title: t('dashboard.weeklyLoadAccumulated'), value: physicalStats.length > 0 ? t('dashboard.calculating') : '0 AU', subtitle: t('dashboard.dbConnected'), icon: Activity, color: 'secondary' },
+          { title: t('dashboard.weeklyLoadAccumulated'), value: '0 AU', subtitle: t('dashboard.dbConnected'), icon: Activity, color: 'secondary' },
           { title: t('dashboard.playersAtRisk'), value: injuredPlayers.toString(), subtitle: t('dashboard.highFatigue'), icon: AlertTriangle, color: 'danger' },
           { title: t('dashboard.medicalAvailability'), value: totalPlayers ? `${Math.round((availablePlayers/totalPlayers)*100)}%` : '0%', subtitle: `${injuredPlayers} ${t('dashboard.injuredSuffix')}`, icon: Users, color: 'primary' },
           { title: t('dashboard.avgRpeYesterday'), value: 'N/A', subtitle: t('dashboard.waitingData'), icon: TrendingUp, color: 'accent' },
@@ -68,7 +44,7 @@ const Dashboard: React.FC = () => {
           { title: t('dashboard.xgLastMatch'), value: '0.00', subtitle: '-', icon: Activity, color: 'accent' },
           { title: t('dashboard.lossesOwnHalf'), value: '0', subtitle: t('dashboard.waitingData'), icon: TrendingUp, color: 'secondary' },
         ];
-      default: // Entrenador
+      default:
         return [
           { title: t('dashboard.nextMatch'), value: t('dashboard.noEvents'), subtitle: t('dashboard.addInCalendar'), icon: Target, color: 'primary' },
           { title: t('dashboard.availablePlayers'), value: `${availablePlayers} / ${totalPlayers}`, subtitle: injuredPlayers > 0 ? `${injuredPlayers} ${t('dashboard.injuredSuffix')}` : t('dashboard.allHealthy'), icon: Users, color: 'secondary' },
@@ -80,19 +56,14 @@ const Dashboard: React.FC = () => {
 
   const stats = getStatsByRole();
 
-  // Generar eventos para el calendario
   const calendarEvents = useMemo(() => {
-    const events: CalendarEvent[] = [];
+    const events: any[] = [];
     const today = new Date();
     
-    // 1. Cumpleaños de la semana actual
     players.forEach((player: any) => {
       if (player.birth_date) {
         const birthDate = new Date(player.birth_date);
-        // Set the birthday to the current year
         const currentYearBirthday = new Date(today.getFullYear(), birthDate.getMonth(), birthDate.getDate());
-        
-        // Comprobar si es de esta semana (simplificado: cae cerca de hoy o simplemente lo añadimos al día correspondiente)
         events.push({
           id: `bday-${player.id}`,
           title: `Cumpleaños: ${player.first_name} ${player.last_name}`,
@@ -103,12 +74,10 @@ const Dashboard: React.FC = () => {
       }
     });
 
-    // 1b. Cumpleaños del cuerpo técnico
     profiles.forEach((profile: any) => {
       if (profile.birth_date) {
         const birthDate = new Date(profile.birth_date);
         const currentYearBirthday = new Date(today.getFullYear(), birthDate.getMonth(), birthDate.getDate());
-        
         events.push({
           id: `bday-staff-${profile.id}`,
           title: `Cumpleaños Staff: ${profile.full_name || 'Entrenador'}`,
@@ -128,21 +97,48 @@ const Dashboard: React.FC = () => {
     });
 
     return events;
-  }, [players, matches, sessions]);
+  }, [players, matches, sessions, profiles]);
+
+  // Find next match for the Hero section
+  const nextMatch = useMemo(() => {
+    const upcomingMatches = matches.filter(m => new Date(m.date) >= new Date()).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    return upcomingMatches.length > 0 ? upcomingMatches[0] : null;
+  }, [matches]);
+
+  // Format upcoming events for cards
+  const upcomingEvents = useMemo(() => {
+    return calendarEvents
+      .filter(e => e.date >= new Date(new Date().setHours(0,0,0,0))) // From today onwards
+      .sort((a, b) => a.date.getTime() - b.date.getTime())
+      .slice(0, 5); // Show next 5
+  }, [calendarEvents]);
 
   return (
-    <div className="flex flex-col gap-6 animate-fade-in">
-      <div className="flex flex-col sm:flex-row justify-end items-start sm:items-center gap-4">
+    <div className="hero-gradient flex flex-col p-2 sm:p-4 lg:p-6 animate-fade-in text-[var(--color-text-primary)] rounded-3xl min-h-[calc(100vh-120px)] border border-[var(--color-border)] shadow-sm">
+      
+      {/* Hero Section */}
+      <div className="flex flex-col xl:flex-row gap-6 justify-between items-start xl:items-center mb-8 animate-fade-in-up">
+        <div className="flex-1 max-w-2xl">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--color-bg-surface)] backdrop-blur-md border border-[var(--color-border)] mb-4 shadow-sm">
+            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+            <span className="text-sm font-medium tracking-wide uppercase text-[var(--color-text-secondary)]">Temporada 2026/27</span>
+          </div>
+          {nextMatch && (
+            <p className="text-2xl sm:text-3xl font-black text-[var(--color-text-primary)] uppercase tracking-tight">
+              Próximo partido: {nextMatch.is_home ? 'vs' : '@'} {nextMatch.opponent}
+            </p>
+          )}
+        </div>
 
-        {/* Simulador de Roles */}
-        <div className="flex gap-1 bg-[var(--color-bg-surface)] p-1 rounded-xl border border-[var(--color-border)]">
+        {/* Role Selector (Glassmorphism) */}
+        <div className="glass-panel rounded-2xl p-2 flex flex-wrap gap-2 w-full xl:w-auto">
           {(['Entrenador', 'Preparador Físico', 'Analista'] as UserRole[]).map(role => (
             <button
               key={role}
               onClick={() => setCurrentRole(role)}
-              className={`px-4 py-2 rounded-lg text-base font-semibold transition-all ${
+              className={`flex-1 xl:flex-none px-6 py-3 rounded-xl text-sm sm:text-base font-bold transition-all duration-300 ${
                 currentRole === role
-                  ? 'bg-[var(--color-primary)] text-white shadow-sm'
+                  ? 'bg-[var(--color-primary)] text-white shadow-lg shadow-[var(--color-primary)]/30 scale-[1.02]'
                   : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-hover)]'
               }`}
             >
@@ -152,64 +148,101 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-10 animate-fade-in-up delay-100">
         {stats.map((stat, index) => (
           <div
             key={index}
-            className="bg-[var(--color-bg-base)] border border-[var(--color-border)] rounded-2xl p-5 flex items-center gap-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300"
+            className="glass-panel hover-lift rounded-3xl p-6 flex items-center gap-5 relative overflow-hidden group"
           >
-            <div className={`w-12 h-12 shrink-0 rounded-xl flex items-center justify-center bg-${stat.color}-glow`}>
-              <stat.icon className={`text-${stat.color}`} size={22} />
+            {/* Background Accent Gradient */}
+            <div className={`absolute -right-10 -top-10 w-32 h-32 bg-${stat.color}-glow rounded-full blur-3xl opacity-20 group-hover:opacity-40 transition-opacity duration-500`}></div>
+            
+            <div className={`w-14 h-14 shrink-0 rounded-2xl flex items-center justify-center bg-${stat.color}-glow border border-[var(--color-border)] z-10`}>
+              <stat.icon className={`text-${stat.color}`} size={26} strokeWidth={2.5} />
             </div>
-            <div className="min-w-0">
-              <h3 className="text-sm text-[var(--color-text-muted)] font-semibold">{stat.title}</h3>
-              <p className="text-2xl font-bold text-[var(--color-text-primary)] mt-0.5 truncate">{stat.value}</p>
-              <p className="text-sm mt-0.5 text-[var(--color-text-secondary)] truncate">{stat.subtitle}</p>
+            <div className="min-w-0 z-10 flex-1">
+              <h3 className="text-sm text-[var(--color-text-muted)] font-bold uppercase tracking-wider mb-1">{stat.title}</h3>
+              <p className="text-3xl font-black text-[var(--color-text-primary)] truncate mb-1">{stat.value}</p>
+              <p className="text-sm text-[var(--color-text-secondary)] truncate font-medium">{stat.subtitle}</p>
             </div>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-        <div className="bg-[var(--color-bg-base)] border border-[var(--color-border)] rounded-2xl p-5 shadow-sm flex flex-col">
-          <div className="flex justify-between items-center mb-5">
-            <h3 className="text-base font-bold text-[var(--color-text-primary)]">{t('dashboard.weeklyLoadVsIntensity')}</h3>
-            <span className="badge badge-neutral">{t('dashboard.realDbData')}</span>
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 animate-fade-in-up delay-200 flex-1">
+        
+        {/* Next Match / Important Info Card */}
+        <div className="glass-panel rounded-3xl p-6 flex flex-col hover-lift">
+          <div className="flex justify-between items-center mb-6">
+             <div className="flex items-center gap-3">
+               <Shield className="text-[var(--color-primary)]" size={24} />
+               <h3 className="text-lg font-black uppercase tracking-wider text-[var(--color-text-primary)]">Estado de Plantilla</h3>
+             </div>
+             <span className="px-3 py-1 rounded-full bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-xs font-bold uppercase tracking-widest text-[var(--color-text-secondary)]">{totalPlayers} Jugadores</span>
           </div>
-          <div className="flex-1 min-h-[220px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={performanceData}>
-                <defs>
-                  <linearGradient id="colorLoad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="var(--color-primary)" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="var(--color-primary)" stopOpacity={0}/>
-                  </linearGradient>
-                  <linearGradient id="colorInt" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="var(--color-secondary)" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="var(--color-secondary)" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <XAxis dataKey="name" stroke="var(--color-text-muted)" fontSize={12} tickLine={false} axisLine={false} />
-                <Tooltip
-                  contentStyle={{ backgroundColor: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: '12px' }}
-                />
-                <Area type="monotone" dataKey="load" stroke="var(--color-primary)" strokeWidth={2.5} fillOpacity={1} fill="url(#colorLoad)" />
-                <Area type="monotone" dataKey="intensity" stroke="var(--color-secondary)" strokeWidth={2.5} fillOpacity={1} fill="url(#colorInt)" />
-              </AreaChart>
-            </ResponsiveContainer>
+          
+          <div className="flex-1 flex flex-col justify-center gap-6">
+            <div className="flex items-center justify-between p-4 rounded-2xl bg-[var(--color-bg-surface)] border border-[var(--color-border)] shadow-sm">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center">
+                  <Award className="text-green-500" size={24} />
+                </div>
+                <div>
+                  <p className="text-2xl font-black text-[var(--color-text-primary)]">{availablePlayers}</p>
+                  <p className="text-sm text-[var(--color-text-muted)] font-medium uppercase tracking-wider">Disponibles</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-2xl font-black text-red-500">{injuredPlayers}</p>
+                <p className="text-sm text-[var(--color-text-muted)] font-medium uppercase tracking-wider">Bajas</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+               <div className="flex justify-between items-center text-sm font-bold">
+                 <span className="text-[var(--color-text-muted)] uppercase">Carga Acumulada</span>
+                 <span className="text-[var(--color-primary)]">Óptima</span>
+               </div>
+               <div className="h-2 w-full bg-[var(--color-border)] rounded-full overflow-hidden">
+                 <div className="h-full bg-[var(--color-primary)] w-[65%] rounded-full shadow-[0_0_10px_var(--color-primary)]"></div>
+               </div>
+            </div>
           </div>
         </div>
 
-        <div className="bg-[var(--color-bg-base)] border border-[var(--color-border)] rounded-2xl p-5 shadow-sm flex flex-col xl:col-span-2">
-          <div className="flex flex-wrap justify-between items-center gap-2 mb-5">
-            <h3 className="text-base font-bold text-[var(--color-text-primary)]">{t('dashboard.upcomingDbEvents', 'Calendario Semanal')}</h3>
-            <span className="badge badge-neutral text-xs px-2 py-1 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#eab308]"></span> Cumpleaños
-              <span className="w-2 h-2 rounded-full bg-[#3b82f6] ml-2"></span> Entrenamientos
-              <span className="w-2 h-2 rounded-full bg-[var(--color-primary)] ml-2"></span> Partidos
-            </span>
+        {/* Calendar / Events Cards */}
+        <div className="glass-panel rounded-3xl p-6 xl:col-span-2 flex flex-col hover-lift">
+          <div className="flex items-center gap-3 mb-6">
+            <Calendar className="text-[var(--color-secondary)]" size={24} />
+            <h3 className="text-lg font-black uppercase tracking-wider text-[var(--color-text-primary)]">{t('dashboard.upcomingDbEvents', 'Próximos Eventos')}</h3>
           </div>
-          <WeeklyCalendar events={calendarEvents} />
+          
+          <div className="flex-1 flex flex-col gap-4">
+             {upcomingEvents.length > 0 ? upcomingEvents.map((event, idx) => (
+               <div key={idx} className="flex items-center gap-4 bg-[var(--color-bg-base)] border border-[var(--color-border)] p-4 rounded-2xl hover:bg-[var(--color-bg-hover)] transition-colors">
+                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
+                   event.type === 'match' ? 'bg-[var(--color-primary)]/10 text-[var(--color-primary)]' :
+                   event.type === 'training' ? 'bg-blue-500/10 text-blue-500' :
+                   'bg-yellow-500/10 text-yellow-500'
+                 }`}>
+                   {event.type === 'match' ? <Target size={24} /> : event.type === 'training' ? <Activity size={24} /> : <Award size={24} />}
+                 </div>
+                 <div className="flex-1 min-w-0">
+                   <h4 className="text-base font-bold text-[var(--color-text-primary)] truncate">{event.title}</h4>
+                   <p className="text-sm text-[var(--color-text-secondary)] truncate">{event.description}</p>
+                 </div>
+                 <div className="text-right shrink-0">
+                   <p className="text-sm font-bold text-[var(--color-text-primary)]">{event.date.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })}</p>
+                   {event.time && <p className="text-xs text-[var(--color-text-muted)]">{event.time}</p>}
+                 </div>
+               </div>
+             )) : (
+               <div className="flex-1 flex items-center justify-center text-[var(--color-text-muted)] font-medium">
+                 No hay próximos eventos programados.
+               </div>
+             )}
+          </div>
         </div>
       </div>
     </div>

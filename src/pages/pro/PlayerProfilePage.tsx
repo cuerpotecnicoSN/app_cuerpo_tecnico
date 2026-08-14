@@ -1,14 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { User, Weight, Stethoscope, ArrowLeft, Edit2, Target, Users2, FileText, Plus, Trash2 } from 'lucide-react';
+import { User, Weight, Stethoscope, ArrowLeft, Edit2, Target, Users2, FileText, Plus, Trash2, CalendarDays, MapPin } from 'lucide-react';
 import type { Player, PlayerObjective, MeetingDB, SeasonReport } from '../../components/types';
 import PlayerWeightTab from '../../components/pro/PlayerWeightTab';
 import PlayerInjuriesTab from '../../components/pro/PlayerInjuriesTab';
 import { useSupabaseData } from '../../hooks/useSupabaseData';
 import { getPlayerObjectives, createPlayerObjective, updatePlayerObjective, deletePlayerObjective, getSeasonReports, createSeasonReport, deleteSeasonReport } from '../../services/playerObjectives';
-import { getMeetingsForPlayer, createMeeting, deleteMeeting, addMeetingPlayer } from '../../services/meetings';
+import { getMeetingsForPlayer, createMeeting, deleteMeeting, addMeetingPlayer, updateMeeting } from '../../services/meetings';
 import { getFlagEmoji } from '../../components/pro/PlayersManagementView';
+import DOMPurify from 'dompurify';
+import RichTextEditor from '../../components/common/RichTextEditor';
 
 import PlayerImportModal from '../../components/pro/PlayerImportModal';
 
@@ -442,63 +444,255 @@ function PlayerObjectivesTab({ playerId }: { playerId: string }) {
 }
 
 function PlayerMeetingsTab({ playerId }: { playerId: string }) {
-  const { t } = useTranslation();
   const [meetings, setMeetings] = useState<MeetingDB[]>([]);
   const [showForm, setShowForm] = useState(false);
-  const [date, setDate] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  
+  // Form State
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [time, setTime] = useState('');
   const [location, setLocation] = useState('');
-  const [objective, setObjective] = useState('');
   const [coach, setCoach] = useState('');
+  const [objective, setObjective] = useState('');
+  const [development, setDevelopment] = useState('');
 
   const load = () => getMeetingsForPlayer(playerId, 'individual').then(setMeetings).catch(() => setMeetings([]));
   useEffect(() => { load(); }, [playerId]);
 
-  const handleAdd = async () => {
+  const handleEditClick = (m: MeetingDB) => {
+    setEditingId(m.id);
+    setDate(m.date || new Date().toISOString().split('T')[0]);
+    setTime(m.time || '');
+    setLocation(m.location || '');
+    setCoach(m.created_by || '');
+    setObjective(m.objective || '');
+    setDevelopment(m.development || '');
+    setShowForm(true);
+  };
+
+  const resetForm = () => {
+    setEditingId(null);
+    setDate(new Date().toISOString().split('T')[0]); 
+    setTime(''); 
+    setLocation(''); 
+    setObjective(''); 
+    setDevelopment('');
+    setCoach(''); 
+    setShowForm(false);
+  };
+
+  const handleSave = async () => {
     if (!date) return;
-    const m = await createMeeting({ type: 'individual', date, time, location, objective, created_by: coach });
-    await addMeetingPlayer(m.id, playerId);
-    setDate(''); setTime(''); setLocation(''); setObjective(''); setCoach(''); setShowForm(false);
+    if (editingId) {
+      await updateMeeting(editingId, {
+        date, time, location, objective, development, created_by: coach
+      });
+    } else {
+      const m = await createMeeting({ 
+        type: 'individual', date, time, location, objective, development, created_by: coach 
+      });
+      await addMeetingPlayer(m.id, playerId);
+    }
+    
+    resetForm();
     load();
   };
 
   return (
-    <div className="space-y-4 animate-fade-in">
-      <div className="flex justify-end">
-        <button onClick={() => setShowForm((v) => !v)} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold flex items-center gap-2">
-          <Plus size={16} /> Añadir reunión
+    <div className="space-y-6 animate-fade-in pb-8">
+      <div className="flex justify-end mt-2">
+        <button 
+          onClick={() => {
+            if (showForm) resetForm();
+            else setShowForm(true);
+          }} 
+          className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-sm transition-all transform hover:scale-[1.02]"
+        >
+          <Plus size={18} className={showForm ? 'rotate-45 transition-transform' : 'transition-transform'} /> 
+          {showForm ? 'Cancelar' : 'Agendar Reunión'}
         </button>
       </div>
+
       {showForm && (
-        <div className="bg-white border border-gray-100 rounded-xl p-4 space-y-3 shadow-sm">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            <input type="date" className="border border-gray-200 rounded-lg px-3 py-2 text-sm" value={date} onChange={(e) => setDate(e.target.value)} />
-            <input type="time" className="border border-gray-200 rounded-lg px-3 py-2 text-sm" value={time} onChange={(e) => setTime(e.target.value)} />
-            <input className="border border-gray-200 rounded-lg px-3 py-2 text-sm" placeholder="Lugar" value={location} onChange={(e) => setLocation(e.target.value)} />
-            <input className="border border-gray-200 rounded-lg px-3 py-2 text-sm" placeholder="Entrenador" value={coach} onChange={(e) => setCoach(e.target.value)} />
+        <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-xl shadow-blue-900/5 animate-fade-in relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
+          <h3 className="text-lg font-bold text-gray-800 mb-5 flex items-center gap-2">
+            <Users2 className="text-blue-500" size={20} />
+            {editingId ? 'Editar Reunión' : 'Nueva Reunión Individual'}
+          </h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Fecha *</label>
+              <input 
+                type="date" 
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                required
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Hora</label>
+              <input 
+                type="time" 
+                value={time}
+                onChange={(e) => setTime(e.target.value)}
+                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+              />
+            </div>
           </div>
-          <textarea className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" placeholder="Objetivo de la reunión" value={objective} onChange={(e) => setObjective(e.target.value)} />
-          <button onClick={handleAdd} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold">{t('common.save')}</button>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Lugar</label>
+              <input 
+                type="text" 
+                placeholder="Ej. Despacho Míster, Sala de vídeo..."
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+              />
+            </div>
+            
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Entrenador/es a cargo</label>
+              <input 
+                type="text" 
+                placeholder="Ej. Míster y Segundo Entrenador"
+                value={coach}
+                onChange={(e) => setCoach(e.target.value)}
+                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div className="flex flex-col gap-1.5 h-full">
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Contenido / Tema principal</label>
+              <div className="h-full min-h-[250px]">
+                <RichTextEditor 
+                  value={objective}
+                  onChange={setObjective}
+                  placeholder="Motivo de la reunión..."
+                  className="h-full"
+                />
+              </div>
+            </div>
+            
+            <div className="flex flex-col gap-1.5 h-full">
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Observaciones / Notas</label>
+              <div className="h-full min-h-[250px]">
+                <RichTextEditor 
+                  value={development}
+                  onChange={setDevelopment}
+                  placeholder="Conclusiones, desarrollo..."
+                  className="h-full"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-between items-center gap-3 pt-4 border-t border-gray-100 mt-4">
+            {editingId ? (
+              <button 
+                onClick={async () => {
+                  if (window.confirm('¿Eliminar esta reunión?')) {
+                    await deleteMeeting(editingId);
+                    resetForm();
+                    load();
+                  }
+                }}
+                className="px-4 py-2.5 text-red-600 bg-red-50 hover:bg-red-100 rounded-xl text-sm font-bold transition-colors flex items-center gap-2"
+              >
+                <Trash2 size={16} /> Eliminar
+              </button>
+            ) : <div></div>}
+            <div className="flex gap-3">
+              <button 
+                onClick={resetForm} 
+                className="px-5 py-2.5 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl text-sm font-bold transition-colors"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={handleSave} 
+                disabled={!date}
+                className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed shadow-sm transition-colors"
+              >
+                {editingId ? 'Guardar Cambios' : 'Agendar Reunión'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
-      {meetings.length === 0 && !showForm && <p className="text-sm text-gray-400">{t('playerTabs.noMeetings')}</p>}
-      <div className="space-y-2">
-        {meetings.map((m) => (
-          <div key={m.id} className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm flex items-start justify-between gap-3">
-            <div>
-              <div className="flex items-center gap-3 mb-1">
-                <span className="font-bold text-gray-800">{m.date} {m.time || ''}</span>
-                {m.location && <span className="text-xs text-gray-400">{m.location}</span>}
-              </div>
-              {m.created_by && <div className="mb-1 text-xs font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md inline-block">Entrenador: {m.created_by}</div>}
-              {m.objective && <p className="text-sm text-gray-600">{m.objective}</p>}
-            </div>
-            <button onClick={async () => { await deleteMeeting(m.id); load(); }} className="text-gray-300 hover:text-red-500 shrink-0">
-              <Trash2 size={16} />
-            </button>
+
+      {meetings.length === 0 && !showForm ? (
+        <div className="bg-white border border-gray-100 rounded-2xl p-12 text-center shadow-sm">
+          <div className="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Users2 size={32} />
           </div>
-        ))}
-      </div>
+          <h3 className="text-xl font-bold text-gray-800 mb-2">No hay reuniones</h3>
+          <p className="text-gray-500 mb-6 max-w-md mx-auto">
+            Este jugador aún no tiene reuniones individuales registradas.
+          </p>
+          <button onClick={() => setShowForm(true)} className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold inline-flex items-center gap-2 transition-colors">
+            <Plus size={18} /> Agendar la primera
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-2">
+          {meetings.map((m) => (
+            <div 
+              key={m.id} 
+              onClick={() => handleEditClick(m)}
+              className={`bg-white border cursor-pointer ${editingId === m.id ? 'border-blue-400 shadow-md ring-2 ring-blue-50' : 'border-gray-100 hover:border-blue-300 hover:shadow-md'} rounded-2xl p-5 shadow-sm transition-all group relative overflow-hidden flex flex-col h-full`}
+            >
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <h4 className="font-bold text-gray-900 text-base flex items-center gap-2">
+                    <CalendarDays size={16} className="text-blue-500"/>
+                    {m.date} {m.time ? `- ${m.time}` : ''}
+                  </h4>
+                  {m.location && (
+                    <div className="flex items-center gap-1 mt-1.5 text-xs text-gray-500">
+                      <MapPin size={12} className="text-rose-500"/> {m.location}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="flex-1 space-y-3">
+                {m.created_by && (
+                  <div className="inline-flex items-center px-2.5 py-1 rounded-md bg-indigo-50 text-indigo-700 text-xs font-bold border border-indigo-100">
+                    Dirigida por: {m.created_by}
+                  </div>
+                )}
+                
+                {m.objective && m.objective !== '<p><br></p>' && (
+                  <div>
+                    <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">Contenido / Tema</p>
+                    <div 
+                      className="text-sm text-gray-800 leading-relaxed prose prose-sm max-w-none"
+                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(m.objective) }}
+                    />
+                  </div>
+                )}
+
+                {m.development && m.development !== '<p><br></p>' && (
+                  <div className="bg-blue-50/50 rounded-xl p-3.5 border border-blue-100/50 mt-2">
+                    <p className="text-[11px] font-bold text-blue-600/70 uppercase tracking-wider mb-1">Observaciones</p>
+                    <div 
+                      className="text-sm text-gray-700 leading-relaxed prose prose-sm max-w-none"
+                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(m.development) }}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -305,7 +305,7 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({
     let x = ((clientX - rect.left) / rect.width) * 100;
     let y = ((clientY - rect.top) / rect.height) * 100;
     
-    const isRotated = (rotateFullField && fieldType === 'full') || fieldType === 'full-horizontal';
+    const isRotated = fieldType === 'full-horizontal';
     if (isRotated) {
       const tempX = x;
       x = 100 - y;
@@ -932,6 +932,7 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({
   };
 
   const renderElement = (el: BoardElement) => {
+    const isRotated = fieldType === 'full-horizontal';
     const isSelected = selectedElementIds.includes(el.id);
     const isShape = ['shape-circle', 'shape-square'].includes(el.type);
     
@@ -958,6 +959,7 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({
     };
 
     let content = null;
+    const counterRotation = -(el.rotation + (isRotated ? -90 : 0));
     
     switch (el.type) {
       case 'coach': {
@@ -973,13 +975,14 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               color: '#fff',
               fontWeight: 'black', fontSize: px(9),
-              fontFamily: 'sans-serif'
+              fontFamily: 'sans-serif',
+              transform: `rotate(${counterRotation}deg)`
             }}>
               {coachInitials(coachLabel)}
             </div>
             {showName && (
               <div style={{
-                position: 'absolute', top: '100%', left: '50%', transform: 'translate(-50%, 0)',
+                position: 'absolute', top: '100%', left: '50%', transform: `translate(-50%, 0) rotate(${counterRotation}deg)`,
                 marginTop: px(1),
                 backgroundColor: printMode ? 'transparent' : 'rgba(255,255,255,0.9)',
                 border: printMode ? 'none' : `${px(1)} solid ${getPrintColor(el.color || COACH_COLOR)}`,
@@ -1010,7 +1013,8 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               color: ['#ffffff', '#ffeb3b'].includes(el.color.toLowerCase()) ? '#000' : '#fff',
               fontWeight: 'black', fontSize: px(10),
-              fontFamily: 'sans-serif'
+              fontFamily: 'sans-serif',
+              transform: `rotate(${counterRotation}deg)`
             }}>
               {el.text}
             </div>
@@ -1021,7 +1025,8 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({
                 background: el.abp_marking === 'Z' ? '#3b82f6' : '#ef4444',
                 color: '#fff', fontSize: px(10), fontWeight: 'bold',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                border: '1px solid #fff'
+                border: '1px solid #fff',
+                transform: `rotate(${counterRotation}deg)`
               }}>
                 {el.abp_marking}
               </div>
@@ -1196,7 +1201,7 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({
         break;
       case 'text':
         content = (
-          <div style={{ color: displayColor, fontSize: px(18), fontWeight: 'bold', whiteSpace: 'nowrap', textShadow: printMode ? 'none' : '0 1px 3px rgba(0,0,0,0.8)' }}>
+          <div style={{ color: displayColor, fontSize: px(18), fontWeight: 'bold', whiteSpace: 'nowrap', textShadow: printMode ? 'none' : '0 1px 3px rgba(0,0,0,0.8)', transform: `rotate(${counterRotation}deg)` }}>
             {el.text}
           </div>
         );
@@ -1443,20 +1448,17 @@ export const TaskBoardEditor: React.FC<TaskBoardEditorProps> = ({
     
     const cropWidth = cropBox.maxX - cropBox.minX;
     const cropHeight = cropBox.maxY - cropBox.minY;
-    const isRotated = (rotateFullField && fieldType === 'full') || fieldType === 'full-horizontal';
+    const isRotated = fieldType === 'full-horizontal';
     
     let containerAspect = (fieldType === 'full') 
       ? '68 / 105' 
       : (fieldType === 'half' || fieldType === 'half-top' || fieldType === 'blank')
         ? '16 / 9'
         : '105 / 68'; // For full-horizontal
-    if (isRotated && fieldType === 'full') containerAspect = '105 / 68';
     if (isCropped) containerAspect = `${cropWidth} / ${cropHeight}`;
 
     // Relación ancho/alto numérica del campo, para el ajuste "contain" en pantalla.
-    const aspectRatioNum = (isRotated && fieldType === 'full')
-      ? 105 / 68
-      : isCropped
+    const aspectRatioNum = isCropped
         ? cropWidth / cropHeight
         : (fieldType === 'full')
           ? 68 / 105
