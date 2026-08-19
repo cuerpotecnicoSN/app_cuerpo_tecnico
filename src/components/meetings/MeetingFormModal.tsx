@@ -1,6 +1,6 @@
-import { useState } from 'react';
+
 import { useForm, Controller } from 'react-hook-form';
-import { X, Calendar, Clock, MapPin, User, FileText, MessageSquare, Plus, Trash2, Users } from 'lucide-react';
+import { X, Calendar, Clock, MapPin, User, FileText, MessageSquare, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { mockPlayers } from '../../data/mockPlayers';
 import RichTextEditor from '../common/RichTextEditor';
@@ -9,6 +9,7 @@ interface MeetingFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   preselectedPlayerId?: string;
+  defaultType?: string;
 }
 
 type MeetingFormData = {

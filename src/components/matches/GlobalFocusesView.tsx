@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { ChevronLeft, Target, Users, User, ShieldAlert, Flag, Shield, Activity, CalendarDays } from 'lucide-react';
 import { getAllMatchFocuses } from '../../services/matches';
 import type { MatchDB, MatchFocus, FocusDetails } from '../types';
