@@ -16,6 +16,11 @@ export const createPlayerWeight = async (weight: Omit<PlayerWeight, 'id' | 'crea
   if (error) throw error;
 };
 
+export const updatePlayerWeight = async (id: string, updates: Partial<PlayerWeight>): Promise<void> => {
+  const { error } = await supabase.from('player_weights').update(updates).eq('id', id);
+  if (error) throw error;
+};
+
 export const getPlayerInjuries = async (playerId: string): Promise<PlayerInjury[]> => {
   const { data, error } = await supabase
     .from('player_injuries')

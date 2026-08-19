@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { getPlayerWeights, createPlayerWeight, deletePlayerWeight } from '../../services/playerHealth';
+import { getPlayerWeights, createPlayerWeight, deletePlayerWeight, updatePlayerWeight } from '../../services/playerHealth';
 import type { PlayerWeight } from '../types';
-import { Weight, Plus, AlertTriangle, TrendingUp, TrendingDown, Minus, Scale, Trash2 } from 'lucide-react';
+import { Weight, Plus, AlertTriangle, TrendingUp, TrendingDown, Minus, Scale, Trash2, Pencil } from 'lucide-react';
 import {
   AreaChart,
   Area,
@@ -18,6 +18,7 @@ export default function PlayerWeightTab({ playerId }: { playerId: string }) {
   const [showModal, setShowModal] = useState(false);
   const [newWeight, setNewWeight] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const loadWeights = async () => {
     try {
@@ -39,21 +40,42 @@ export default function PlayerWeightTab({ playerId }: { playerId: string }) {
     e.preventDefault();
     if (!newWeight || !date) return;
     try {
-      await createPlayerWeight({
-        player_id: playerId,
-        weight: parseFloat(newWeight),
-        date
-      });
-      setShowModal(false);
-      setNewWeight('');
+      if (editingId) {
+        await updatePlayerWeight(editingId, {
+          weight: parseFloat(newWeight),
+          date
+        });
+      } else {
+        await createPlayerWeight({
+          player_id: playerId,
+          weight: parseFloat(newWeight),
+          date
+        });
+      }
+      closeModal();
       loadWeights();
     } catch (err) {
       console.error(err);
-      alert('Error al añadir peso');
+      alert('Error al guardar el peso');
     }
   };
 
+  const closeModal = () => {
+    setShowModal(false);
+    setEditingId(null);
+    setNewWeight('');
+    setDate(new Date().toISOString().split('T')[0]);
+  };
+
+  const handleEditClick = (w: PlayerWeight) => {
+    setEditingId(w.id);
+    setNewWeight(w.weight.toString());
+    setDate(w.date);
+    setShowModal(true);
+  };
+
   const handleDelete = async (id: string) => {
+    if (!window.confirm('¿Estás seguro de que quieres eliminar este registro de peso?')) return;
     try {
       await deletePlayerWeight(id);
       loadWeights();
@@ -85,7 +107,12 @@ export default function PlayerWeightTab({ playerId }: { playerId: string }) {
         </h2>
         <button
           className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-colors shadow-sm"
-          onClick={() => setShowModal(true)}
+          onClick={() => {
+            setEditingId(null);
+            setNewWeight('');
+            setDate(new Date().toISOString().split('T')[0]);
+            setShowModal(true);
+          }}
         >
           <Plus size={18} /> Añadir Registro
         </button>
@@ -218,14 +245,17 @@ export default function PlayerWeightTab({ playerId }: { playerId: string }) {
                             </span>
                           </div>
                         </div>
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2 transition-opacity">
                           {wDiff !== 0 && prev !== null && (
-                            <span className={`flex items-center text-sm font-bold px-3 py-1.5 rounded-full ${wDiff > 0 ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                            <span className={`flex items-center text-sm font-bold px-3 py-1.5 rounded-full mr-2 ${wDiff > 0 ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'}`}>
                               {wDiff > 0 ? <TrendingUp size={14} className="mr-1" /> : <TrendingDown size={14} className="mr-1" />}
                               {Math.abs(wDiff).toFixed(1)}
                             </span>
                           )}
-                          <button onClick={() => handleDelete(w.id)} className="p-3 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors opacity-0 group-hover:opacity-100" title="Eliminar registro">
+                          <button onClick={() => handleEditClick(w)} className="p-2 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Editar registro">
+                            <Pencil size={18} />
+                          </button>
+                          <button onClick={() => handleDelete(w.id)} className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Eliminar registro">
                             <Trash2 size={18} />
                           </button>
                         </div>
@@ -243,7 +273,7 @@ export default function PlayerWeightTab({ playerId }: { playerId: string }) {
         <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white border border-gray-100 rounded-2xl shadow-xl max-w-sm w-full animate-in fade-in zoom-in-95 duration-200">
             <div className="p-6">
-              <h3 className="text-lg font-bold mb-4 text-gray-900">Añadir Control de Peso</h3>
+              <h3 className="text-lg font-bold mb-4 text-gray-900">{editingId ? 'Editar Control de Peso' : 'Añadir Control de Peso'}</h3>
               <form onSubmit={handleAdd} className="space-y-4">
                 <div>
                   <label className="block text-xs font-semibold text-gray-600 mb-1">Fecha</label>
@@ -269,11 +299,11 @@ export default function PlayerWeightTab({ playerId }: { playerId: string }) {
                   />
                 </div>
                 <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
-                  <button type="button" className="px-4 py-2 bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 rounded-lg text-sm font-semibold transition-colors" onClick={() => setShowModal(false)}>
+                  <button type="button" className="px-4 py-2 bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 rounded-lg text-sm font-semibold transition-colors" onClick={closeModal}>
                     Cancelar
                   </button>
                   <button type="submit" className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-semibold transition-colors">
-                    Guardar
+                    {editingId ? 'Guardar Cambios' : 'Añadir Peso'}
                   </button>
                 </div>
               </form>

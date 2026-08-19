@@ -1,11 +1,13 @@
 import { useEffect, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Trash2, ChevronLeft, MapPin, Swords } from 'lucide-react';
+import { Plus, Trash2, ChevronLeft, MapPin, Swords, Pencil, User } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import type { MatchDB, MatchFocus, MatchDataPoint } from '../../components/types';
-import { getMatches, createMatch, updateMatch, getMatchFocuses, createMatchFocus, deleteMatchFocus, getMatchDataPoints, createMatchDataPoint, deleteMatchDataPoint } from '../../services/matches';
+import { getMatches, createMatch, updateMatch, getMatchFocuses, createMatchFocus, updateMatchFocus, deleteMatchFocus, getMatchDataPoints, createMatchDataPoint, deleteMatchDataPoint } from '../../services/matches';
 import { exportMatchesListPdf } from '../../utils/matchesPdf';
 import { useSupabaseData } from '../../hooks/useSupabaseData';
+import GlobalFocusesView from '../../components/matches/GlobalFocusesView';
+import type { FocusDetails } from '../../components/types';
 
 export default function MatchesPage() {
   const { t } = useTranslation();
@@ -23,6 +25,7 @@ export default function MatchesPage() {
   const closestRef = useRef<HTMLDivElement>(null);
   const [filterType, setFilterType] = useState<'all' | 'league' | 'cup' | 'friendly'>('all');
   const [exporting, setExporting] = useState(false);
+  const [showGlobalFocuses, setShowGlobalFocuses] = useState(false);
 
   const load = () => getMatches().then(setMatches).catch(() => setMatches([]));
   useEffect(() => { load(); }, []);
@@ -86,6 +89,10 @@ export default function MatchesPage() {
     return <MatchDetail match={activeMatch} onBack={() => { setActiveMatch(null); load(); }} onUpdate={load} />;
   }
 
+  if (showGlobalFocuses) {
+    return <GlobalFocusesView matches={matches} onBack={() => setShowGlobalFocuses(false)} />;
+  }
+
   return (
     <div className="space-y-4">
       {/* Header Container */}
@@ -124,7 +131,13 @@ export default function MatchesPage() {
         </div>
 
         {/* Right Side: Action Buttons */}
-        <div className="flex items-center gap-3 w-full xl:w-auto justify-start sm:justify-end">
+        <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto justify-start sm:justify-end">
+          <button 
+            onClick={() => setShowGlobalFocuses(true)}
+            className="px-5 py-2.5 bg-indigo-50 text-indigo-700 rounded-xl text-sm font-bold shadow-sm border border-indigo-200 hover:bg-indigo-100 transition-all flex-1 sm:flex-none text-center"
+          >
+            Focos Globales
+          </button>
           <button 
             onClick={handleExport}
             disabled={exporting || filteredMatches.length === 0}
@@ -251,6 +264,20 @@ function MatchDetail({ match, onBack, onUpdate }: { match: MatchDB; onBack: () =
 
   const [focusTitle, setFocusTitle] = useState('');
   const [focusDesc, setFocusDesc] = useState('');
+  const [focusType, setFocusType] = useState<'Colectivo' | 'Grupal' | 'Individual' | 'Rival'>('Colectivo');
+  const [focusPhases, setFocusPhases] = useState<('Ofensivo' | 'Defensivo' | 'ABP')[]>(['Ofensivo']);
+  const [focusAssignedTo, setFocusAssignedTo] = useState('');
+  const [focusPlayerId, setFocusPlayerId] = useState('');
+  const [focusPlayerIds, setFocusPlayerIds] = useState<string[]>([]);
+  const [editingFocusId, setEditingFocusId] = useState<string | null>(null);
+
+  const toggleFocusPlayer = (id: string) => {
+    setFocusPlayerIds(prev => prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]);
+  };
+
+  const toggleFocusPhase = (p: 'Ofensivo' | 'Defensivo' | 'ABP') => {
+    setFocusPhases(prev => prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p]);
+  };
 
   const [dpPlayer, setDpPlayer] = useState('');
   const [dpMinute, setDpMinute] = useState('');
@@ -330,21 +357,233 @@ function MatchDetail({ match, onBack, onUpdate }: { match: MatchDB; onBack: () =
       )}
 
       {tab === 'focuses' && (
-        <div className="space-y-3">
-          <div className="bg-white border border-gray-100 rounded-xl p-4 space-y-2 shadow-sm">
-            <input className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" placeholder={t('common.title') as string} value={focusTitle} onChange={(e) => setFocusTitle(e.target.value)} />
-            <textarea className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" placeholder={t('common.description') as string} value={focusDesc} onChange={(e) => setFocusDesc(e.target.value)} />
-            <button
-              onClick={async () => { if (!focusTitle.trim()) return; await createMatchFocus({ match_id: match.id, title: focusTitle, description: focusDesc, order: focuses.length }); setFocusTitle(''); setFocusDesc(''); loadFocuses(); }}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold flex items-center gap-2"
-            ><Plus size={16} /> {t('matchesPage.newFocus')}</button>
-          </div>
-          {focuses.map((f) => (
-            <div key={f.id} className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm flex justify-between items-start">
-              <div><p className="font-bold text-gray-800">{f.title}</p>{f.description && <p className="text-sm text-gray-500">{f.description}</p>}</div>
-              <button onClick={async () => { await deleteMatchFocus(f.id); loadFocuses(); }} className="text-gray-300 hover:text-red-500"><Trash2 size={16} /></button>
+        <div className="space-y-4">
+          <div className="bg-white border border-gray-100 rounded-xl p-5 space-y-4 shadow-sm" id="focus-form">
+            <h3 className="font-bold text-gray-900 text-sm">{editingFocusId ? 'Editar Foco' : 'Añadir Nuevo Foco'}</h3>
+            <input className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder={t('common.title') as string} value={focusTitle} onChange={(e) => setFocusTitle(e.target.value)} />
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-bold text-gray-500 uppercase block mb-1">Tipo de Foco</label>
+                <select className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={focusType} onChange={(e) => setFocusType(e.target.value as any)}>
+                  <option value="Colectivo">Colectivo</option>
+                  <option value="Grupal">Grupal</option>
+                  <option value="Individual">Individual</option>
+                  <option value="Rival">Rival</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-bold text-gray-500 uppercase block mb-1">Fases del Juego</label>
+                <div className="flex gap-2 flex-wrap">
+                  <label className="flex items-center gap-1.5 text-sm cursor-pointer hover:bg-gray-50 p-1.5 rounded-md transition-colors border border-gray-100">
+                    <input type="checkbox" checked={focusPhases.includes('Ofensivo')} onChange={() => toggleFocusPhase('Ofensivo')} className="rounded text-blue-600 focus:ring-blue-500" /> Ofensivo
+                  </label>
+                  <label className="flex items-center gap-1.5 text-sm cursor-pointer hover:bg-gray-50 p-1.5 rounded-md transition-colors border border-gray-100">
+                    <input type="checkbox" checked={focusPhases.includes('Defensivo')} onChange={() => toggleFocusPhase('Defensivo')} className="rounded text-blue-600 focus:ring-blue-500" /> Defensivo
+                  </label>
+                  <label className="flex items-center gap-1.5 text-sm cursor-pointer hover:bg-gray-50 p-1.5 rounded-md transition-colors border border-gray-100">
+                    <input type="checkbox" checked={focusPhases.includes('ABP')} onChange={() => toggleFocusPhase('ABP')} className="rounded text-blue-600 focus:ring-blue-500" /> ABP
+                  </label>
+                </div>
+              </div>
             </div>
-          ))}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {focusType === 'Individual' && (
+                <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase block mb-1">Jugador Objetivo</label>
+                  <select className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={focusPlayerId} onChange={(e) => setFocusPlayerId(e.target.value)}>
+                    <option value="">Selecciona Jugador...</option>
+                    {(dbPlayers || []).sort((a:any, b:any) => a.first_name.localeCompare(b.first_name)).map((p: any) => <option key={p.id} value={p.id}>{p.first_name} {p.last_name}</option>)}
+                  </select>
+                </div>
+              )}
+              {focusType === 'Grupal' && (
+                <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase block mb-1">Jugadores Implicados</label>
+                  <div className="max-h-32 overflow-y-auto border border-gray-200 rounded-lg p-2 space-y-1">
+                    {(dbPlayers || []).sort((a:any, b:any) => a.first_name.localeCompare(b.first_name)).map((p: any) => (
+                      <label key={p.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-gray-50 p-1.5 rounded-md transition-colors">
+                        <input type="checkbox" className="rounded text-blue-600 focus:ring-blue-500 w-4 h-4" checked={focusPlayerIds.includes(p.id)} onChange={() => toggleFocusPlayer(p.id)} />
+                        <span className="text-gray-700">{p.first_name} {p.last_name}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div className={(focusType === 'Colectivo' || focusType === 'Rival') ? 'md:col-span-2' : ''}>
+                <label className="text-xs font-bold text-gray-500 uppercase block mb-1">Responsable / Controlador</label>
+                <input className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Ej. 2º Entrenador, Analista..." value={focusAssignedTo} onChange={(e) => setFocusAssignedTo(e.target.value)} />
+              </div>
+            </div>
+
+            <textarea className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Descripción detallada del foco..." value={focusDesc} onChange={(e) => setFocusDesc(e.target.value)} rows={3} />
+            
+            <div className="flex gap-2 flex-wrap">
+              <button
+                onClick={async () => { 
+                  if (!focusTitle.trim()) return alert("El título es obligatorio.");
+                  if (focusPhases.length === 0) return alert("Debes seleccionar al menos una fase del juego.");
+                  if (!focusAssignedTo.trim()) return alert("El responsable o controlador es obligatorio.");
+                  if (focusType === 'Individual' && !focusPlayerId) return alert("Debes seleccionar un jugador objetivo.");
+                  if (focusType === 'Grupal' && focusPlayerIds.length === 0) return alert("Debes seleccionar al menos un jugador implicado.");
+                  if (!focusDesc.trim()) return alert("La descripción es obligatoria.");
+
+                  const details: FocusDetails = { text: focusDesc, focusType, phases: focusPhases, assignedTo: focusAssignedTo, playerId: focusPlayerId, playerIds: focusPlayerIds };
+                  
+                  if (editingFocusId) {
+                    await updateMatchFocus(editingFocusId, { title: focusTitle, description: JSON.stringify(details) });
+                  } else {
+                    await createMatchFocus({ match_id: match.id, title: focusTitle, description: JSON.stringify(details), order: focuses.length }); 
+                  }
+
+                  setEditingFocusId(null);
+                  setFocusTitle(''); setFocusDesc(''); setFocusAssignedTo(''); setFocusPlayerId(''); setFocusPlayerIds([]); loadFocuses(); 
+                }}
+                className="px-5 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-bold flex items-center justify-center w-full sm:w-auto gap-2 hover:bg-blue-700 transition-colors"
+              >
+                {editingFocusId ? <Pencil size={16} /> : <Plus size={16} />} 
+                {editingFocusId ? 'Guardar Cambios' : 'Guardar Foco'}
+              </button>
+              {editingFocusId && (
+                <button
+                  onClick={() => {
+                    setEditingFocusId(null);
+                    setFocusTitle(''); setFocusDesc(''); setFocusAssignedTo(''); setFocusPlayerId(''); setFocusPlayerIds([]);
+                  }}
+                  className="px-5 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-lg text-sm font-bold flex items-center justify-center w-full sm:w-auto hover:bg-gray-50 transition-colors"
+                >
+                  Cancelar
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="mt-8">
+            {(() => {
+              const parsedFocuses = focuses.map(f => {
+                let details: FocusDetails | null = null;
+                let plainDesc = f.description;
+                try {
+                  if (f.description && f.description.startsWith('{')) {
+                    details = JSON.parse(f.description);
+                    plainDesc = details?.text || '';
+                  }
+                } catch (e) {
+                  // legacy format
+                }
+                return { ...f, details, plainDesc };
+              });
+
+              const groupedByRole = new Map<string, typeof parsedFocuses>();
+              parsedFocuses.forEach(f => {
+                const role = f.details?.assignedTo?.trim() || 'Sin asignar / General';
+                if (!groupedByRole.has(role)) groupedByRole.set(role, []);
+                groupedByRole.get(role)!.push(f);
+              });
+
+              if (parsedFocuses.length === 0) return <p className="text-sm text-gray-400 text-center py-6">No hay focos registrados para este partido.</p>;
+
+              return (
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                  {Array.from(groupedByRole.entries()).map(([role, roleFocuses]) => (
+                    <div key={role} className="bg-gray-50/50 border border-gray-200 rounded-2xl p-5 shadow-sm flex flex-col relative overflow-hidden">
+                      <div className="absolute top-0 left-0 w-1.5 h-full bg-gradient-to-b from-indigo-500 to-blue-500" />
+                      <div className="flex items-center gap-3 mb-5 pb-3 border-b border-gray-200 ml-2">
+                        <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 shadow-inner">
+                          <User size={16} />
+                        </div>
+                        <h4 className="font-extrabold text-gray-900 text-sm uppercase tracking-tight">{role}</h4>
+                        <span className="ml-auto bg-white border border-gray-200 text-gray-600 text-xs font-black px-2 py-0.5 rounded-full shadow-sm">{roleFocuses.length}</span>
+                      </div>
+                      
+                      <div className="space-y-4 ml-2">
+                        {roleFocuses.map(f => {
+                          const details = f.details;
+                          const plainDesc = f.plainDesc;
+
+                          const typeColors = {
+                            Colectivo: 'bg-indigo-100 text-indigo-700 border-indigo-200',
+                            Grupal: 'bg-teal-100 text-teal-700 border-teal-200',
+                            Individual: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+                            Rival: 'bg-rose-100 text-rose-700 border-rose-200'
+                          };
+                          
+                          const phaseColors = {
+                            Ofensivo: 'bg-blue-100 text-blue-700 border-blue-200',
+                            Defensivo: 'bg-red-100 text-red-700 border-red-200',
+                            ABP: 'bg-amber-100 text-amber-700 border-amber-200'
+                          };
+
+                          let playerName = '';
+                          if (details?.focusType === 'Individual' && details?.playerId && dbPlayers) {
+                            const player = dbPlayers.find((p:any) => p.id === details?.playerId);
+                            if (player) playerName = `${player.first_name} ${player.last_name}`;
+                          } else if (details?.focusType === 'Grupal' && details?.playerIds && dbPlayers) {
+                            playerName = dbPlayers.filter((p:any) => details.playerIds?.includes(p.id)).map((p:any) => p.first_name).join(', ');
+                          }
+
+                          return (
+                            <div key={f.id} className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col gap-3 relative group">
+                              <div className="flex justify-between items-start gap-4">
+                                <div className="flex-1">
+                                  <div className="flex flex-wrap items-center gap-2 mb-2">
+                                    {details?.focusType && (
+                                      <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded border ${typeColors[details.focusType as keyof typeof typeColors] || 'bg-gray-100'}`}>
+                                        {details.focusType} {playerName ? `(${playerName})` : ''}
+                                      </span>
+                                    )}
+                                    {details?.phases?.map(ph => (
+                                      <span key={ph} className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded border ${phaseColors[ph as keyof typeof phaseColors] || 'bg-gray-100'}`}>
+                                        {ph}
+                                      </span>
+                                    ))}
+                                  </div>
+                                  <h4 className="font-bold text-gray-900 text-lg leading-tight">{f.title}</h4>
+                                </div>
+                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white p-1 rounded-md">
+                                  <button 
+                                    onClick={() => {
+                                      setEditingFocusId(f.id);
+                                      setFocusTitle(f.title);
+                                      setFocusDesc(plainDesc);
+                                      setFocusType(details?.focusType || 'Colectivo');
+                                      setFocusPhases(details?.phases || []);
+                                      setFocusAssignedTo(details?.assignedTo || '');
+                                      setFocusPlayerId(details?.playerId || '');
+                                      setFocusPlayerIds(details?.playerIds || []);
+                                      document.getElementById('focus-form')?.scrollIntoView({ behavior: 'smooth' });
+                                    }} 
+                                    className="text-gray-400 hover:text-blue-500 transition-colors p-1"
+                                    title="Editar foco"
+                                  >
+                                    <Pencil size={18} />
+                                  </button>
+                                  <button 
+                                    onClick={async () => { 
+                                      if (window.confirm('¿Estás seguro de que quieres eliminar este foco?')) {
+                                        await deleteMatchFocus(f.id); 
+                                        loadFocuses(); 
+                                      }
+                                    }} 
+                                    className="text-gray-400 hover:text-red-500 transition-colors p-1"
+                                    title="Eliminar foco"
+                                  >
+                                    <Trash2 size={18} />
+                                  </button>
+                                </div>
+                              </div>
+                              {plainDesc && <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">{plainDesc}</p>}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+          </div>
         </div>
       )}
 

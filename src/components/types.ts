@@ -237,11 +237,21 @@ export interface MatchDB {
   created_at?: string;
 }
 
+export interface FocusDetails {
+  text: string;
+  focusType: 'Colectivo' | 'Grupal' | 'Individual' | 'Rival';
+  phase?: 'Ofensivo' | 'Defensivo' | 'ABP'; // Legacy
+  phases?: ('Ofensivo' | 'Defensivo' | 'ABP')[];
+  assignedTo: string;
+  playerId?: string;
+  playerIds?: string[];
+}
+
 export interface MatchFocus {
   id: string;
   match_id: string;
   title: string;
-  description?: string;
+  description?: string; // Puede ser un string JSON que cumple FocusDetails
   order: number;
   created_at?: string;
 }
@@ -270,6 +280,10 @@ export interface MeetingDB {
   location?: string;
   objective?: string;
   development?: string;
+  feedback?: {
+    positives: string[];
+    negatives: string[];
+  };
   positive_points?: string;
   improvements?: string;
   agreements?: string;

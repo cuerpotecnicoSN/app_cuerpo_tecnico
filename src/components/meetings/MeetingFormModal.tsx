@@ -1,7 +1,9 @@
-import { useForm } from 'react-hook-form';
-import { X } from 'lucide-react';
+import { useState } from 'react';
+import { useForm, Controller } from 'react-hook-form';
+import { X, Calendar, Clock, MapPin, User, FileText, MessageSquare, Plus, Trash2, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { mockPlayers } from '../../data/mockPlayers';
+import RichTextEditor from '../common/RichTextEditor';
 
 interface MeetingFormModalProps {
   isOpen: boolean;
@@ -13,131 +15,194 @@ type MeetingFormData = {
   date: string;
   time: string;
   location: string;
-  type: string;
+  coach: string;
   playerIds: string[];
-  objective: string;
-  development: string;
-  positivePoints: string;
-  improvements: string;
-  agreements: string;
-  nextSteps: string;
+  content: string;
+  observations: string;
 };
 
-const MeetingFormModal = ({ isOpen, onClose, preselectedPlayerId }: MeetingFormModalProps) => {
+const MeetingFormModal = ({ isOpen, onClose, preselectedPlayerId, defaultType }: MeetingFormModalProps) => {
   const { t } = useTranslation();
-  const meetingTypeOptions = [
-    t('meetings.formModal.types.individual'),
-    t('meetings.formModal.types.group'),
-    t('meetings.formModal.types.groupDynamic'),
-    t('meetings.formModal.types.individualFeedback'),
-    t('meetings.formModal.types.evaluation'),
-    t('meetings.formModal.types.followUp'),
-  ];
-  const { register, handleSubmit } = useForm<MeetingFormData>({
+  const { register, handleSubmit, control } = useForm<MeetingFormData>({
     defaultValues: {
+      type: defaultType || 'individual',
       playerIds: preselectedPlayerId ? [preselectedPlayerId] : [],
       date: new Date().toISOString().split('T')[0],
       time: new Date().toTimeString().split(' ')[0].substring(0, 5),
+      content: '',
+      observations: ''
     }
   });
 
   if (!isOpen) return null;
 
   const onSubmit = (data: MeetingFormData) => {
-    console.log('Nueva reunión creada:', data);
-    // Here we would typically save to Supabase or update our mock state
-    alert(t('meetings.formModal.savedAlert'));
+    const meetingData = {
+      ...data
+    };
+    console.log('Nueva reunión creada:', meetingData);
+    alert(t('meetings.formModal.savedAlert', 'Reunión guardada exitosamente'));
     onClose();
   };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.5)', padding: '1rem' }}>
-      <div className="card animate-fade-in" style={{ width: '100%', maxWidth: '800px', maxHeight: '90vh', overflowY: 'auto', position: 'relative' }}>
-        <button 
-          onClick={onClose}
-          style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', color: 'var(--color-text-muted)' }}
-        >
-          <X size={24} />
-        </button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-md p-4 sm:p-6 lg:p-8">
+      {/* Ventana Modal Flotante Moderna */}
+      <div className="bg-white dark:bg-gray-900 w-full max-w-7xl h-full max-h-[92vh] flex flex-col rounded-[2rem] shadow-[0_20px_50px_-12px_rgba(0,0,0,0.5)] overflow-hidden animate-fade-in border border-white/50 dark:border-gray-800/80 ring-1 ring-black/5">
         
-        <h2 className="h2" style={{ marginBottom: '1.5rem' }}>{t('meetings.formModal.title')}</h2>
-        
-        <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+        {/* Encabezado Principal y Controles */}
+        <div className="flex items-center justify-between px-8 py-5 border-b border-gray-100 dark:border-gray-800 bg-white/50 dark:bg-gray-900/50 backdrop-blur-xl shrink-0 z-10">
+          <div className="flex items-center gap-3">
+            <div className="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 p-2.5 rounded-xl">
+              <Users size={24} strokeWidth={2.5} />
+            </div>
+            <h2 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
+              {t('meetings.formModal.title', 'Nueva Reunión Individual')}
+            </h2>
+          </div>
+          <div className="flex items-center gap-3">
+            <button type="button" className="px-5 py-2.5 rounded-xl font-medium text-gray-700 dark:text-gray-300 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 transition-colors" onClick={onClose}>
+              {t('common.cancel', 'Cancelar')}
+            </button>
+            <button type="button" className="px-6 py-2.5 rounded-xl font-medium text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-500/20 transition-all active:scale-95" onClick={handleSubmit(onSubmit)}>
+              {t('common.save', 'Guardar Reunión')}
+            </button>
+            <div className="w-px h-8 bg-gray-200 dark:bg-gray-800 mx-2"></div>
+            <button onClick={onClose} className="p-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all">
+              <X size={24} />
+            </button>
+          </div>
+        </div>
+
+        <form className="flex flex-col flex-1 overflow-hidden" onSubmit={handleSubmit(onSubmit)}>
           
-          {/* Row 1: Basicos */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <label className="text-sm font-medium">{t('meetings.date')}</label>
-              <input type="date" {...register('date', { required: true })} />
+          {/* Sección Superior - Datos Básicos (Fondo Suave Moderno) */}
+          <div className="bg-gradient-to-br from-slate-50 to-blue-50/50 dark:from-gray-800/40 dark:to-blue-900/10 px-8 py-6 border-b border-gray-100 dark:border-gray-800 shrink-0">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-6 max-w-full">
+              
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                  <User size={16} className="text-blue-500" /> Jugador
+                </label>
+                <select 
+                  className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-shadow shadow-sm" 
+                  {...register('playerIds', { required: true })}
+                >
+                  <option value="">Seleccionar Jugador</option>
+                  {mockPlayers.map(p => (
+                    <option key={p.id} value={p.id}>{p.firstName} {p.lastName}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                  <Calendar size={16} className="text-blue-500" /> Fecha
+                </label>
+                <input 
+                  type="date" 
+                  className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-shadow shadow-sm"
+                  {...register('date', { required: true })} 
+                />
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                  <Clock size={16} className="text-blue-500" /> Hora
+                </label>
+                <input 
+                  type="time" 
+                  className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-shadow shadow-sm"
+                  {...register('time', { required: true })} 
+                />
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                  <MapPin size={16} className="text-blue-500" /> Lugar
+                </label>
+                <input 
+                  type="text" 
+                  placeholder="Ej: Despacho, Campo..."
+                  className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-shadow shadow-sm"
+                  {...register('location')} 
+                />
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                  <User size={16} className="text-blue-500" /> Entrenador
+                </label>
+                <input 
+                  type="text" 
+                  placeholder="Nombre del entrenador"
+                  className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-shadow shadow-sm"
+                  {...register('coach')} 
+                />
+              </div>
+
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <label className="text-sm font-medium">{t('meetings.time')}</label>
-              <input type="time" {...register('time', { required: true })} />
+          </div>
+
+          {/* Sección Inferior - Editores Grandes Lado a Lado */}
+          <div className="flex-1 p-8 grid grid-cols-1 lg:grid-cols-2 gap-8 min-h-0 bg-white dark:bg-gray-900">
+            
+            {/* Contenido */}
+            <div className="flex flex-col h-full bg-gray-50/80 dark:bg-gray-800/30 rounded-[1.5rem] border border-gray-100 dark:border-gray-800 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300 group">
+              <div className="p-5 border-b border-gray-100 dark:border-gray-800 bg-white/50 dark:bg-gray-800/50 shrink-0 flex items-center gap-3">
+                <div className="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 p-2 rounded-lg">
+                  <FileText size={20} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">Contenido de la Reunión</h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Desarrollo, temas tratados y puntos clave</p>
+                </div>
+              </div>
+              <div className="flex-1 overflow-hidden flex flex-col p-4 bg-white/30 dark:bg-transparent">
+                <Controller
+                  name="content"
+                  control={control}
+                  render={({ field }) => (
+                    <RichTextEditor 
+                      value={field.value} 
+                      onChange={field.onChange} 
+                      className="h-full flex flex-col [&>div:last-child]:flex-1 border-none !ring-0 shadow-none bg-transparent"
+                      placeholder="Escribe el contenido de forma detallada aquí..."
+                    />
+                  )}
+                />
+              </div>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <label className="text-sm font-medium">{t('planning.location')}</label>
-              <input type="text" placeholder={t('meetings.formModal.locationPlaceholder')} {...register('location')} />
+
+            {/* Observaciones */}
+            <div className="flex flex-col h-full bg-gray-50/80 dark:bg-gray-800/30 rounded-[1.5rem] border border-gray-100 dark:border-gray-800 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300 group">
+              <div className="p-5 border-b border-gray-100 dark:border-gray-800 bg-white/50 dark:bg-gray-800/50 shrink-0 flex items-center gap-3">
+                <div className="bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 p-2 rounded-lg">
+                  <MessageSquare size={20} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">Observaciones y Acuerdos</h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Conclusiones finales y próximos pasos a seguir</p>
+                </div>
+              </div>
+              <div className="flex-1 overflow-hidden flex flex-col p-4 bg-white/30 dark:bg-transparent">
+                <Controller
+                  name="observations"
+                  control={control}
+                  render={({ field }) => (
+                    <RichTextEditor 
+                      value={field.value} 
+                      onChange={field.onChange} 
+                      className="h-full flex flex-col [&>div:last-child]:flex-1 border-none !ring-0 shadow-none bg-transparent"
+                      placeholder="Anota acuerdos, impresiones o tareas pendientes..."
+                    />
+                  )}
+                />
+              </div>
             </div>
-          </div>
 
-          {/* Row 2: Tipo y Jugadores */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <label className="text-sm font-medium">{t('meetings.type')}</label>
-              <select {...register('type', { required: true })}>
-                {meetingTypeOptions.map(opt => (
-                  <option key={opt} value={opt}>{opt}</option>
-                ))}
-              </select>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <label className="text-sm font-medium">{t('meetings.formModal.involvedPlayers')}</label>
-              <select multiple {...register('playerIds', { required: true })} style={{ height: 'auto', minHeight: '80px' }}>
-                {mockPlayers.map(p => (
-                  <option key={p.id} value={p.id}>{p.firstName} {p.lastName}</option>
-                ))}
-              </select>
-            </div>
           </div>
-
-          {/* Row 3: Objetivo y Desarrollo */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <label className="text-sm font-medium">{t('meetings.formModal.mainObjective')}</label>
-            <input type="text" placeholder={t('meetings.formModal.objectivePlaceholder')} {...register('objective', { required: true })} />
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <label className="text-sm font-medium">{t('meetings.formModal.developmentSummary')}</label>
-            <textarea rows={4} placeholder={t('meetings.formModal.developmentPlaceholder')} {...register('development', { required: true })} />
-          </div>
-
-          {/* Row 4: Puntos y Acuerdos */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <label className="text-sm font-medium text-emerald-600 dark:text-emerald-400">{t('meetings.formModal.positivePoints')}</label>
-              <textarea rows={2} {...register('positivePoints')} />
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <label className="text-sm font-medium text-amber-600 dark:text-amber-400">{t('meetings.formModal.improvements')}</label>
-              <textarea rows={2} {...register('improvements')} />
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <label className="text-sm font-medium">{t('meetings.formModal.agreementsReached')}</label>
-            <input type="text" placeholder={t('meetings.formModal.agreementsPlaceholder')} {...register('agreements')} />
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <label className="text-sm font-medium">{t('meetings.formModal.nextSteps')}</label>
-            <input type="text" {...register('nextSteps')} />
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem' }}>
-            <button type="button" className="btn btn-outline" onClick={onClose}>{t('common.cancel')}</button>
-            <button type="submit" className="btn btn-primary">{t('meetings.formModal.saveRecord')}</button>
-          </div>
-
+          
         </form>
       </div>
     </div>

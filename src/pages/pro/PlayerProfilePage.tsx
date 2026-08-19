@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { User, Weight, Stethoscope, ArrowLeft, Edit2, Target, Users2, FileText, Plus, Trash2, CalendarDays, MapPin } from 'lucide-react';
+import { User, Weight, Stethoscope, ArrowLeft, Edit2, Target, Users2, FileText, Plus, Trash2, CalendarDays, MapPin, BarChart2 } from 'lucide-react';
 import type { Player, PlayerObjective, MeetingDB, SeasonReport } from '../../components/types';
 import PlayerWeightTab from '../../components/pro/PlayerWeightTab';
 import PlayerInjuriesTab from '../../components/pro/PlayerInjuriesTab';
@@ -11,10 +11,11 @@ import { getMeetingsForPlayer, createMeeting, deleteMeeting, addMeetingPlayer, u
 import { getFlagEmoji } from '../../components/pro/PlayersManagementView';
 import DOMPurify from 'dompurify';
 import RichTextEditor from '../../components/common/RichTextEditor';
+import { extractFeedbackFromHtml } from '../../utils/feedbackExtractor';
 
 import PlayerImportModal from '../../components/pro/PlayerImportModal';
 
-type Tab = 'ficha' | 'peso' | 'lesiones' | 'plan' | 'reuniones' | 'informes';
+type Tab = 'ficha' | 'peso' | 'lesiones' | 'plan' | 'reuniones' | 'informes' | 'feedback';
 
 export default function PlayerProfilePage() {
   const { id } = useParams<{ id: string }>();
@@ -25,7 +26,7 @@ export default function PlayerProfilePage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const rawViewParam = searchParams.get('view');
-  const initialTab = rawViewParam && ['ficha', 'peso', 'lesiones', 'plan', 'reuniones', 'informes', 'evaluations'].includes(rawViewParam)
+  const initialTab = rawViewParam && ['ficha', 'peso', 'lesiones', 'plan', 'reuniones', 'informes', 'evaluations', 'feedback'].includes(rawViewParam)
     ? (rawViewParam === 'evaluations' ? 'informes' : rawViewParam as Tab)
     : 'ficha';
 
@@ -33,7 +34,7 @@ export default function PlayerProfilePage() {
 
   useEffect(() => {
     const param = searchParams.get('view');
-    if (param && ['ficha', 'peso', 'lesiones', 'plan', 'reuniones', 'informes', 'evaluations'].includes(param)) {
+    if (param && ['ficha', 'peso', 'lesiones', 'plan', 'reuniones', 'informes', 'evaluations', 'feedback'].includes(param)) {
       setActiveTab(param === 'evaluations' ? 'informes' : param as Tab);
     }
   }, [searchParams]);
@@ -154,6 +155,17 @@ export default function PlayerProfilePage() {
           >
             <FileText size={20} className={activeTab === 'informes' ? 'text-blue-600' : 'text-gray-400'} />
             {t('playerTabs.pastSeasonReports')}
+          </button>
+          <button
+            className={`flex-1 sm:flex-none px-6 py-3 font-bold text-base rounded-xl transition-all duration-300 flex items-center justify-center gap-2 border-2 ${
+              activeTab === 'feedback'
+                ? 'bg-blue-50 border-blue-600 text-blue-700 shadow-md'
+                : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-800 shadow-sm'
+            }`}
+            onClick={() => handleTabChange('feedback')}
+          >
+            <BarChart2 size={20} className={activeTab === 'feedback' ? 'text-blue-600' : 'text-gray-400'} />
+            Feedback
           </button>
         </div>
 
@@ -362,6 +374,7 @@ export default function PlayerProfilePage() {
         {activeTab === 'plan' && <PlayerObjectivesTab playerId={activePlayer.id} />}
         {activeTab === 'reuniones' && <PlayerMeetingsTab playerId={activePlayer.id} />}
         {activeTab === 'informes' && <PlayerReportsTab playerId={activePlayer.id} />}
+        {activeTab === 'feedback' && <PlayerFeedbackTab playerId={activePlayer.id} />}
       </div>
 
       {showEditModal && (
@@ -455,6 +468,11 @@ function PlayerMeetingsTab({ playerId }: { playerId: string }) {
   const [coach, setCoach] = useState('');
   const [objective, setObjective] = useState('');
   const [development, setDevelopment] = useState('');
+  
+  const [positives, setPositives] = useState<string[]>([]);
+  const [negatives, setNegatives] = useState<string[]>([]);
+  const [newPositive, setNewPositive] = useState('');
+  const [newNegative, setNewNegative] = useState('');
 
   const load = () => getMeetingsForPlayer(playerId, 'individual').then(setMeetings).catch(() => setMeetings([]));
   useEffect(() => { load(); }, [playerId]);
@@ -467,6 +485,7 @@ function PlayerMeetingsTab({ playerId }: { playerId: string }) {
     setCoach(m.created_by || '');
     setObjective(m.objective || '');
     setDevelopment(m.development || '');
+    
     setShowForm(true);
   };
 
@@ -478,18 +497,23 @@ function PlayerMeetingsTab({ playerId }: { playerId: string }) {
     setObjective(''); 
     setDevelopment('');
     setCoach(''); 
+    setPositives([]);
+    setNegatives([]);
+    setNewPositive('');
+    setNewNegative('');
     setShowForm(false);
   };
 
   const handleSave = async () => {
     if (!date) return;
+
     if (editingId) {
       await updateMeeting(editingId, {
         date, time, location, objective, development, created_by: coach
       });
     } else {
       const m = await createMeeting({ 
-        type: 'individual', date, time, location, objective, development, created_by: coach 
+        type: 'individual', date, time, location, objective, development, created_by: coach
       });
       await addMeetingPlayer(m.id, playerId);
     }
@@ -594,6 +618,78 @@ function PlayerMeetingsTab({ playerId }: { playerId: string }) {
             </div>
           </div>
 
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            {/* Puntos Positivos */}
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-bold text-emerald-600">Puntos Positivos</label>
+              <div className="flex gap-2">
+                <input 
+                  type="text" 
+                  value={newPositive}
+                  onChange={(e) => setNewPositive(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      if (newPositive.trim()) { setPositives([...positives, newPositive.trim()]); setNewPositive(''); }
+                    }
+                  }}
+                  className="flex-1 border border-emerald-200 bg-emerald-50/50 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+                  placeholder="Añadir punto positivo..."
+                />
+                <button 
+                  type="button"
+                  onClick={() => { if (newPositive.trim()) { setPositives([...positives, newPositive.trim()]); setNewPositive(''); } }}
+                  className="bg-emerald-100 hover:bg-emerald-200 text-emerald-700 p-2 rounded-xl"
+                >
+                  <Plus size={20} />
+                </button>
+              </div>
+              <ul className="space-y-2 mt-2">
+                {positives.map((p, idx) => (
+                  <li key={idx} className="flex items-center justify-between bg-emerald-50 border border-emerald-100 p-2 rounded-lg text-sm text-emerald-800">
+                    <span>{p}</span>
+                    <button type="button" onClick={() => setPositives(positives.filter((_, i) => i !== idx))} className="text-emerald-400 hover:text-emerald-600"><Trash2 size={14}/></button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Puntos Negativos / A Mejorar */}
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-bold text-red-600">A Mejorar / Puntos Críticos</label>
+              <div className="flex gap-2">
+                <input 
+                  type="text" 
+                  value={newNegative}
+                  onChange={(e) => setNewNegative(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      if (newNegative.trim()) { setNegatives([...negatives, newNegative.trim()]); setNewNegative(''); }
+                    }
+                  }}
+                  className="flex-1 border border-red-200 bg-red-50/50 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-red-500 outline-none"
+                  placeholder="Añadir punto a mejorar..."
+                />
+                <button 
+                  type="button"
+                  onClick={() => { if (newNegative.trim()) { setNegatives([...negatives, newNegative.trim()]); setNewNegative(''); } }}
+                  className="bg-red-100 hover:bg-red-200 text-red-700 p-2 rounded-xl"
+                >
+                  <Plus size={20} />
+                </button>
+              </div>
+              <ul className="space-y-2 mt-2">
+                {negatives.map((p, idx) => (
+                  <li key={idx} className="flex items-center justify-between bg-red-50 border border-red-100 p-2 rounded-lg text-sm text-red-800">
+                    <span>{p}</span>
+                    <button type="button" onClick={() => setNegatives(negatives.filter((_, i) => i !== idx))} className="text-red-400 hover:text-red-600"><Trash2 size={14}/></button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
           <div className="flex justify-between items-center gap-3 pt-4 border-t border-gray-100 mt-4">
             {editingId ? (
               <button 
@@ -688,7 +784,8 @@ function PlayerMeetingsTab({ playerId }: { playerId: string }) {
                     />
                   </div>
                 )}
-              </div>
+                
+                </div>
             </div>
           ))}
         </div>
@@ -741,6 +838,115 @@ function PlayerReportsTab({ playerId }: { playerId: string }) {
             </button>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+function PlayerFeedbackTab({ playerId }: { playerId: string }) {
+  const { t } = useTranslation();
+  const [meetings, setMeetings] = useState<MeetingDB[]>([]);
+
+  useEffect(() => {
+    getMeetingsForPlayer(playerId, 'individual').then(setMeetings).catch(() => setMeetings([]));
+  }, [playerId]);
+
+  const feedbackData = useMemo(() => {
+    let totalPositives = 0;
+    let totalNegatives = 0;
+    const items: { date: string; type: 'positive' | 'negative'; text: string; meetingId: string }[] = [];
+
+    meetings.forEach(m => {
+      const extracted = extractFeedbackFromHtml(m.objective || '', m.development || '');
+
+      if (extracted.positives.length > 0) {
+        totalPositives += extracted.positives.length;
+        extracted.positives.forEach(text => items.push({ date: m.date, type: 'positive', text, meetingId: m.id }));
+      }
+      if (extracted.negatives.length > 0) {
+        totalNegatives += extracted.negatives.length;
+        extracted.negatives.forEach(text => items.push({ date: m.date, type: 'negative', text, meetingId: m.id }));
+      }
+    });
+
+    items.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    // Group by date
+    const grouped: Record<string, typeof items> = {};
+    items.forEach(i => {
+      if (!grouped[i.date]) grouped[i.date] = [];
+      grouped[i.date].push(i);
+    });
+
+    return { totalPositives, totalNegatives, grouped };
+  }, [meetings]);
+
+  const total = feedbackData.totalPositives + feedbackData.totalNegatives;
+  const posPercent = total > 0 ? (feedbackData.totalPositives / total) * 100 : 0;
+  const negPercent = total > 0 ? (feedbackData.totalNegatives / total) * 100 : 0;
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
+        <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
+          <BarChart2 className="text-blue-500" />
+          Resumen Estadístico de Feedback
+        </h3>
+        
+        {total === 0 ? (
+          <p className="text-gray-500 text-center py-4">Aún no hay feedback registrado en las reuniones de este jugador.</p>
+        ) : (
+          <div className="space-y-8">
+            {/* Gráfica de Barras */}
+            <div>
+              <div className="flex justify-between mb-2 text-sm font-bold">
+                <span className="text-emerald-600">{feedbackData.totalPositives} Positivos ({Math.round(posPercent)}%)</span>
+                <span className="text-red-600">{feedbackData.totalNegatives} A Mejorar ({Math.round(negPercent)}%)</span>
+              </div>
+              <div className="h-4 w-full bg-gray-100 rounded-full overflow-hidden flex">
+                <div style={{ width: `${posPercent}%` }} className="bg-emerald-500 transition-all duration-1000"></div>
+                <div style={{ width: `${negPercent}%` }} className="bg-red-500 transition-all duration-1000"></div>
+              </div>
+            </div>
+
+            {/* Timeline Agrupado */}
+            <div className="space-y-6">
+              <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">Línea Temporal de Feedback</h4>
+              {Object.entries(feedbackData.grouped).map(([date, items]) => (
+                <div key={date} className="relative pl-6 border-l-2 border-gray-100 pb-2">
+                  <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-blue-100 border-2 border-blue-500"></div>
+                  <h5 className="font-bold text-gray-900 mb-3">{new Date(date).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</h5>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {items.filter(i => i.type === 'positive').length > 0 && (
+                      <div className="bg-emerald-50/50 border border-emerald-100 rounded-xl p-4">
+                        <span className="text-xs font-bold uppercase text-emerald-600 block mb-2">Positivo</span>
+                        <ul className="space-y-2">
+                          {items.filter(i => i.type === 'positive').map((item, idx) => (
+                            <li key={idx} className="flex items-start gap-2 text-sm text-gray-700">
+                              <span className="text-emerald-500 mt-1">•</span> {item.text}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {items.filter(i => i.type === 'negative').length > 0 && (
+                      <div className="bg-red-50/50 border border-red-100 rounded-xl p-4">
+                        <span className="text-xs font-bold uppercase text-red-600 block mb-2">A Mejorar</span>
+                        <ul className="space-y-2">
+                          {items.filter(i => i.type === 'negative').map((item, idx) => (
+                            <li key={idx} className="flex items-start gap-2 text-sm text-gray-700">
+                              <span className="text-red-500 mt-1">•</span> {item.text}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Calendar, Users, Activity, Target, TrendingUp, AlertTriangle, Video, Shield, Award } from 'lucide-react';
+import { Calendar, Users, Activity, Target, TrendingUp, AlertTriangle, Video, Shield, Award, Clock } from 'lucide-react';
 import { useSupabaseData } from '../hooks/useSupabaseData';
 import { getMatches } from '../services/matches';
 import { getTrainingSessions } from '../services/training';
@@ -15,6 +15,9 @@ const Dashboard: React.FC = () => {
 
   const { data: players = [] } = useSupabaseData<any>('players');
   const { data: profiles = [] } = useSupabaseData<any>('profiles');
+  const { data: meetings = [] } = useSupabaseData<any>('individual_meetings');
+  const { data: dynamics = [] } = useSupabaseData<any>('team_dynamics');
+  const { data: matchFocuses = [] } = useSupabaseData<any>('match_focuses');
 
   const [matches, setMatches] = useState<MatchDB[]>([]);
   const [sessions, setSessions] = useState<TrainingSessionDB[]>([]);
@@ -113,6 +116,47 @@ const Dashboard: React.FC = () => {
       .slice(0, 5); // Show next 5
   }, [calendarEvents]);
 
+  const recentActivities = useMemo(() => {
+    const activities: any[] = [];
+    
+    meetings.forEach((m: any) => {
+      activities.push({
+        id: `meeting-${m.id}`,
+        type: 'Reunión',
+        title: m.topic || 'Reunión Individual',
+        date: new Date(m.created_at),
+        icon: Users,
+        color: 'text-blue-600 bg-blue-50 border-blue-200'
+      });
+    });
+
+    dynamics.forEach((d: any) => {
+      activities.push({
+        id: `dynamic-${d.id}`,
+        type: 'Dinámica',
+        title: d.title,
+        date: new Date(d.created_at),
+        icon: Activity,
+        color: 'text-purple-600 bg-purple-50 border-purple-200'
+      });
+    });
+
+    matchFocuses.forEach((f: any) => {
+      activities.push({
+        id: `focus-${f.id}`,
+        type: 'Foco de Partido',
+        title: f.title,
+        date: new Date(f.created_at),
+        icon: Target,
+        color: 'text-emerald-600 bg-emerald-50 border-emerald-200'
+      });
+    });
+
+    return activities
+      .sort((a, b) => b.date.getTime() - a.date.getTime())
+      .slice(0, 6);
+  }, [meetings, dynamics, matchFocuses]);
+
   return (
     <div className="hero-gradient flex flex-col p-2 sm:p-4 lg:p-6 animate-fade-in text-[var(--color-text-primary)] rounded-3xl min-h-[calc(100vh-120px)] border border-[var(--color-border)] shadow-sm">
       
@@ -172,42 +216,37 @@ const Dashboard: React.FC = () => {
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 animate-fade-in-up delay-200 flex-1">
         
-        {/* Next Match / Important Info Card */}
+        {/* Recent Activity Feed */}
         <div className="glass-panel rounded-3xl p-6 flex flex-col hover-lift">
           <div className="flex justify-between items-center mb-6">
              <div className="flex items-center gap-3">
-               <Shield className="text-[var(--color-primary)]" size={24} />
-               <h3 className="text-lg font-black uppercase tracking-wider text-[var(--color-text-primary)]">Estado de Plantilla</h3>
+               <Clock className="text-[var(--color-primary)]" size={24} />
+               <h3 className="text-lg font-black uppercase tracking-wider text-[var(--color-text-primary)]">Actividad Reciente</h3>
              </div>
-             <span className="px-3 py-1 rounded-full bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-xs font-bold uppercase tracking-widest text-[var(--color-text-secondary)]">{totalPlayers} Jugadores</span>
           </div>
           
-          <div className="flex-1 flex flex-col justify-center gap-6">
-            <div className="flex items-center justify-between p-4 rounded-2xl bg-[var(--color-bg-surface)] border border-[var(--color-border)] shadow-sm">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center">
-                  <Award className="text-green-500" size={24} />
+          <div className="flex-1 flex flex-col gap-3 overflow-y-auto">
+            {recentActivities.length > 0 ? recentActivities.map((act) => (
+              <div key={act.id} className="flex items-center gap-4 bg-[var(--color-bg-surface)] border border-[var(--color-border)] p-3 rounded-2xl hover:bg-[var(--color-bg-hover)] transition-colors">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border ${act.color}`}>
+                  <act.icon size={20} />
                 </div>
-                <div>
-                  <p className="text-2xl font-black text-[var(--color-text-primary)]">{availablePlayers}</p>
-                  <p className="text-sm text-[var(--color-text-muted)] font-medium uppercase tracking-wider">Disponibles</p>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between mb-0.5">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)]">{act.type}</span>
+                    <span className="text-[10px] text-[var(--color-text-muted)] font-medium">
+                      {act.date.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}
+                    </span>
+                  </div>
+                  <h4 className="text-sm font-bold text-[var(--color-text-primary)] truncate">{act.title}</h4>
                 </div>
               </div>
-              <div className="text-right">
-                <p className="text-2xl font-black text-red-500">{injuredPlayers}</p>
-                <p className="text-sm text-[var(--color-text-muted)] font-medium uppercase tracking-wider">Bajas</p>
+            )) : (
+              <div className="flex-1 flex flex-col items-center justify-center text-[var(--color-text-muted)] opacity-50 p-6 text-center">
+                <Clock size={32} className="mb-3" />
+                <p className="text-sm font-medium">No hay actividad reciente registrada en el sistema.</p>
               </div>
-            </div>
-
-            <div className="space-y-4">
-               <div className="flex justify-between items-center text-sm font-bold">
-                 <span className="text-[var(--color-text-muted)] uppercase">Carga Acumulada</span>
-                 <span className="text-[var(--color-primary)]">Óptima</span>
-               </div>
-               <div className="h-2 w-full bg-[var(--color-border)] rounded-full overflow-hidden">
-                 <div className="h-full bg-[var(--color-primary)] w-[65%] rounded-full shadow-[0_0_10px_var(--color-primary)]"></div>
-               </div>
-            </div>
+            )}
           </div>
         </div>
 

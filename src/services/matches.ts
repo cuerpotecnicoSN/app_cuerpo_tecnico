@@ -42,8 +42,19 @@ export const getMatchFocuses = async (matchId: string): Promise<MatchFocus[]> =>
   return data || [];
 };
 
+export const getAllMatchFocuses = async (): Promise<MatchFocus[]> => {
+  const { data, error } = await supabase.from('match_focuses').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+};
+
 export const createMatchFocus = async (focus: Omit<MatchFocus, 'id' | 'created_at'>): Promise<void> => {
   const { error } = await supabase.from('match_focuses').insert([focus]);
+  if (error) throw error;
+};
+
+export const updateMatchFocus = async (id: string, updates: Partial<MatchFocus>): Promise<void> => {
+  const { error } = await supabase.from('match_focuses').update(updates).eq('id', id);
   if (error) throw error;
 };
 
