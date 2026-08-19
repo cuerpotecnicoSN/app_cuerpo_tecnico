@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Calendar, Users, Activity, Target, TrendingUp, AlertTriangle, Video, Shield, Award, Clock } from 'lucide-react';
+import { Calendar, Users, Activity, Target, TrendingUp, AlertTriangle, Video, Award, Clock } from 'lucide-react';
 import { useSupabaseData } from '../hooks/useSupabaseData';
 import { getMatches } from '../services/matches';
 import { getTrainingSessions } from '../services/training';

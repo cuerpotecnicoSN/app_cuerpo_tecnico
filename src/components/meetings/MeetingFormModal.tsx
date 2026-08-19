@@ -13,6 +13,7 @@ interface MeetingFormModalProps {
 }
 
 type MeetingFormData = {
+  type: string;
   date: string;
   time: string;
   location: string;
@@ -30,6 +31,8 @@ const MeetingFormModal = ({ isOpen, onClose, preselectedPlayerId, defaultType }:
       playerIds: preselectedPlayerId ? [preselectedPlayerId] : [],
       date: new Date().toISOString().split('T')[0],
       time: new Date().toTimeString().split(' ')[0].substring(0, 5),
+      location: '',
+      coach: '',
       content: '',
       observations: ''
     }

@@ -844,7 +844,6 @@ function PlayerReportsTab({ playerId }: { playerId: string }) {
 }
 
 function PlayerFeedbackTab({ playerId }: { playerId: string }) {
-  const { t } = useTranslation();
   const [meetings, setMeetings] = useState<MeetingDB[]>([]);
 
   useEffect(() => {

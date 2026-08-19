@@ -547,7 +547,7 @@ function MatchDetail({ match, onBack, onUpdate }: { match: MatchDB; onBack: () =
                                       setEditingFocusId(f.id);
                                       setFocusTitle(f.title);
                                       setFocusDesc(plainDesc);
-                                      setFocusType(details?.focusType || 'Colectivo');
+                                      setFocusType((details?.focusType as 'Colectivo' | 'Grupal' | 'Individual' | 'Rival') || 'Colectivo');
                                       setFocusPhases(details?.phases || []);
                                       setFocusAssignedTo(details?.assignedTo || '');
                                       setFocusPlayerId(details?.playerId || '');
