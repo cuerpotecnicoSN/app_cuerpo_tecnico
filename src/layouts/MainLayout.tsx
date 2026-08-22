@@ -5,6 +5,7 @@ import { ChevronDown, LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { navigation } from '../config/navigation';
 import EditProfileModal from '../components/auth/EditProfileModal';
+import ErrorBoundary from '../components/ErrorBoundary';
 
 const LANGS = [
   { code: 'es', flag: '🇪🇸', label: 'Español' },
@@ -197,7 +198,9 @@ const MainLayout: React.FC = () => {
       {/* Main Content Area */}
       <main className="flex-1 w-full min-w-0 min-h-0 overflow-y-auto overflow-x-hidden bg-gray-50 dark:bg-[#0a0a0a] px-4 sm:px-5 lg:px-10 pb-16 lg:pb-0">
         <div className="w-full py-4 lg:py-6">
-          <Outlet />
+          <ErrorBoundary resetKey={location.pathname + location.search}>
+            <Outlet />
+          </ErrorBoundary>
         </div>
       </main>
 

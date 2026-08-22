@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { ChevronLeft, Target, Users, User, ShieldAlert, Flag, Shield, Activity, CalendarDays } from 'lucide-react';
-import { getAllMatchFocuses } from '../../services/matches';
-import type { MatchDB, MatchFocus, FocusDetails } from '../types';
+import { getAllMatchFocuses, getAllMatchDataPoints } from '../../services/matches';
+import type { MatchDB, MatchFocus, FocusDetails, MatchDataPoint } from '../types';
+import PitchGraph from './PitchGraph';
 
 interface GlobalFocusesViewProps {
   matches: MatchDB[];
@@ -15,9 +16,15 @@ export default function GlobalFocusesView({ matches, onBack }: GlobalFocusesView
   const [activeFilterType, setActiveFilterType] = useState<'Todos' | 'Colectivo' | 'Individual' | 'Rival'>('Todos');
   const [activeFilterPhase, setActiveFilterPhase] = useState<'Todas' | 'Ofensivo' | 'Defensivo' | 'ABP'>('Todas');
 
+  const [dataPoints, setDataPoints] = useState<MatchDataPoint[]>([]);
+
   useEffect(() => {
-    getAllMatchFocuses().then(data => {
-      setFocuses(data);
+    Promise.all([
+      getAllMatchFocuses(),
+      getAllMatchDataPoints()
+    ]).then(([focusData, dpData]) => {
+      setFocuses(focusData);
+      setDataPoints(dpData);
       setLoading(false);
     }).catch(err => {
       console.error(err);
@@ -221,6 +228,13 @@ export default function GlobalFocusesView({ matches, onBack }: GlobalFocusesView
                                 <p className="text-xs text-gray-500 leading-relaxed mb-1">
                                   {f.plainDesc}
                                 </p>
+                              )}
+                              
+                              {/* PitchGraph if focus needs pitch */}
+                              {getFocusDetails(f).needs_pitch && (
+                                <div className="mt-3 rounded-lg overflow-hidden border border-gray-100 shadow-sm relative mx-auto max-w-lg">
+                                  <PitchGraph events={dataPoints.filter(dp => dp.focus_id === f.id && dp.coordinates?.x != null && dp.coordinates?.y != null)} interactive={false} />
+                                </div>
                               )}
                             </div>
                           );

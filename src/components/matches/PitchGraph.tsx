@@ -59,27 +59,40 @@ const PitchGraph: React.FC<PitchGraphProps> = ({ onPitchClick, events = [], inte
         if (!ev.coordinates) return null;
         
         let color = 'white';
-        if (ev.outcome === 'Success') color = '#3b82f6';
-        if (ev.outcome === 'Failure') color = '#ef4444';
+        if (ev.outcome === 'Success') color = '#22c55e'; // Green
+        if (ev.outcome === 'Failure') color = '#ef4444'; // Red
+        
+        const hasArrow = ev.coordinates.endX != null && ev.coordinates.endY != null;
         
         return (
-          <div 
-            key={ev.id || idx}
-            style={{
-              position: 'absolute',
-              left: `${ev.coordinates.x}%`,
-              top: `${ev.coordinates.y}%`,
-              width: '12px',
-              height: '12px',
-              backgroundColor: color,
-              border: '2px solid white',
-              borderRadius: '50%',
-              transform: 'translate(-50%, -50%)',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
-              pointerEvents: 'none' // Don't block clicks on the pitch
-            }}
-            title={`${ev.type} - ${ev.minute ?? ''}'`}
-          />
+          <div key={ev.id || idx}>
+            {hasArrow && (
+              <svg style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
+                <defs>
+                  <marker id={`arrowhead-${ev.id || idx}`} markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+                    <polygon points="0 0, 6 3, 0 6" fill={color} />
+                  </marker>
+                </defs>
+                <line x1={`${ev.coordinates.x}%`} y1={`${ev.coordinates.y}%`} x2={`${ev.coordinates.endX}%`} y2={`${ev.coordinates.endY}%`} stroke={color} strokeWidth="3" strokeDasharray="4,2" markerEnd={`url(#arrowhead-${ev.id || idx})`} />
+              </svg>
+            )}
+            <div 
+              style={{
+                position: 'absolute',
+                left: `${ev.coordinates.x}%`,
+                top: `${ev.coordinates.y}%`,
+                width: '12px',
+                height: '12px',
+                backgroundColor: color,
+                border: '2px solid white',
+                borderRadius: '50%',
+                transform: 'translate(-50%, -50%)',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
+                pointerEvents: 'none' // Don't block clicks on the pitch
+              }}
+              title={`${ev.type} - ${ev.minute ?? ''}'`}
+            />
+          </div>
         );
       })}
     </div>

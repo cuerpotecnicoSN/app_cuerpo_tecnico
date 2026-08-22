@@ -1,7 +1,7 @@
 import { jsPDF } from 'jspdf';
 import { MatchDB } from '../components/types';
 
-const loadImage = async (url: string): Promise<{ dataUrl: string; ratio: number } | null> => {
+export const loadImage = async (url: string): Promise<{ dataUrl: string; ratio: number } | null> => {
   try {
     const imgUrl = url.startsWith('http') ? `https://corsproxy.io/?${encodeURIComponent(url)}` : url;
     const img = new Image();

@@ -234,6 +234,9 @@ export interface MatchDB {
   result_home?: number | null;
   result_away?: number | null;
   scouting_notes?: string;
+  timer_start_time?: string | null;
+  timer_accumulated_seconds?: number;
+  timer_is_running?: boolean;
   created_at?: string;
 }
 
@@ -245,6 +248,12 @@ export interface FocusDetails {
   assignedTo: string;
   playerId?: string;
   playerIds?: string[];
+  needs_pitch?: boolean;
+  needs_zones?: boolean;
+  needs_players?: boolean;
+  needs_player_selection?: boolean;
+  needs_comments?: boolean;
+  needs_outcome?: boolean;
 }
 
 export interface MatchFocus {
@@ -256,15 +265,27 @@ export interface MatchFocus {
   created_at?: string;
 }
 
+export interface DataPointCoordinates {
+  x?: number;
+  y?: number;
+  endX?: number;
+  endY?: number;
+  zone?: string;
+  attackingPlayers?: number | string;
+  defendingPlayers?: number | string;
+  period?: string;
+}
+
 export interface MatchDataPoint {
   id: string;
   match_id: string;
+  focus_id?: string | null;
   player_id?: string | null;
   staff_id?: string | null;
   minute?: number;
   type: string;
   outcome: 'Success' | 'Failure' | 'Neutral';
-  coordinates?: { x: number; y: number } | null;
+  coordinates?: DataPointCoordinates | null;
   comments?: string;
   created_at?: string;
 }

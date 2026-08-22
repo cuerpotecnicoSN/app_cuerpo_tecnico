@@ -1,12 +1,16 @@
 import { useEffect, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Trash2, ChevronLeft, MapPin, Swords, Pencil, User } from 'lucide-react';
+import { Plus, Trash2, ChevronLeft, MapPin, Swords, Pencil, User, Radio, Target } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import type { MatchDB, MatchFocus, MatchDataPoint } from '../../components/types';
-import { getMatches, createMatch, updateMatch, getMatchFocuses, createMatchFocus, updateMatchFocus, deleteMatchFocus, getMatchDataPoints, createMatchDataPoint, deleteMatchDataPoint } from '../../services/matches';
+import { getMatches, createMatch, updateMatch, getMatchFocuses, createMatchFocus, updateMatchFocus, deleteMatchFocus, getMatchDataPoints } from '../../services/matches';
 import { exportMatchesListPdf } from '../../utils/matchesPdf';
 import { useSupabaseData } from '../../hooks/useSupabaseData';
 import GlobalFocusesView from '../../components/matches/GlobalFocusesView';
+import MatchLiveRegistrationView from '../../components/matches/MatchLiveRegistrationView';
+import FocusStatisticsView from '../../components/matches/FocusStatisticsView';
+import LiveRegistrationFlow from '../../components/matches/LiveRegistrationFlow';
+import FocusPlanningFlow from '../../components/matches/FocusPlanningFlow';
 import type { FocusDetails } from '../../components/types';
 
 export default function MatchesPage() {
@@ -26,9 +30,29 @@ export default function MatchesPage() {
   const [filterType, setFilterType] = useState<'all' | 'league' | 'cup' | 'friendly'>('all');
   const [exporting, setExporting] = useState(false);
   const [showGlobalFocuses, setShowGlobalFocuses] = useState(false);
+  const [showFocusStats, setShowFocusStats] = useState(false);
+  const [showLiveFlow, setShowLiveFlow] = useState(false);
+  const [showFocusPlanning, setShowFocusPlanning] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const load = () => getMatches().then(setMatches).catch(() => setMatches([]));
   useEffect(() => { load(); }, []);
+
+  // El menú lateral navega a /matches?view=focuses | ?view=data
+  useEffect(() => {
+    if (activeMatch) return;
+    const view = searchParams.get('view');
+    setShowFocusPlanning(view === 'focuses');
+    setShowLiveFlow(view === 'data');
+    if (view === 'focuses' || view === 'data') {
+      setShowGlobalFocuses(false);
+      setShowFocusStats(false);
+    }
+  }, [searchParams, activeMatch]);
+
+  const openFocusPlanning = () => { setShowFocusPlanning(true); setSearchParams({ view: 'focuses' }); };
+  const openLiveFlow = () => { setShowLiveFlow(true); setSearchParams({ view: 'data' }); };
+  const closeFlows = () => { setShowFocusPlanning(false); setShowLiveFlow(false); setSearchParams({}); load(); };
 
   const filteredMatches = matches
     .filter(m => m.date >= '2026-08-01')
@@ -93,6 +117,20 @@ export default function MatchesPage() {
     return <GlobalFocusesView matches={matches} onBack={() => setShowGlobalFocuses(false)} />;
   }
 
+  if (showFocusStats) {
+    return <FocusStatisticsView matches={matches} onBack={() => setShowFocusStats(false)} />;
+  }
+
+  if (showFocusPlanning) {
+    return <FocusPlanningFlow matches={matches} onBack={closeFlows} />;
+  }
+
+  if (showLiveFlow) {
+    return (
+      <LiveRegistrationFlow matches={matches} onBack={closeFlows} />
+    );
+  }
+
   return (
     <div className="space-y-4">
       {/* Header Container */}
@@ -133,10 +171,28 @@ export default function MatchesPage() {
         {/* Right Side: Action Buttons */}
         <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto justify-start sm:justify-end">
           <button 
+            onClick={openLiveFlow}
+            className="px-5 py-2.5 bg-red-50 text-red-700 rounded-xl text-sm font-bold shadow-sm border border-red-200 hover:bg-red-100 transition-all flex-1 sm:flex-none text-center flex items-center justify-center gap-2"
+          >
+            <Radio size={16} /> Registro en Vivo
+          </button>
+          <button 
+            onClick={openFocusPlanning}
+            className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-md hover:bg-indigo-500 transition-all flex-1 sm:flex-none text-center flex items-center justify-center gap-2"
+          >
+            <Target size={16} /> Planificar Focos
+          </button>
+          <button 
             onClick={() => setShowGlobalFocuses(true)}
             className="px-5 py-2.5 bg-indigo-50 text-indigo-700 rounded-xl text-sm font-bold shadow-sm border border-indigo-200 hover:bg-indigo-100 transition-all flex-1 sm:flex-none text-center"
           >
             Focos Globales
+          </button>
+          <button 
+            onClick={() => setShowFocusStats(true)}
+            className="px-5 py-2.5 bg-blue-50 text-blue-700 rounded-xl text-sm font-bold shadow-sm border border-blue-200 hover:bg-blue-100 transition-all flex-1 sm:flex-none text-center"
+          >
+            Estadísticas Focos
           </button>
           <button 
             onClick={handleExport}
@@ -186,7 +242,7 @@ export default function MatchesPage() {
           const awayTeamName = m.is_home ? m.opponent : myTeamName;
 
           return (
-          <div key={m.id} ref={m.id === closestMatchId ? closestRef : null} className="relative bg-white border border-gray-100 rounded-[28px] p-6 shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden group" onClick={() => setActiveMatch(m)}>
+          <div key={m.id} ref={m.id === closestMatchId ? closestRef : null} className="relative bg-white border border-gray-100 rounded-[28px] p-6 shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden group" onClick={() => { setSearchParams({}); setActiveMatch(m); }}>
             <div className={`absolute top-0 left-0 w-2 h-full ${theme.border} rounded-l-[28px]`} />
             <div className={`absolute -right-10 -top-10 ${theme.icon} opacity-50 pointer-events-none group-hover:scale-110 transition-transform duration-500`}>
               <Swords size={160} />
@@ -269,6 +325,11 @@ function MatchDetail({ match, onBack, onUpdate }: { match: MatchDB; onBack: () =
   const [focusAssignedTo, setFocusAssignedTo] = useState('');
   const [focusPlayerId, setFocusPlayerId] = useState('');
   const [focusPlayerIds, setFocusPlayerIds] = useState<string[]>([]);
+  const [focusNeedsPitch, setFocusNeedsPitch] = useState(false);
+  const [focusNeedsZones, setFocusNeedsZones] = useState(false);
+  const [focusNeedsPlayers, setFocusNeedsPlayers] = useState(false);
+  const [focusNeedsPlayerSelection, setFocusNeedsPlayerSelection] = useState(false);
+  const [focusNeedsComments, setFocusNeedsComments] = useState(false);
   const [editingFocusId, setEditingFocusId] = useState<string | null>(null);
 
   const toggleFocusPlayer = (id: string) => {
@@ -278,12 +339,6 @@ function MatchDetail({ match, onBack, onUpdate }: { match: MatchDB; onBack: () =
   const toggleFocusPhase = (p: 'Ofensivo' | 'Defensivo' | 'ABP') => {
     setFocusPhases(prev => prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p]);
   };
-
-  const [dpPlayer, setDpPlayer] = useState('');
-  const [dpMinute, setDpMinute] = useState('');
-  const [dpType, setDpType] = useState('');
-  const [dpOutcome, setDpOutcome] = useState<'Success' | 'Failure' | 'Neutral'>('Neutral');
-  const [dpComments, setDpComments] = useState('');
 
   const loadFocuses = () => getMatchFocuses(match.id).then(setFocuses).catch(() => setFocuses([]));
   const loadDataPoints = () => getMatchDataPoints(match.id).then(setDataPoints).catch(() => setDataPoints([]));
@@ -302,44 +357,110 @@ function MatchDetail({ match, onBack, onUpdate }: { match: MatchDB; onBack: () =
     setSearchParams({ view: newTab });
   };
 
+  // Carga un foco en el formulario de edición y lleva la vista hasta él
+  const startEditFocus = (f: MatchFocus) => {
+    let details: any = {};
+    let plain = f.description || '';
+    try {
+      const parsed = JSON.parse(f.description || '{}');
+      if (parsed && typeof parsed === 'object') { details = parsed; plain = parsed.text || ''; }
+    } catch (e) { /* descripción en texto plano */ }
+
+    setEditingFocusId(f.id);
+    setFocusTitle(f.title);
+    setFocusDesc(plain);
+    setFocusType((details?.focusType as 'Colectivo' | 'Grupal' | 'Individual' | 'Rival') || 'Colectivo');
+    setFocusPhases(details?.phases || []);
+    setFocusAssignedTo(details?.assignedTo || '');
+    setFocusPlayerId(details?.playerId || '');
+    setFocusPlayerIds(details?.playerIds || []);
+    setFocusNeedsPitch(details?.needs_pitch || false);
+    setFocusNeedsZones(details?.needs_zones || false);
+    setFocusNeedsPlayers(details?.needs_players || false);
+    setFocusNeedsPlayerSelection(details?.needs_player_selection || false);
+    setFocusNeedsComments(details?.needs_comments || false);
+    handleTabChange('focuses');
+    setTimeout(() => document.getElementById('focus-form')?.scrollIntoView({ behavior: 'smooth' }), 100);
+  };
+
   return (
     <div className="space-y-4">
       <button onClick={() => { setSearchParams({}); onBack(); }} className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-gray-800">
         <ChevronLeft size={16} /> {t('common.back')}
       </button>
 
-      <div className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h2 className="text-xl font-extrabold text-gray-900">{match.is_home ? 'vs' : '@'} {match.opponent}</h2>
+      <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-6 md:p-8 shadow-xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+        
+        <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-8">
           
-          {isEditingInfo ? (
-            <div className="flex gap-2 mt-2">
-              <input type="date" className="border border-gray-200 rounded-lg px-2 py-1 text-sm" value={editDate} onChange={(e) => setEditDate(e.target.value)} />
-              <input type="time" className="border border-gray-200 rounded-lg px-2 py-1 text-sm" value={editTime} onChange={(e) => setEditTime(e.target.value)} />
-              <button 
-                onClick={async () => {
-                  await updateMatch(match.id, { date: editDate, time: editTime || undefined });
-                  setIsEditingInfo(false);
-                  onUpdate();
-                  match.date = editDate; // optimistically update local object
-                  match.time = editTime || undefined;
-                }}
-                className="bg-blue-600 text-white px-3 py-1 rounded-lg text-sm font-bold"
-              >
-                {t('common.save')}
-              </button>
-              <button onClick={() => setIsEditingInfo(false)} className="bg-gray-200 text-gray-700 px-3 py-1 rounded-lg text-sm font-bold">
-                {t('common.cancel')}
-              </button>
-            </div>
-          ) : (
-            <p className="text-sm text-gray-400 flex items-center gap-2">
-              <span>{match.date} {match.time ? `| ${match.time}` : ''} {match.competition ? `· ${match.competition}` : ''}</span>
-              <button onClick={() => setIsEditingInfo(true)} className="text-blue-500 hover:text-blue-700 text-xs font-bold underline">
-                {t('common.edit')}
-              </button>
-            </p>
-          )}
+          <div className="flex flex-col text-white space-y-4">
+             <div className="flex items-center gap-2 text-xs md:text-sm text-gray-400 font-black tracking-widest uppercase">
+                <span className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)]"></span>
+                {match.competition || 'Partido Oficial'}
+             </div>
+             
+             <div className="flex items-center gap-4 md:gap-8">
+                {/* Local Team */}
+                <div className="flex flex-col items-center gap-3">
+                   {match.is_home ? (
+                      <div className="w-16 h-16 md:w-20 md:h-20 bg-white rounded-full flex items-center justify-center text-2xl md:text-3xl font-black text-gray-900 shadow-inner">SN</div>
+                   ) : (
+                      <div className="w-16 h-16 md:w-20 md:h-20 bg-gray-800/80 rounded-full flex items-center justify-center text-lg md:text-xl font-bold text-white border border-gray-600 shadow-inner overflow-hidden">
+                         <span className="truncate w-full text-center px-1">{(match.opponent || 'RIV').substring(0,3).toUpperCase()}</span>
+                      </div>
+                   )}
+                   <span className="font-bold text-sm md:text-base text-center max-w-[120px] md:max-w-[160px] line-clamp-2 leading-tight">{match.is_home ? 'San Nicasio' : (match.opponent || 'Rival')}</span>
+                </div>
+                
+                <div className="flex flex-col items-center justify-center">
+                   <span className="text-xl md:text-2xl font-black text-white/50 bg-white/5 px-4 py-1.5 rounded-xl backdrop-blur-sm">VS</span>
+                </div>
+
+                {/* Away Team */}
+                <div className="flex flex-col items-center gap-3">
+                   {!match.is_home ? (
+                      <div className="w-16 h-16 md:w-20 md:h-20 bg-white rounded-full flex items-center justify-center text-2xl md:text-3xl font-black text-gray-900 shadow-inner">SN</div>
+                   ) : (
+                      <div className="w-16 h-16 md:w-20 md:h-20 bg-gray-800/80 rounded-full flex items-center justify-center text-lg md:text-xl font-bold text-white border border-gray-600 shadow-inner overflow-hidden">
+                         <span className="truncate w-full text-center px-1">{(match.opponent || 'RIV').substring(0,3).toUpperCase()}</span>
+                      </div>
+                   )}
+                   <span className="font-bold text-sm md:text-base text-center max-w-[120px] md:max-w-[160px] line-clamp-2 leading-tight">{!match.is_home ? 'San Nicasio' : (match.opponent || 'Rival')}</span>
+                </div>
+             </div>
+          </div>
+          
+          <div className="flex flex-col items-start md:items-end gap-3 text-white/90">
+             {isEditingInfo ? (
+               <div className="flex flex-col gap-2 w-full md:items-end">
+                 <input type="date" className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500 w-full md:w-auto" value={editDate} onChange={(e) => setEditDate(e.target.value)} />
+                 <input type="time" className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500 w-full md:w-auto" value={editTime} onChange={(e) => setEditTime(e.target.value)} />
+                 <div className="flex gap-2 mt-2 w-full md:w-auto">
+                   <button onClick={async () => {
+                     await updateMatch(match.id, { date: editDate, time: editTime || undefined });
+                     setIsEditingInfo(false);
+                     onUpdate();
+                     match.date = editDate; match.time = editTime || undefined;
+                   }} className="flex-1 md:flex-none bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-xl text-sm font-bold transition-colors">Guardar</button>
+                   <button onClick={() => setIsEditingInfo(false)} className="flex-1 md:flex-none bg-white/10 hover:bg-white/20 text-white px-5 py-2 rounded-xl text-sm font-bold transition-colors">Cancelar</button>
+                 </div>
+               </div>
+             ) : (
+               <>
+                 <div className="flex flex-col items-start md:items-end gap-1 bg-black/20 p-4 rounded-2xl w-full md:w-auto">
+                    <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Fecha del Encuentro</span>
+                    <span className="text-sm md:text-base font-bold text-white capitalize">
+                      {match.date ? new Date(match.date).toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'Fecha sin definir'}
+                    </span>
+                    {match.time && <span className="text-sm font-mono text-blue-300 font-bold bg-blue-900/30 px-2 py-0.5 rounded-md mt-1">{match.time} H</span>}
+                 </div>
+                 <button onClick={() => setIsEditingInfo(true)} className="text-gray-400 hover:text-white text-xs font-bold underline transition-colors ml-2 md:ml-0">
+                   Editar Info
+                 </button>
+               </>
+             )}
+          </div>
         </div>
       </div>
 
@@ -394,7 +515,7 @@ function MatchDetail({ match, onBack, onUpdate }: { match: MatchDB; onBack: () =
                   <label className="text-xs font-bold text-gray-500 uppercase block mb-1">Jugador Objetivo</label>
                   <select className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={focusPlayerId} onChange={(e) => setFocusPlayerId(e.target.value)}>
                     <option value="">Selecciona Jugador...</option>
-                    {(dbPlayers || []).sort((a:any, b:any) => a.first_name.localeCompare(b.first_name)).map((p: any) => <option key={p.id} value={p.id}>{p.first_name} {p.last_name}</option>)}
+                    {[...(dbPlayers || [])].sort((a:any, b:any) => String(a?.first_name || '').localeCompare(String(b?.first_name || ''))).map((p: any) => <option key={p.id} value={p.id}>{p.first_name} {p.last_name}</option>)}
                   </select>
                 </div>
               )}
@@ -402,7 +523,7 @@ function MatchDetail({ match, onBack, onUpdate }: { match: MatchDB; onBack: () =
                 <div>
                   <label className="text-xs font-bold text-gray-500 uppercase block mb-1">Jugadores Implicados</label>
                   <div className="max-h-32 overflow-y-auto border border-gray-200 rounded-lg p-2 space-y-1">
-                    {(dbPlayers || []).sort((a:any, b:any) => a.first_name.localeCompare(b.first_name)).map((p: any) => (
+                    {[...(dbPlayers || [])].sort((a:any, b:any) => String(a?.first_name || '').localeCompare(String(b?.first_name || ''))).map((p: any) => (
                       <label key={p.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-gray-50 p-1.5 rounded-md transition-colors">
                         <input type="checkbox" className="rounded text-blue-600 focus:ring-blue-500 w-4 h-4" checked={focusPlayerIds.includes(p.id)} onChange={() => toggleFocusPlayer(p.id)} />
                         <span className="text-gray-700">{p.first_name} {p.last_name}</span>
@@ -417,6 +538,10 @@ function MatchDetail({ match, onBack, onUpdate }: { match: MatchDB; onBack: () =
               </div>
             </div>
 
+            <p className="text-xs font-bold text-gray-400 bg-gray-50 border border-gray-100 rounded-lg p-3">
+              Cómo se registra cada foco (campo, zonas, nº de jugadores, jugador implicado, observaciones) se configura desde <span className="text-gray-600">Registro en Vivo</span>.
+            </p>
+
             <textarea className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Descripción detallada del foco..." value={focusDesc} onChange={(e) => setFocusDesc(e.target.value)} rows={3} />
             
             <div className="flex gap-2 flex-wrap">
@@ -429,7 +554,7 @@ function MatchDetail({ match, onBack, onUpdate }: { match: MatchDB; onBack: () =
                   if (focusType === 'Grupal' && focusPlayerIds.length === 0) return alert("Debes seleccionar al menos un jugador implicado.");
                   if (!focusDesc.trim()) return alert("La descripción es obligatoria.");
 
-                  const details: FocusDetails = { text: focusDesc, focusType, phases: focusPhases, assignedTo: focusAssignedTo, playerId: focusPlayerId, playerIds: focusPlayerIds };
+                  const details: FocusDetails = { text: focusDesc, focusType, phases: focusPhases, assignedTo: focusAssignedTo, playerId: focusPlayerId, playerIds: focusPlayerIds, needs_pitch: focusNeedsPitch, needs_zones: focusNeedsZones, needs_players: focusNeedsPlayers, needs_player_selection: focusNeedsPlayerSelection, needs_comments: focusNeedsComments };
                   
                   if (editingFocusId) {
                     await updateMatchFocus(editingFocusId, { title: focusTitle, description: JSON.stringify(details) });
@@ -438,7 +563,7 @@ function MatchDetail({ match, onBack, onUpdate }: { match: MatchDB; onBack: () =
                   }
 
                   setEditingFocusId(null);
-                  setFocusTitle(''); setFocusDesc(''); setFocusAssignedTo(''); setFocusPlayerId(''); setFocusPlayerIds([]); loadFocuses(); 
+                  setFocusTitle(''); setFocusDesc(''); setFocusAssignedTo(''); setFocusPlayerId(''); setFocusPlayerIds([]); setFocusNeedsPitch(false); setFocusNeedsZones(false); setFocusNeedsPlayers(false); setFocusNeedsPlayerSelection(false); setFocusNeedsComments(false); loadFocuses(); 
                 }}
                 className="px-5 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-bold flex items-center justify-center w-full sm:w-auto gap-2 hover:bg-blue-700 transition-colors"
               >
@@ -449,7 +574,7 @@ function MatchDetail({ match, onBack, onUpdate }: { match: MatchDB; onBack: () =
                 <button
                   onClick={() => {
                     setEditingFocusId(null);
-                    setFocusTitle(''); setFocusDesc(''); setFocusAssignedTo(''); setFocusPlayerId(''); setFocusPlayerIds([]);
+                    setFocusTitle(''); setFocusDesc(''); setFocusAssignedTo(''); setFocusPlayerId(''); setFocusPlayerIds([]); setFocusNeedsPitch(false); setFocusNeedsZones(false); setFocusNeedsPlayers(false); setFocusNeedsPlayerSelection(false); setFocusNeedsComments(false);
                   }}
                   className="px-5 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-lg text-sm font-bold flex items-center justify-center w-full sm:w-auto hover:bg-gray-50 transition-colors"
                 >
@@ -543,17 +668,7 @@ function MatchDetail({ match, onBack, onUpdate }: { match: MatchDB; onBack: () =
                                 </div>
                                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white p-1 rounded-md">
                                   <button 
-                                    onClick={() => {
-                                      setEditingFocusId(f.id);
-                                      setFocusTitle(f.title);
-                                      setFocusDesc(plainDesc || '');
-                                      setFocusType((details?.focusType as 'Colectivo' | 'Grupal' | 'Individual' | 'Rival') || 'Colectivo');
-                                      setFocusPhases(details?.phases || []);
-                                      setFocusAssignedTo(details?.assignedTo || '');
-                                      setFocusPlayerId(details?.playerId || '');
-                                      setFocusPlayerIds(details?.playerIds || []);
-                                      document.getElementById('focus-form')?.scrollIntoView({ behavior: 'smooth' });
-                                    }} 
+                                    onClick={() => startEditFocus(f)} 
                                     className="text-gray-400 hover:text-blue-500 transition-colors p-1"
                                     title="Editar foco"
                                   >
@@ -588,42 +703,18 @@ function MatchDetail({ match, onBack, onUpdate }: { match: MatchDB; onBack: () =
       )}
 
       {tab === 'data' && (
-        <div className="space-y-3">
-          <div className="bg-white border border-gray-100 rounded-xl p-4 space-y-2 shadow-sm">
-            <select className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" value={dpPlayer} onChange={(e) => setDpPlayer(e.target.value)}>
-              <option value="">—</option>
-              {(dbPlayers || []).map((p: any) => <option key={p.id} value={p.id}>{p.first_name} {p.last_name}</option>)}
-            </select>
-            <div className="flex gap-2">
-              <input type="number" className="w-1/3 border border-gray-200 rounded-lg px-3 py-2 text-sm" placeholder={t('matchesPage.minute') as string} value={dpMinute} onChange={(e) => setDpMinute(e.target.value)} />
-              <input className="w-1/3 border border-gray-200 rounded-lg px-3 py-2 text-sm" placeholder={t('matchesPage.type') as string} value={dpType} onChange={(e) => setDpType(e.target.value)} />
-              <select className="w-1/3 border border-gray-200 rounded-lg px-3 py-2 text-sm" value={dpOutcome} onChange={(e) => setDpOutcome(e.target.value as any)}>
-                <option value="Success">Success</option>
-                <option value="Neutral">Neutral</option>
-                <option value="Failure">Failure</option>
-              </select>
-            </div>
-            <textarea className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" placeholder={t('matchesPage.comments') as string} value={dpComments} onChange={(e) => setDpComments(e.target.value)} />
-            <button
-              onClick={async () => {
-                if (!dpType.trim()) return;
-                await createMatchDataPoint({ match_id: match.id, player_id: dpPlayer || null, minute: dpMinute ? Number(dpMinute) : undefined, type: dpType, outcome: dpOutcome, comments: dpComments });
-                setDpPlayer(''); setDpMinute(''); setDpType(''); setDpOutcome('Neutral'); setDpComments('');
-                loadDataPoints();
-              }}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold flex items-center gap-2"
-            ><Plus size={16} /> {t('matchesPage.newDataPoint')}</button>
-          </div>
-          {dataPoints.map((dp) => (
-            <div key={dp.id} className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm flex justify-between items-start">
-              <div>
-                <p className="font-bold text-gray-800">{dp.minute != null ? `${dp.minute}' ` : ''}{dp.type} — {dp.outcome}</p>
-                {dp.comments && <p className="text-sm text-gray-500">{dp.comments}</p>}
-              </div>
-              <button onClick={async () => { await deleteMatchDataPoint(dp.id); loadDataPoints(); }} className="text-gray-300 hover:text-red-500"><Trash2 size={16} /></button>
-            </div>
-          ))}
-        </div>
+        <MatchLiveRegistrationView 
+          match={match} 
+          focuses={focuses} 
+          dataPoints={dataPoints} 
+          onUpdateMatch={async (updates) => {
+            await updateMatch(match.id, updates);
+            onUpdate(); // Reload match info
+            Object.assign(match, updates); // Optimistically update local state
+          }}
+          onRefreshDataPoints={loadDataPoints}
+          onRefreshFocuses={loadFocuses}
+        />
       )}
     </div>
   );
