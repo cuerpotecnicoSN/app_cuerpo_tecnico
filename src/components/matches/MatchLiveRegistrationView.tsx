@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { Play, Pause, Edit2, Trash2, Check, X, Clock, Filter, Flag, ChevronLeft, AlertTriangle, Sliders, MapPinned, Grid3x3, Hash, UserPlus, MessageSquare, ThumbsUp, ThumbsDown, Minus, BarChart3, FileDown, ChevronDown } from 'lucide-react';
+import { Play, Pause, Edit2, Trash2, Check, X, Clock, Filter, Flag, ChevronLeft, AlertTriangle, Sliders, MapPinned, Grid3x3, Hash, UserPlus, MessageSquare, ThumbsUp, ThumbsDown, Minus, BarChart3, FileDown } from 'lucide-react';
 import type { MatchDB, MatchFocus, MatchDataPoint } from '../types';
 import { createMatchDataPoint, deleteMatchDataPoint, deleteAllMatchDataPoints, updateMatchDataPoint, updateMatchFocus, isTimerPersistenceAvailable } from '../../services/matches';
 import { useSupabaseData } from '../../hooks/useSupabaseData';

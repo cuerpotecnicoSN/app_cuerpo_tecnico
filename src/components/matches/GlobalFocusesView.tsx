@@ -3,6 +3,7 @@ import { ChevronLeft, Target, Users, User, ShieldAlert, Flag, Shield, Activity, 
 import { getAllMatchFocuses, getAllMatchDataPoints } from '../../services/matches';
 import type { MatchDB, MatchFocus, FocusDetails, MatchDataPoint } from '../types';
 import PitchGraph from './PitchGraph';
+import { getFocusDetails } from './MatchLiveRegistrationView';
 
 interface GlobalFocusesViewProps {
   matches: MatchDB[];
