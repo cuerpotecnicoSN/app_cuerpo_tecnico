@@ -34,6 +34,25 @@ const phaseRank = (d: FocusDetails) => {
   return ps.length ? Math.min(...ps.map(p => PHASE_ORDER[p] ?? 9)) : 9;
 };
 
+const TRAINER_COLORS = [
+  { bg: 'bg-emerald-50/60 hover:bg-emerald-50/90 border-emerald-200 hover:border-emerald-400', text: 'text-emerald-950', iconBg: 'bg-gradient-to-br from-emerald-500 to-teal-600', badge: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
+  { bg: 'bg-blue-50/60 hover:bg-blue-50/90 border-blue-200 hover:border-blue-400', text: 'text-blue-950', iconBg: 'bg-gradient-to-br from-blue-500 to-indigo-600', badge: 'bg-blue-100 text-blue-800 border-blue-200' },
+  { bg: 'bg-amber-50/60 hover:bg-amber-50/90 border-amber-200 hover:border-amber-400', text: 'text-amber-950', iconBg: 'bg-gradient-to-br from-amber-500 to-orange-600', badge: 'bg-amber-100 text-amber-800 border-amber-200' },
+  { bg: 'bg-rose-50/60 hover:bg-rose-50/90 border-rose-200 hover:border-rose-400', text: 'text-rose-950', iconBg: 'bg-gradient-to-br from-rose-500 to-pink-600', badge: 'bg-rose-100 text-rose-800 border-rose-200' },
+  { bg: 'bg-purple-50/60 hover:bg-purple-50/90 border-purple-200 hover:border-purple-400', text: 'text-purple-950', iconBg: 'bg-gradient-to-br from-purple-500 to-violet-600', badge: 'bg-purple-100 text-purple-800 border-purple-200' },
+  { bg: 'bg-cyan-50/60 hover:bg-cyan-50/90 border-cyan-200 hover:border-cyan-400', text: 'text-cyan-950', iconBg: 'bg-gradient-to-br from-cyan-500 to-blue-600', badge: 'bg-cyan-100 text-cyan-800 border-cyan-200' },
+  { bg: 'bg-indigo-50/60 hover:bg-indigo-50/90 border-indigo-200 hover:border-indigo-400', text: 'text-indigo-950', iconBg: 'bg-gradient-to-br from-indigo-500 to-purple-600', badge: 'bg-indigo-100 text-indigo-800 border-indigo-200' },
+];
+
+function getTrainerColor(name: string) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % TRAINER_COLORS.length;
+  return TRAINER_COLORS[index];
+}
+
 interface Props {
   matches: MatchDB[];
   onBack: () => void;
@@ -89,6 +108,18 @@ export default function FocusPlanningFlow({ matches, onBack }: Props) {
     });
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [allFocuses, profiles, rolesInMatch]);
+
+  // Todos los entrenadores combinados
+  const combinedTrainers = useMemo(() => {
+    const list: { name: string; count: number; isSuggestion: boolean }[] = [];
+    rolesInMatch.forEach(([r, count]) => {
+      list.push({ name: r, count, isSuggestion: false });
+    });
+    roleSuggestions.forEach(r => {
+      list.push({ name: r, count: 0, isSuggestion: true });
+    });
+    return list;
+  }, [rolesInMatch, roleSuggestions]);
 
   // Orden: fase (Ofensivo → Defensivo → ABP) y dentro, tipo (Colectivo → Grupal → Individual → Rival)
   const myFocuses = useMemo(
@@ -171,7 +202,7 @@ export default function FocusPlanningFlow({ matches, onBack }: Props) {
     };
 
     return (
-      <div className="space-y-6 animate-fade-in">
+      <div className="space-y-8 animate-fade-in">
         <button onClick={() => { setStep('match'); setMatch(null); setFocuses([]); }} className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-gray-800 transition-colors">
           <ChevronLeft size={16} /> Cambiar de partido
         </button>
@@ -187,37 +218,84 @@ export default function FocusPlanningFlow({ matches, onBack }: Props) {
         {loading ? (
           <p className="text-sm text-gray-400 font-bold py-10 text-center">Cargando focos...</p>
         ) : (
-          <div className="space-y-6">
-            {rolesInMatch.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                {rolesInMatch.map(([r, count]) => (
-                  <button
-                    key={r}
-                    onClick={() => startWithRole(r)}
-                    className="text-left bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-lg hover:border-indigo-400 transition-all active:scale-[0.99] group"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 text-white flex items-center justify-center shadow-md shrink-0">
-                        <User size={20} />
+          <div className="space-y-8">
+            {combinedTrainers.length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {combinedTrainers.map((t) => {
+                  const colors = getTrainerColor(t.name);
+                  const trainerFocuses = focuses.filter(f => getFocusRole(f) === t.name);
+                  const sortedTrainerFocuses = [...trainerFocuses].sort((a, b) => {
+                    const ta = getFocusDetails(a).focusType || 'Colectivo';
+                    const tb = getFocusDetails(b).focusType || 'Colectivo';
+                    return (TYPE_ORDER[ta] ?? 9) - (TYPE_ORDER[tb] ?? 9);
+                  });
+
+                  return (
+                    <button
+                      key={t.name}
+                      onClick={() => startWithRole(t.name)}
+                      className={`text-left bg-white border ${colors.bg} rounded-2xl p-6 shadow-sm hover:shadow-xl transition-all active:scale-[0.98] group flex flex-col justify-between min-h-[140px]`}
+                    >
+                      <div className="w-full space-y-4">
+                        <div className="flex items-start gap-4">
+                          <div className={`w-12 h-12 rounded-2xl ${colors.iconBg} text-white flex items-center justify-center shadow-md shrink-0`}>
+                            <User size={24} />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className={`font-black text-xl leading-snug truncate ${colors.text} group-hover:scale-[1.01] transition-transform`}>{t.name}</p>
+                            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mt-1">
+                              {t.isSuggestion ? 'Cuerpo Técnico' : 'Focos Activos'}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* List of focuses grouped/sorted by type */}
+                        {sortedTrainerFocuses.length > 0 && (
+                          <div className="space-y-2 w-full pt-1">
+                            {sortedTrainerFocuses.map(f => {
+                              const type = getFocusDetails(f).focusType || 'Colectivo';
+                              const meta = typeMeta(type);
+                              return (
+                                <div key={f.id} className="flex items-center justify-between text-xs bg-white/70 border border-gray-150 rounded-xl p-2.5 shadow-sm">
+                                  <span className="font-bold text-gray-800 truncate pr-2">{f.title}</span>
+                                  <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-lg border ${meta.chip} shrink-0`}>
+                                    {type}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
-                      <div className="min-w-0">
-                        <p className="font-black text-gray-900 text-lg leading-tight truncate group-hover:text-indigo-700 transition-colors">{r}</p>
-                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">{count} foco{count === 1 ? '' : 's'} planificado{count === 1 ? '' : 's'}</p>
+
+                      <div className="mt-4 pt-3 border-t border-gray-100/60 flex justify-between items-center w-full">
+                        {t.count > 0 ? (
+                          <span className="text-xs font-black px-3 py-1.5 rounded-xl bg-indigo-600 text-white shadow-sm">
+                            {t.count} foco{t.count === 1 ? '' : 's'} planificado{t.count === 1 ? '' : 's'}
+                          </span>
+                        ) : (
+                          <span className="text-xs font-bold px-3 py-1.5 rounded-xl bg-gray-100 text-gray-500">
+                            Sin focos
+                          </span>
+                        )}
+                        <span className="text-xs font-bold text-indigo-600 group-hover:translate-x-1 transition-transform">
+                          Seleccionar &rarr;
+                        </span>
                       </div>
-                    </div>
-                  </button>
-                ))}
+                    </button>
+                  );
+                })}
               </div>
             )}
 
-            <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm space-y-4">
-              <div className="flex items-center gap-2">
-                <Sparkles size={18} className="text-indigo-500" />
-                <h3 className="font-black text-gray-900">Añadir otro entrenador</h3>
+            <div className="bg-white border border-gray-200 rounded-3xl p-6 shadow-sm max-w-2xl">
+              <div className="flex items-center gap-2 mb-3">
+                <Sparkles size={18} className="text-indigo-500 animate-pulse" />
+                <h3 className="font-black text-gray-900">¿No está en la lista? Añade otro rol o entrenador</h3>
               </div>
-              <div className="flex flex-col sm:flex-row gap-2">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <input
-                  className="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                  className="flex-1 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none shadow-inner"
                   placeholder="Ej. 2º Entrenador, Analista, Preparador Físico..."
                   value={newRole}
                   onChange={(e) => setNewRole(e.target.value)}
@@ -226,20 +304,11 @@ export default function FocusPlanningFlow({ matches, onBack }: Props) {
                 <button
                   onClick={() => startWithRole(newRole)}
                   disabled={!newRole.trim()}
-                  className="px-5 py-2.5 bg-gray-900 hover:bg-black disabled:opacity-40 text-white rounded-xl text-sm font-bold shadow-md"
+                  className="px-6 py-3 bg-gray-900 hover:bg-black disabled:opacity-40 text-white rounded-xl text-sm font-bold shadow-md hover:shadow-lg transition-all shrink-0"
                 >
                   Empezar
                 </button>
               </div>
-              {roleSuggestions.length > 0 && (
-                <div className="flex flex-wrap gap-2 pt-1">
-                  {roleSuggestions.map(r => (
-                    <button key={r} onClick={() => startWithRole(r)} className="text-xs font-bold text-gray-600 bg-gray-100 hover:bg-indigo-100 hover:text-indigo-700 border border-gray-200 px-3 py-1.5 rounded-lg transition-colors">
-                      {r}
-                    </button>
-                  ))}
-                </div>
-              )}
             </div>
           </div>
         )}

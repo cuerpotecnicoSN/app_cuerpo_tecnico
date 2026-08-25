@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { Play, Pause, Edit2, Trash2, Check, X, Clock, Filter, Flag, ChevronLeft, AlertTriangle, Sliders, MapPinned, Grid3x3, Hash, UserPlus, MessageSquare, ThumbsUp, ThumbsDown, Minus, BarChart3, FileDown } from 'lucide-react';
+import { Play, Pause, Edit2, Trash2, Check, X, Clock, Filter, Flag, ChevronLeft, AlertTriangle, Sliders, MapPinned, Grid3x3, Hash, UserPlus, MessageSquare, ThumbsUp, ThumbsDown, Minus, BarChart3, FileDown, Flame } from 'lucide-react';
 import type { MatchDB, MatchFocus, MatchDataPoint } from '../types';
 import { createMatchDataPoint, deleteMatchDataPoint, deleteAllMatchDataPoints, updateMatchDataPoint, updateMatchFocus, isTimerPersistenceAvailable } from '../../services/matches';
 import { useSupabaseData } from '../../hooks/useSupabaseData';
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceLine, PieChart, Pie, Cell } from 'recharts';
 import MatchDataEditModal from './MatchDataEditModal';
 import PitchGraph from './PitchGraph';
 import { exportLiveRegistrationPdf, type FocusStatRow } from '../../utils/liveRegistrationPdf';
@@ -57,7 +58,8 @@ export default function MatchLiveRegistrationView({ match, focuses, dataPoints, 
   const [activeTab, setActiveTab] = useState<'registro' | 'vision_general'>('registro');
   const [exporting, setExporting] = useState(false);
   const [currentPeriod, setCurrentPeriod] = useState<string>('1ª Parte');
-  const [deletePrompt, setDeletePrompt] = useState<{ type: 'all' | 'single', id?: string } | null>(null);
+  const [heatmapMode, setHeatmapMode] = useState<'points' | 'heatmap'>('points');
+  const [focusHeatmapModes, setFocusHeatmapModes] = useState<Record<string, 'points' | 'heatmap'>>({});
 
   const roles = useMemo(
     () => Array.from(new Set(focuses.map(getFocusRole))).sort((a, b) => a.localeCompare(b)),
@@ -197,11 +199,20 @@ export default function MatchLiveRegistrationView({ match, focuses, dataPoints, 
     const details = getFocusDetails(f);
     const needsExtra = !!(details.needs_pitch || details.needs_zones || details.needs_players || details.needs_player_selection);
 
+    const eventSeconds = timer.running ? Math.max(0, liveSeconds - 10) : liveSeconds;
+    let eventMinute = Math.floor(eventSeconds / 60);
+
+    if (currentPeriod === '2ª Parte' && eventMinute < 45) {
+      eventMinute += 45;
+    } else if (currentPeriod === 'Prórroga' && eventMinute < 90) {
+      eventMinute += 90;
+    }
+
     try {
       const newPoint = await createMatchDataPoint({
         match_id: match.id,
         focus_id: f.id,
-        minute: currentMinute,
+        minute: eventMinute,
         type: f.title,
         outcome,
         coordinates: { period: currentPeriod }
@@ -240,6 +251,20 @@ export default function MatchLiveRegistrationView({ match, focuses, dataPoints, 
     const next: MatchDataPoint['outcome'] = dp.outcome === 'Success' ? 'Failure' : dp.outcome === 'Failure' ? 'Neutral' : 'Success';
     await updateMatchDataPoint(dp.id, { outcome: next });
     onRefreshDataPoints();
+  };
+
+  const handleDeleteAll = async () => {
+    if (window.confirm('¿De verdad quieres eliminar TODOS los registros de este partido? Esta acción no se puede deshacer.')) {
+      await deleteAllMatchDataPoints(match.id);
+      onRefreshDataPoints();
+    }
+  };
+
+  const handleDeleteSingle = async (id: string, type: string) => {
+    if (window.confirm(`¿De verdad quieres eliminar el registro de "${type}"?`)) {
+      await deleteMatchDataPoint(id);
+      onRefreshDataPoints();
+    }
   };
 
   const myFocuses = useMemo(() => focuses.filter(f => getFocusRole(f) === activeRole), [focuses, activeRole]);
@@ -284,6 +309,10 @@ export default function MatchLiveRegistrationView({ match, focuses, dataPoints, 
     const titles = new Set(myFocuses.map(f => f.title));
     return dataPoints.filter(dp => (dp.focus_id ? ids.has(dp.focus_id) : titles.has(dp.type)));
   }, [dataPoints, myFocuses]);
+
+  const coordDataPoints = useMemo(() => {
+    return myDataPoints.filter(dp => dp.coordinates && dp.coordinates.x != null && dp.coordinates.y != null);
+  }, [myDataPoints]);
 
   const pctColor = (pct: number | null) => pct == null ? 'text-gray-400' : pct >= 60 ? 'text-emerald-600' : pct >= 40 ? 'text-amber-600' : 'text-red-600';
   const pctBar = (pct: number | null) => pct == null ? 'bg-gray-300' : pct >= 60 ? 'bg-emerald-500' : pct >= 40 ? 'bg-amber-500' : 'bg-red-500';
@@ -536,57 +565,221 @@ export default function MatchLiveRegistrationView({ match, focuses, dataPoints, 
             </div>
           </div>
 
-          <div className="space-y-4 pt-2">
-            {myFocuses.length === 0 && <p className="text-sm text-gray-400 font-bold text-center py-4">Este entrenador no tiene focos asignados.</p>}
-            {myFocuses.map(f => {
-              const r = { title: f.title, type: getFocusDetails(f).focusType || 'Colectivo', ...statsFor(f) };
-              const d = getFocusDetails(f);
-              const asks = [
-                d.needs_pitch && 'Campo',
-                d.needs_zones && 'Zonas',
-                d.needs_players && 'Nº jug.',
-                d.needs_player_selection && 'Jugador',
-                d.needs_comments && 'Observ.',
-              ].filter(Boolean) as string[];
-              
-              const pts = myDataPoints.filter(dp => dp.focus_id === f.id && dp.coordinates?.x != null && dp.coordinates?.y != null);
+          {myFocuses.length === 0 ? (
+            <p className="text-sm text-gray-400 font-bold text-center py-4">Este entrenador no tiene focos asignados.</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 pt-2">
+              {myFocuses.map(f => {
+                const r = { title: f.title, type: getFocusDetails(f).focusType || 'Colectivo', ...statsFor(f) };
+                const d = getFocusDetails(f);
+                const asks = [
+                  d.needs_pitch && 'Campo',
+                  d.needs_zones && 'Zonas',
+                  d.needs_players && 'Nº jug.',
+                  d.needs_player_selection && 'Jugador',
+                  d.needs_comments && 'Observ.',
+                ].filter(Boolean) as string[];
+                
+                const pts = pointsOfFocus(f).filter(dp => dp.coordinates?.x != null && dp.coordinates?.y != null);
 
-              return (
-              <div key={f.id} className="bg-gray-50 border border-gray-100 rounded-xl p-3">
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mb-2">
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-gray-800 text-sm truncate">{r.title}</p>
-                    <div className="flex items-center gap-1.5 flex-wrap mt-1">
-                      <span className="text-[11px] font-black uppercase tracking-wider text-gray-400">{r.type}</span>
-                      {asks.length > 0
-                        ? asks.map(a => <span key={a} className="text-[10px] font-black uppercase tracking-wider text-blue-700 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded">{a}</span>)
-                        : <span className="text-[10px] font-black uppercase tracking-wider text-gray-400 bg-gray-100 border border-gray-200 px-1.5 py-0.5 rounded">Registro directo</span>}
-                      <button onClick={() => setConfigFocus(f)} className="text-[10px] font-black uppercase tracking-wider text-gray-500 hover:text-blue-700 flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-blue-50" title="Configurar cómo se registra">
-                        <Sliders size={11} /> Editar registro
-                      </button>
+                return (
+                  <div key={f.id} className="bg-gray-50 border border-gray-200 rounded-2xl p-4 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow">
+                    <div className="space-y-3">
+                      {/* Header: Title and tags */}
+                      <div>
+                        <p className="font-bold text-gray-800 text-sm line-clamp-2 leading-snug" title={r.title}>{r.title}</p>
+                        <div className="flex items-center gap-1.5 flex-wrap mt-2">
+                          <span className="text-[10px] font-black uppercase tracking-wider text-gray-400">{r.type}</span>
+                          {asks.length > 0
+                            ? asks.map(a => <span key={a} className="text-[9px] font-black uppercase tracking-wider text-blue-700 bg-blue-50 border border-blue-200 px-1 py-0.5 rounded">{a}</span>)
+                            : <span className="text-[9px] font-black uppercase tracking-wider text-gray-400 bg-gray-100 border border-gray-200 px-1 py-0.5 rounded">Directo</span>}
+                          <button onClick={() => setConfigFocus(f)} className="text-[9px] font-black uppercase tracking-wider text-gray-500 hover:text-blue-750 flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-blue-50" title="Configurar cómo se registra">
+                            <Sliders size={10} /> Editar
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Stats Row */}
+                      <div className="bg-white p-3 rounded-xl border border-gray-200/60 shadow-inner space-y-2">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-bold text-gray-500">{r.total} eventos</span>
+                          <span className={`font-black text-sm ${pctColor(r.pct)}`}>
+                            {r.pct == null ? '—' : `${r.pct}%`}
+                          </span>
+                        </div>
+
+                        <div className="h-2 bg-gray-150 rounded-full overflow-hidden">
+                          <div className={`h-full ${pctBar(r.pct)} transition-all`} style={{ width: `${r.pct ?? 0}%` }} />
+                        </div>
+
+                        <div className="flex items-center justify-between pt-1.5 border-t border-gray-100 text-[10px] font-bold">
+                          <span className="text-emerald-600 flex items-center gap-0.5">🟢 {r.success}</span>
+                          <span className="text-red-650 flex items-center gap-0.5">🔴 {r.failure}</span>
+                        </div>
+                      </div>
                     </div>
+
+                    {/* PitchGraph if focus needs pitch */}
+                    {d.needs_pitch && (
+                      <div className="mt-3 space-y-2">
+                        <div className="flex items-center justify-between gap-1.5 bg-gray-150 p-1.5 rounded-xl border border-gray-250 w-fit ml-auto">
+                          <button 
+                            onClick={() => setFocusHeatmapModes(prev => ({ ...prev, [f.id]: 'points' }))}
+                            className={`px-2.5 py-1 text-[10px] font-bold rounded-lg transition-all flex items-center gap-1 ${
+                              (focusHeatmapModes[f.id] || 'points') === 'points' 
+                                ? 'bg-slate-950 text-white shadow-sm' 
+                                : 'text-gray-500 hover:text-gray-800'
+                            }`}
+                          >
+                            <MapPinned size={12} /> Puntos
+                          </button>
+                          <button 
+                            onClick={() => setFocusHeatmapModes(prev => ({ ...prev, [f.id]: 'heatmap' }))}
+                            className={`px-2.5 py-1 text-[10px] font-bold rounded-lg transition-all flex items-center gap-1 ${
+                              (focusHeatmapModes[f.id] || 'points') === 'heatmap' 
+                                ? 'bg-amber-950 text-amber-300 shadow-sm border border-amber-900' 
+                                : 'text-gray-500 hover:text-gray-800'
+                            }`}
+                          >
+                            <Flame size={12} className={(focusHeatmapModes[f.id] || 'points') === 'heatmap' ? 'animate-pulse text-amber-400' : ''} /> Mapa
+                          </button>
+                        </div>
+                        <div className="rounded-xl overflow-hidden border border-gray-200 shadow-inner relative bg-white aspect-[1.5]">
+                          <PitchGraph events={pts} interactive={false} mode={focusHeatmapModes[f.id] || 'points'} />
+                        </div>
+
+                        {/* Outcome donut chart accompanying the pitch */}
+                        {r.total > 0 ? (
+                          <div className="flex items-center justify-between gap-3 bg-white p-2.5 rounded-xl border border-gray-200 shadow-sm">
+                            <div className="w-12 h-12 shrink-0">
+                              <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                  <Pie
+                                    data={[
+                                      { name: 'Bueno', value: r.success, color: '#10b981' },
+                                      { name: 'Neutro', value: Math.max(0, r.total - r.success - r.failure), color: '#9ca3af' },
+                                      { name: 'Malo', value: r.failure, color: '#ef4444' },
+                                    ].filter(item => item.value > 0)}
+                                    cx="50%"
+                                    cy="50%"
+                                    innerRadius={12}
+                                    outerRadius={20}
+                                    paddingAngle={2}
+                                    dataKey="value"
+                                  >
+                                    {[
+                                      { name: 'Bueno', value: r.success, color: '#10b981' },
+                                      { name: 'Neutro', value: Math.max(0, r.total - r.success - r.failure), color: '#9ca3af' },
+                                      { name: 'Malo', value: r.failure, color: '#ef4444' },
+                                    ].filter(item => item.value > 0).map((entry, idx) => (
+                                      <Cell key={`cell-${idx}`} fill={entry.color} />
+                                    ))}
+                                  </Pie>
+                                </PieChart>
+                              </ResponsiveContainer>
+                            </div>
+                            <div className="flex-1 text-[10px] space-y-0.5 font-bold text-gray-600">
+                              <div className="flex items-center justify-between">
+                                <span className="flex items-center gap-1 text-emerald-600"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Bueno:</span>
+                                <span>{Math.round((r.success / r.total) * 100)}%</span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span className="flex items-center gap-1 text-gray-500"><span className="w-1.5 h-1.5 rounded-full bg-gray-400" /> Neutro:</span>
+                                <span>{Math.round((Math.max(0, r.total - r.success - r.failure) / r.total) * 100)}%</span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span className="flex items-center gap-1 text-red-500"><span className="w-1.5 h-1.5 rounded-full bg-red-500" /> Malo:</span>
+                                <span>{Math.round((r.failure / r.total) * 100)}%</span>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="text-[10px] text-gray-400 text-center py-2 font-bold bg-white rounded-xl border border-gray-150">Sin eventos registrados aún</p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Chart for player counts if focus has needs_players */}
+                    {d.needs_players && (
+                      <div className="mt-3 bg-white p-3 rounded-xl border border-gray-200 shadow-sm">
+                        <h6 className="text-[10px] font-black text-gray-500 uppercase mb-2 flex items-center gap-1">
+                          <BarChart3 size={12} className="text-blue-500" /> Jugadores
+                        </h6>
+                        {(() => {
+                          const ptsForChart = pointsOfFocus(f)
+                            .filter(dp => dp.coordinates?.attackingPlayers || dp.coordinates?.defendingPlayers);
+                          
+                          if (ptsForChart.length === 0) {
+                            return <p className="text-[10px] text-gray-400 text-center py-4 font-bold">Sin datos de jugadores</p>;
+                          }
+
+                          const periodOrder = (p?: string) => {
+                            if (!p) return 0;
+                            if (p.includes('1ª')) return 1;
+                            if (p.includes('Descanso')) return 2;
+                            if (p.includes('2ª')) return 3;
+                            if (p.includes('Prór')) return 4;
+                            if (p.includes('Penal')) return 5;
+                            return 6;
+                          };
+
+                          const getPeriodShorthand = (p?: string) => {
+                            if (!p) return '';
+                            if (p.includes('1ª')) return '1T';
+                            if (p.includes('2ª')) return '2T';
+                            if (p.includes('Prór')) return 'PR';
+                            if (p.includes('Penal')) return 'PE';
+                            return p;
+                          };
+
+                          const sorted = ptsForChart.slice().sort((a, b) => {
+                            const orderA = periodOrder(a.coordinates?.period);
+                            const orderB = periodOrder(b.coordinates?.period);
+                            if (orderA !== orderB) return orderA - orderB;
+                            return (a.minute || 0) - (b.minute || 0);
+                          });
+
+                          const chartData = sorted.map((dp, idx) => {
+                            const sh = getPeriodShorthand(dp.coordinates?.period);
+                            const name = dp.minute != null 
+                              ? `${dp.minute}'${sh ? ` (${sh})` : ''}`
+                              : `Ev ${idx + 1}${sh ? ` (${sh})` : ''}`;
+                            return {
+                              name,
+                              Ataque: parseFloat(dp.coordinates?.attackingPlayers || '0') || 0,
+                              Defensa: parseFloat(dp.coordinates?.defendingPlayers || '0') || 0,
+                              is2T: dp.coordinates?.period?.includes('2ª')
+                            };
+                          });
+
+                          const first2TItem = chartData.find(item => item.is2T);
+
+                          return (
+                            <div className="h-32 w-full text-[9px] font-bold">
+                              <ResponsiveContainer width="100%" height="100%">
+                                <LineChart data={chartData} margin={{ top: 5, right: 5, left: -25, bottom: 5 }}>
+                                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                                  <XAxis dataKey="name" stroke="#9ca3af" fontSize={8} tickLine={false} />
+                                  <YAxis stroke="#9ca3af" fontSize={8} tickLine={false} allowDecimals={false} />
+                                  <Tooltip contentStyle={{ background: '#111827', border: 'none', borderRadius: '6px', color: '#fff', fontSize: '9px', padding: '4px 8px' }} />
+                                  <Legend wrapperStyle={{ fontSize: '9px', paddingTop: '4px' }} />
+                                  {first2TItem && (
+                                    <ReferenceLine x={first2TItem.name} stroke="#9ca3af" strokeDasharray="4 4" label={{ value: '2T', position: 'insideTopLeft', fill: '#9ca3af', fontSize: 9, fontWeight: 'bold' }} />
+                                  )}
+                                  <Line type="monotone" dataKey="Ataque" stroke="#3b82f6" strokeWidth={1.5} dot={{ r: 2 }} name="Atq." />
+                                  <Line type="monotone" dataKey="Defensa" stroke="#ef4444" strokeWidth={1.5} dot={{ r: 2 }} name="Def." />
+                                </LineChart>
+                              </ResponsiveContainer>
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    )}
                   </div>
-                  <div className="flex items-center gap-3 shrink-0">
-                    <span className="text-xs font-black text-gray-500 w-12 text-right">{r.total} ev.</span>
-                    <span className="text-xs font-black text-emerald-600 w-8 text-right">{r.success}</span>
-                    <span className="text-xs font-black text-red-600 w-8 text-right">{r.failure}</span>
-                    <div className="w-24 sm:w-40 h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div className={`h-full ${pctBar(r.pct)} transition-all`} style={{ width: `${r.pct ?? 0}%` }} />
-                    </div>
-                    <span className={`text-sm font-black w-12 text-right ${pctColor(r.pct)}`}>{r.pct == null ? '—' : `${r.pct}%`}</span>
-                  </div>
-                </div>
-              
-              {/* PitchGraph if focus needs pitch */}
-              {d.needs_pitch && (
-                <div className="mt-3 mb-1 rounded-xl overflow-hidden border border-gray-200 shadow-inner relative max-w-lg mx-auto bg-white">
-                  <PitchGraph events={pts} interactive={false} />
-                </div>
-              )}
-              </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       ) : (
         <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm space-y-4 animate-fade-in">
@@ -595,7 +788,7 @@ export default function MatchLiveRegistrationView({ match, focuses, dataPoints, 
               <h4 className="font-black text-gray-900 text-sm">Registro Cronológico</h4>
               {visibleDataPoints.length > 0 && (
                 <button 
-                  onClick={() => setDeletePrompt({ type: 'all' })} 
+                  onClick={handleDeleteAll} 
                   className="text-xs font-bold text-red-600 bg-red-100 border border-red-200 hover:bg-red-200 hover:text-red-800 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 uppercase tracking-wider"
                   title="Borrar todos los registros de este partido"
                 >
@@ -630,7 +823,7 @@ export default function MatchLiveRegistrationView({ match, focuses, dataPoints, 
                 </div>
                 <div className="flex gap-2">
                   <button onClick={() => setEditingPoint(dp)} className="p-2 text-gray-400 hover:text-blue-700 hover:bg-blue-50 bg-white rounded-lg shadow-sm border border-gray-200 transition-colors" title="Editar registro"><Edit2 size={14} /></button>
-                  <button onClick={() => setDeletePrompt({ type: 'single', id: dp.id })} className="p-2 text-gray-400 hover:text-red-700 hover:bg-red-50 bg-white rounded-lg shadow-sm border border-gray-200 transition-colors" title="Borrar registro"><Trash2 size={14} /></button>
+                  <button onClick={() => handleDeleteSingle(dp.id, dp.type)} className="p-2 text-gray-400 hover:text-red-700 hover:bg-red-50 bg-white rounded-lg shadow-sm border border-gray-200 transition-colors" title="Borrar registro"><Trash2 size={14} /></button>
                 </div>
               </div>
             ))}
@@ -719,48 +912,6 @@ export default function MatchLiveRegistrationView({ match, focuses, dataPoints, 
               )}
               <button onClick={finishMatch} className="w-full px-4 py-2.5 bg-gray-900 hover:bg-black text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2">
                 <Flag size={16} /> Finalizar partido y salir
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {deletePrompt && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl p-6 space-y-5 animate-fade-in">
-            <div className="flex items-start gap-3">
-              <div className="p-3 bg-red-100 text-red-600 rounded-xl shrink-0"><Trash2 size={24} /></div>
-              <div>
-                <h3 className="font-black text-gray-900 text-lg leading-tight">
-                  {deletePrompt.type === 'all' ? '¿Borrar todos los registros?' : '¿Borrar este registro?'}
-                </h3>
-                <p className="text-sm text-gray-500 font-medium mt-1">
-                  {deletePrompt.type === 'all' 
-                    ? 'Se eliminarán todos los eventos registrados para este partido. Esta acción no se puede deshacer.' 
-                    : 'El registro se eliminará permanentemente.'}
-                </p>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <button 
-                onClick={() => setDeletePrompt(null)} 
-                className="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-xl text-sm font-bold transition-colors"
-              >
-                Cancelar
-              </button>
-              <button 
-                onClick={async () => {
-                  if (deletePrompt.type === 'all') {
-                    await deleteAllMatchDataPoints(match.id);
-                  } else if (deletePrompt.id) {
-                    await deleteMatchDataPoint(deletePrompt.id);
-                  }
-                  onRefreshDataPoints();
-                  setDeletePrompt(null);
-                }} 
-                className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-bold shadow-sm transition-colors flex items-center justify-center gap-2"
-              >
-                Sí, borrar
               </button>
             </div>
           </div>
