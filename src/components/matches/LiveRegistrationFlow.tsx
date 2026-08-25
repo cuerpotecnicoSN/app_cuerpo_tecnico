@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { ChevronLeft, Radio, UserCheck, Users, CheckCircle2, Target } from 'lucide-react';
+import { ChevronLeft, Radio, UserCheck, Target } from 'lucide-react';
 import type { MatchDB, MatchFocus, MatchDataPoint } from '../types';
 import { getMatch, getMatchFocuses, getAllMatchFocuses, getMatchDataPoints, updateMatch } from '../../services/matches';
 import MatchLiveRegistrationView, { getFocusRole, getFocusDetails } from './MatchLiveRegistrationView';

@@ -58,7 +58,6 @@ export default function MatchLiveRegistrationView({ match, focuses, dataPoints, 
   const [activeTab, setActiveTab] = useState<'registro' | 'vision_general'>('registro');
   const [exporting, setExporting] = useState(false);
   const [currentPeriod, setCurrentPeriod] = useState<string>('1ª Parte');
-  const [heatmapMode, setHeatmapMode] = useState<'points' | 'heatmap'>('points');
   const [focusHeatmapModes, setFocusHeatmapModes] = useState<Record<string, 'points' | 'heatmap'>>({});
 
   const roles = useMemo(
@@ -309,10 +308,6 @@ export default function MatchLiveRegistrationView({ match, focuses, dataPoints, 
     const titles = new Set(myFocuses.map(f => f.title));
     return dataPoints.filter(dp => (dp.focus_id ? ids.has(dp.focus_id) : titles.has(dp.type)));
   }, [dataPoints, myFocuses]);
-
-  const coordDataPoints = useMemo(() => {
-    return myDataPoints.filter(dp => dp.coordinates && dp.coordinates.x != null && dp.coordinates.y != null);
-  }, [myDataPoints]);
 
   const pctColor = (pct: number | null) => pct == null ? 'text-gray-400' : pct >= 60 ? 'text-emerald-600' : pct >= 40 ? 'text-amber-600' : 'text-red-600';
   const pctBar = (pct: number | null) => pct == null ? 'bg-gray-300' : pct >= 60 ? 'bg-emerald-500' : pct >= 40 ? 'bg-amber-500' : 'bg-red-500';
@@ -746,8 +741,8 @@ export default function MatchLiveRegistrationView({ match, focuses, dataPoints, 
                               : `Ev ${idx + 1}${sh ? ` (${sh})` : ''}`;
                             return {
                               name,
-                              Ataque: parseFloat(dp.coordinates?.attackingPlayers || '0') || 0,
-                              Defensa: parseFloat(dp.coordinates?.defendingPlayers || '0') || 0,
+                              Ataque: parseFloat(String(dp.coordinates?.attackingPlayers || '0')) || 0,
+                              Defensa: parseFloat(String(dp.coordinates?.defendingPlayers || '0')) || 0,
                               is2T: dp.coordinates?.period?.includes('2ª')
                             };
                           });
