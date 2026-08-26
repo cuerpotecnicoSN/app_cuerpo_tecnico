@@ -89,3 +89,9 @@ export const reorderSessionTasks = async (orderedIds: string[]): Promise<void> =
   const failed = results.find((r) => r.error);
   if (failed?.error) throw failed.error;
 };
+
+export const getAllSessionTasks = async (): Promise<SessionTask[]> => {
+  const { data, error } = await supabase.from('session_tasks').select('*');
+  if (error) throw error;
+  return data || [];
+};

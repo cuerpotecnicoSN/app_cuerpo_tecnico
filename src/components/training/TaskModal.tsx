@@ -13,9 +13,10 @@ interface TaskModalProps {
   initialData?: Partial<TaskLibraryItem>;
   /** Si se pasa, aparece el botón de eliminar dentro de la tarea (sólo al editar) */
   onDelete?: () => void;
+  readOnly?: boolean;
 }
 
-export function TaskModal({ isOpen, onClose, onSave, initialData, onDelete }: TaskModalProps) {
+export function TaskModal({ isOpen, onClose, onSave, initialData, onDelete, readOnly = false }: TaskModalProps) {
   const [title, setTitle] = useState(initialData?.title || '');
   const [category, setCategory] = useState(initialData?.category || 'Principal');
   const [description, setDescription] = useState(initialData?.description || '');
@@ -31,6 +32,7 @@ export function TaskModal({ isOpen, onClose, onSave, initialData, onDelete }: Ta
   const [drawingUndoTrigger, setDrawingUndoTrigger] = useState(0);
   const [teamsUndoTrigger, setTeamsUndoTrigger] = useState(0);
   const [clearTeamsTrigger, setClearTeamsTrigger] = useState(0);
+  const [isEditMode, setIsEditMode] = useState(!readOnly);
 
   const handleBoardDataChange = (drawingData: string) => {
     try {
@@ -152,8 +154,9 @@ export function TaskModal({ isOpen, onClose, onSave, initialData, onDelete }: Ta
     setIsRichEditorOpen(false);
     setIsDrawingModalOpen(false);
     setIsTeamsModalOpen(false);
+    setIsEditMode(!readOnly);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, initialData?.id]);
+  }, [isOpen, initialData?.id, readOnly]);
 
   if (!isOpen) return null;
 
@@ -201,9 +204,15 @@ export function TaskModal({ isOpen, onClose, onSave, initialData, onDelete }: Ta
             </div>
             <div>
               <h2 className="text-lg font-black text-gray-900 leading-none">
-                {initialData?.id ? 'Editar Tarea de Entrenamiento' : 'Nueva Tarea de Entrenamiento'}
+                {isEditMode 
+                  ? (initialData?.id ? 'Editar Tarea de Entrenamiento' : 'Nueva Tarea de Entrenamiento') 
+                  : 'Ficha de Tarea de Entrenamiento'}
               </h2>
-              <p className="text-xs text-gray-400 mt-1">Diseña el gráfico táctico y define las características de la tarea</p>
+              <p className="text-xs text-gray-400 mt-1">
+                {isEditMode 
+                  ? 'Diseña el gráfico táctico y define las características de la tarea' 
+                  : 'Consulta los parámetros, descripción y pizarras de la tarea'}
+              </p>
             </div>
           </div>
           <button
@@ -226,14 +235,20 @@ export function TaskModal({ isOpen, onClose, onSave, initialData, onDelete }: Ta
                   <AlignLeft size={16} className="text-blue-500" />
                   Nombre de la Tarea <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="text"
-                  required
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Ej. Rondo 4v4 + 3 comodines"
-                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-lg font-bold text-gray-800 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all shadow-sm"
-                />
+                {isEditMode ? (
+                  <input
+                    type="text"
+                    required
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Ej. Rondo 4v4 + 3 comodines"
+                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-lg font-bold text-gray-800 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all shadow-sm"
+                  />
+                ) : (
+                  <div className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-lg font-black text-gray-900 bg-gray-50 shadow-sm">
+                    {title}
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -242,21 +257,27 @@ export function TaskModal({ isOpen, onClose, onSave, initialData, onDelete }: Ta
                     <Layers size={16} className="text-purple-500" />
                     Categoría
                   </label>
-                  <select
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-base font-semibold text-gray-800 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all shadow-sm"
-                  >
-                    <option value="Calentamiento">Calentamiento</option>
-                    <option value="Rondo">Rondo</option>
-                    <option value="Posesión">Posesión</option>
-                    <option value="Partido Reducido">Partido Reducido</option>
-                    <option value="Partido">Partido</option>
-                    <option value="Principal">Principal</option>
-                    <option value="ABP">ABP / Táctica</option>
-                    <option value="Física">Preparación Física</option>
-                    <option value="Vuelta a la calma">Vuelta a la calma</option>
-                  </select>
+                  {isEditMode ? (
+                    <select
+                      value={category}
+                      onChange={(e) => setCategory(e.target.value)}
+                      className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-base font-semibold text-gray-800 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all shadow-sm"
+                    >
+                      <option value="Calentamiento">Calentamiento</option>
+                      <option value="Rondo">Rondo</option>
+                      <option value="Posesión">Posesión</option>
+                      <option value="Partido Reducido">Partido Reducido</option>
+                      <option value="Partido">Partido</option>
+                      <option value="Principal">Principal</option>
+                      <option value="ABP">ABP / Táctica</option>
+                      <option value="Física">Preparación Física</option>
+                      <option value="Vuelta a la calma">Vuelta a la calma</option>
+                    </select>
+                  ) : (
+                    <div className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-base font-bold text-gray-800 bg-gray-50 shadow-sm">
+                      {category}
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -264,13 +285,19 @@ export function TaskModal({ isOpen, onClose, onSave, initialData, onDelete }: Ta
                     <Clock size={16} className="text-emerald-500" />
                     Duración (min)
                   </label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={durationMin}
-                    onChange={(e) => setDurationMin(e.target.value)}
-                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-base font-semibold text-gray-800 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all shadow-sm"
-                  />
+                  {isEditMode ? (
+                    <input
+                      type="number"
+                      min="1"
+                      value={durationMin}
+                      onChange={(e) => setDurationMin(e.target.value)}
+                      className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-base font-semibold text-gray-800 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all shadow-sm"
+                    />
+                  ) : (
+                    <div className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-base font-bold text-gray-800 bg-gray-50 shadow-sm">
+                      {durationMin} min
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -278,43 +305,66 @@ export function TaskModal({ isOpen, onClose, onSave, initialData, onDelete }: Ta
                 <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">
                   Tipo de Tarea (Varios)
                 </label>
-                <div className="flex flex-wrap gap-1.5 bg-white border border-gray-200 rounded-xl p-2.5 max-h-28 overflow-y-auto shadow-sm">
-                  {TASK_TYPES.map((t) => {
-                    const isSelected = types.includes(t);
-                    return (
-                      <span
-                        key={t}
-                        onClick={() => {
-                          if (isSelected) {
-                            setTypes(types.filter((x) => x !== t));
-                          } else {
-                            setTypes([...types, t]);
-                          }
-                        }}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer select-none ${
-                          isSelected
-                            ? 'bg-blue-600 border-blue-700 text-white shadow-sm'
-                            : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
-                        }`}
-                      >
-                        {t}
-                      </span>
-                    );
-                  })}
-                </div>
+                {isEditMode ? (
+                  <div className="flex flex-wrap gap-1.5 bg-white border border-gray-200 rounded-xl p-2.5 max-h-28 overflow-y-auto shadow-sm">
+                    {TASK_TYPES.map((t) => {
+                      const isSelected = types.includes(t);
+                      return (
+                        <span
+                          key={t}
+                          onClick={() => {
+                            if (isSelected) {
+                              setTypes(types.filter((x) => x !== t));
+                            } else {
+                              setTypes([...types, t]);
+                            }
+                          }}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer select-none ${
+                            isSelected
+                              ? 'bg-blue-600 border-blue-700 text-white shadow-sm'
+                              : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
+                          }`}
+                        >
+                          {t}
+                        </span>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-1.5 bg-gray-50 border border-gray-200 rounded-xl p-2.5 max-h-28 overflow-y-auto shadow-sm">
+                    {types.length > 0 ? (
+                      types.map((t) => (
+                        <span
+                          key={t}
+                          className="px-3 py-1.5 rounded-lg text-xs font-bold bg-red-50 border border-red-100 text-red-700 shadow-sm animate-fade-in"
+                        >
+                          {t}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-xs text-gray-400 italic font-bold">Sin tipo asignado</span>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">
                   Material Necesario
                 </label>
-                <input
-                  type="text"
-                  value={material}
-                  onChange={(e) => setMaterial(e.target.value)}
-                  placeholder="Ej. 10 conos, petos rojos/azules, 2 balones"
-                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-base text-gray-800 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all shadow-sm"
-                />
+                {isEditMode ? (
+                  <input
+                    type="text"
+                    value={material}
+                    onChange={(e) => setMaterial(e.target.value)}
+                    placeholder="Ej. 10 conos, petos rojos/azules, 2 balones"
+                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-base text-gray-800 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all shadow-sm"
+                  />
+                ) : (
+                  <div className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-base text-gray-850 bg-gray-55 bg-gray-50 shadow-sm">
+                    {material || <span className="text-gray-400 italic">No especificado</span>}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -324,18 +374,29 @@ export function TaskModal({ isOpen, onClose, onSave, initialData, onDelete }: Ta
                 <label className="block text-sm font-bold text-gray-700 uppercase tracking-wider">
                   Descripción / Consignas
                 </label>
-                <span
-                  onClick={() => setIsRichEditorOpen(true)}
-                  className="text-xs font-black text-blue-600 hover:text-blue-700 cursor-pointer uppercase flex items-center gap-1 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100 transition-colors select-none"
-                >
-                  📝 Abrir Editor
-                </span>
+                {isEditMode && (
+                  <span
+                    onClick={() => setIsRichEditorOpen(true)}
+                    className="text-xs font-black text-blue-600 hover:text-blue-700 cursor-pointer uppercase flex items-center gap-1 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100 transition-colors select-none"
+                  >
+                    📝 Abrir Editor
+                  </span>
+                )}
               </div>
               <div
-                onClick={() => setIsRichEditorOpen(true)}
-                className="w-full flex-1 border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-800 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all cursor-pointer min-h-[200px] overflow-y-auto whitespace-pre-wrap select-none hover:bg-gray-50/50 shadow-sm"
+                onClick={isEditMode ? () => setIsRichEditorOpen(true) : undefined}
+                className={`w-full flex-1 border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-800 shadow-sm overflow-y-auto whitespace-pre-wrap ${
+                  isEditMode
+                    ? 'bg-white cursor-pointer select-none hover:bg-gray-50/50'
+                    : 'bg-gray-50'
+                }`}
                 dangerouslySetInnerHTML={{
-                  __html: description ? description : `<span class="text-gray-400 italic">Haz clic para escribir descripción enriquecida (estilo Word)...</span>`
+                  __html: description
+                    ? description
+                    : (isEditMode
+                        ? `<span class="text-gray-400 italic">Haz clic para escribir descripción enriquecida (estilo Word)...</span>`
+                        : `<span class="text-gray-400 italic">Sin descripción</span>`
+                      )
                 }}
               />
             </div>
@@ -365,7 +426,7 @@ export function TaskModal({ isOpen, onClose, onSave, initialData, onDelete }: Ta
                   }}
                   className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-blue-500/20 hover:scale-105 active:scale-95 cursor-pointer transition-all select-none"
                 >
-                  🎨 Dibujo / Editar
+                  {isEditMode ? '🎨 Dibujo / Editar' : '🔍 Ver Gráfico Ampliado'}
                 </span>
               </div>
             </div>
@@ -391,43 +452,65 @@ export function TaskModal({ isOpen, onClose, onSave, initialData, onDelete }: Ta
                   }}
                   className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-blue-500/20 hover:scale-105 active:scale-95 cursor-pointer transition-all select-none"
                 >
-                  📋 Hacer Equipos
+                  {isEditMode ? '📋 Hacer Equipos' : '🔍 Ver Distribución Ampliada'}
                 </span>
               </div>
             </div>
 
           </div>
-
         </form>
 
         {/* Footer del Modal */}
         <div className="px-5 py-2 border-t border-gray-100 bg-gray-50 flex items-center justify-end gap-3 shrink-0">
-          {onDelete && initialData?.id && (
-            <button
-              type="button"
-              onClick={onDelete}
-              className="mr-auto px-4 py-2 rounded-xl text-sm font-bold text-red-600 hover:text-white hover:bg-red-600 border border-red-200 hover:border-red-600 transition-colors flex items-center gap-2"
-            >
-              <Trash2 size={16} />
-              Eliminar tarea
-            </button>
+          {isEditMode ? (
+            <>
+              {onDelete && initialData?.id && (
+                <button
+                  type="button"
+                  onClick={onDelete}
+                  className="mr-auto px-4 py-2 rounded-xl text-sm font-bold text-red-600 hover:text-white hover:bg-red-600 border border-red-200 hover:border-red-600 transition-colors flex items-center gap-2"
+                >
+                  <Trash2 size={16} />
+                  Eliminar tarea
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={readOnly ? () => setIsEditMode(false) : onClose}
+                className="px-4 py-2 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-200 transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={isSaving || !title.trim()}
+                className="px-6 py-2 rounded-xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center gap-2 shadow-lg shadow-blue-500/20 cursor-pointer"
+              >
+                <Save size={16} />
+                {isSaving ? 'Guardando...' : 'Guardar Tarea'}
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-6 py-2 rounded-xl text-sm font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors border border-gray-200 cursor-pointer"
+              >
+                Cerrar
+              </button>
+              {initialData?.id && (
+                <button
+                  type="button"
+                  onClick={() => setIsEditMode(true)}
+                  className="px-6 py-2 rounded-xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 transition-colors flex items-center gap-2 shadow-lg shadow-blue-500/20 cursor-pointer"
+                >
+                  Editar Tarea
+                </button>
+              )}
+            </>
           )}
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-200 transition-colors"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={isSaving || !title.trim()}
-            className="px-6 py-2 rounded-xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center gap-2 shadow-lg shadow-blue-500/20"
-          >
-            <Save size={16} />
-            {isSaving ? 'Guardando...' : 'Guardar Tarea'}
-          </button>
         </div>
 
       </div>
@@ -448,34 +531,51 @@ export function TaskModal({ isOpen, onClose, onSave, initialData, onDelete }: Ta
                 <Dumbbell size={20} />
               </span>
               <div>
-                <h3 className="text-md font-black text-white leading-none">Diseñar Pizarra Táctica</h3>
-                <p className="text-xs text-slate-400 mt-1">Coloca jugadores, entrenadores, material y dibuja tus consignas tácticas</p>
+                <h3 className="text-md font-black text-white leading-none">
+                  {isEditMode ? 'Diseñar Pizarra Táctica' : 'Visualizar Pizarra Táctica'}
+                </h3>
+                <p className="text-xs text-slate-400 mt-1">
+                  {isEditMode ? 'Coloca jugadores, entrenadores, material y dibuja tus consignas tácticas' : 'Consignas tácticas y gráfico del ejercicio'}
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <span
-                onClick={() => setDrawingUndoTrigger(prev => prev + 1)}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer transition-all select-none border border-slate-700"
-              >
-                ↩️ Deshacer
-              </span>
-              <span
-                onClick={() => {
-                  setBoardData(boardDataSnapshot);
-                  setIsDrawingModalOpen(false);
-                }}
-                className="px-4 py-2 bg-red-950/80 hover:bg-red-900/80 text-red-300 font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer transition-all select-none border border-red-900/30"
-              >
-                ❌ Salir sin Guardar
-              </span>
-              <span
-                onClick={() => {
-                  setIsDrawingModalOpen(false);
-                }}
-                className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer transition-all select-none"
-              >
-                Listo / Guardar
-              </span>
+              {isEditMode ? (
+                <>
+                  <span
+                    onClick={() => setDrawingUndoTrigger(prev => prev + 1)}
+                    className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer transition-all select-none border border-slate-700"
+                  >
+                    ↩️ Deshacer
+                  </span>
+                  <span
+                    onClick={() => {
+                      setBoardData(boardDataSnapshot);
+                      setIsDrawingModalOpen(false);
+                    }}
+                    className="px-4 py-2 bg-red-950/80 hover:bg-red-900/80 text-red-300 font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer transition-all select-none border border-red-900/30"
+                  >
+                    ❌ Salir sin Guardar
+                  </span>
+                  <span
+                    onClick={() => {
+                      setIsDrawingModalOpen(false);
+                    }}
+                    className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer transition-all select-none"
+                  >
+                    Listo / Guardar
+                  </span>
+                </>
+              ) : (
+                <span
+                  onClick={() => {
+                    setIsDrawingModalOpen(false);
+                  }}
+                  className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer transition-all select-none"
+                >
+                  Cerrar
+                </span>
+              )}
             </div>
           </div>
 
@@ -483,7 +583,9 @@ export function TaskModal({ isOpen, onClose, onSave, initialData, onDelete }: Ta
           <div className="flex-1 bg-slate-950 p-2 sm:p-4 overflow-hidden relative">
             <TaskBoardEditor
               value={boardData}
-              onChange={handleBoardDataChange}
+              onChange={isEditMode ? handleBoardDataChange : undefined}
+              readOnly={!isEditMode}
+              hideToolbar={!isEditMode}
               undoTrigger={drawingUndoTrigger}
             />
           </div>
@@ -499,53 +601,70 @@ export function TaskModal({ isOpen, onClose, onSave, initialData, onDelete }: Ta
                 <Dumbbell size={20} />
               </span>
               <div>
-                <h3 className="text-md font-black text-white leading-none">Hacer Equipos / Poner Anotaciones</h3>
-                <p className="text-xs text-slate-400 mt-1">Organiza a los jugadores en columns y añade notas explicativas</p>
+                <h3 className="text-md font-black text-white leading-none">
+                  {isEditMode ? 'Hacer Equipos / Poner Anotaciones' : 'Visualizar Equipos / Anotaciones'}
+                </h3>
+                <p className="text-xs text-slate-400 mt-1">
+                  {isEditMode ? 'Organiza a los jugadores en columnas y añade notas explicativas' : 'Distribución y anotaciones de la tarea'}
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <span
-                onClick={() => {
-                  const confirmClear = window.confirm("¿Estás seguro de que quieres borrar todos los equipos, tablas y jugadores de esta pizarra?");
-                  if (confirmClear) {
-                    setClearTeamsTrigger(prev => prev + 1);
-                  }
-                }}
-                className="px-4 py-2 bg-red-955/40 hover:bg-red-900/60 text-red-300 font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer transition-all select-none border border-red-900/40"
-              >
-                🗑️ Borrar Todo
-              </span>
-              <span
-                onClick={() => setTeamsUndoTrigger(prev => prev + 1)}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer transition-all select-none border border-slate-700"
-              >
-                ↩️ Deshacer
-              </span>
-              <span
-                onClick={() => {
-                  setBoardData(boardDataSnapshot);
-                  setIsTeamsModalOpen(false);
-                }}
-                className="px-4 py-2 bg-red-950/80 hover:bg-red-900/80 text-red-300 font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer transition-all select-none border border-red-900/30"
-              >
-                ❌ Salir sin Guardar
-              </span>
-              <span
-                onClick={() => {
-                  setIsTeamsModalOpen(false);
-                }}
-                className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer transition-all select-none"
-              >
-                Listo / Guardar
-              </span>
+              {isEditMode ? (
+                <>
+                  <span
+                    onClick={() => {
+                      const confirmClear = window.confirm("¿Estás seguro de que quieres borrar todos los equipos, tablas y jugadores de esta pizarra?");
+                      if (confirmClear) {
+                        setClearTeamsTrigger(prev => prev + 1);
+                      }
+                    }}
+                    className="px-4 py-2 bg-red-955/40 hover:bg-red-900/60 text-red-300 font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer transition-all select-none border border-red-900/40"
+                  >
+                    🗑️ Borrar Todo
+                  </span>
+                  <span
+                    onClick={() => setTeamsUndoTrigger(prev => prev + 1)}
+                    className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer transition-all select-none border border-slate-700"
+                  >
+                    ↩️ Deshacer
+                  </span>
+                  <span
+                    onClick={() => {
+                      setBoardData(boardDataSnapshot);
+                      setIsTeamsModalOpen(false);
+                    }}
+                    className="px-4 py-2 bg-red-950/80 hover:bg-red-900/80 text-red-300 font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer transition-all select-none border border-red-900/30"
+                  >
+                    ❌ Salir sin Guardar
+                  </span>
+                  <span
+                    onClick={() => {
+                      setIsTeamsModalOpen(false);
+                    }}
+                    className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer transition-all select-none"
+                  >
+                    Listo / Guardar
+                  </span>
+                </>
+              ) : (
+                <span
+                  onClick={() => {
+                    setIsTeamsModalOpen(false);
+                  }}
+                  className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer transition-all select-none"
+                >
+                  Cerrar
+                </span>
+              )}
             </div>
           </div>
 
           {/* Teams Editor Container */}
-          <div className="flex-1 bg-white p-2 sm:p-4 overflow-hidden relative">
+          <div className={`flex-1 bg-white p-2 sm:p-4 overflow-hidden relative ${!isEditMode ? 'pointer-events-none select-none' : ''}`}>
             <TeamsAnnotationsBoard
               value={boardData}
-              onChange={(newData) => setBoardData(newData)}
+              onChange={isEditMode ? (newData) => setBoardData(newData) : () => {}}
               undoTrigger={teamsUndoTrigger}
               clearTrigger={clearTeamsTrigger}
             />

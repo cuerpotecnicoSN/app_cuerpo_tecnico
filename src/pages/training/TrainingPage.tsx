@@ -12,6 +12,7 @@ import { SessionFormModal } from '../../components/training/SessionFormModal';
 import { TaskModal } from '../../components/training/TaskModal';
 import { TaskBoardEditor } from '../../components/training/TaskBoardEditor';
 import { exportSessionToPdf } from '../../utils/sessionPdf';
+import { TaskStatsView } from '../../components/training/TaskStatsView';
 
 const stripHtml = (html?: string) => {
   if (!html) return '';
@@ -43,17 +44,20 @@ const drawingAspectRatio = (boardDataStr?: string) => {
   }
 };
 
-type View = 'sessions' | 'library';
+type View = 'sessions' | 'library' | 'stats';
 
 export default function TrainingPage() {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const viewParam = searchParams.get('view') as View;
-  const initialView: View = viewParam === 'library' ? 'library' : 'sessions';
+  const initialView: View = viewParam === 'library' ? 'library' : (viewParam === 'stats' ? 'stats' : 'sessions');
   const [view, setView] = useState<View>(initialView);
   const [sessions, setSessions] = useState<TrainingSessionDB[]>([]);
   const [tasks, setTasks] = useState<TaskLibraryItem[]>([]);
   const [activeSession, setActiveSession] = useState<TrainingSessionDB | null>(null);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [initialTypeFilter, setInitialTypeFilter] = useState<string>('todos');
+  const [cameFromStats, setCameFromStats] = useState(false);
 
   const loadSessions = () => getTrainingSessions().then(setSessions).catch(() => setSessions([]));
   const loadTasks = () => getTasks().then(setTasks).catch(() => setTasks([]));
@@ -62,14 +66,18 @@ export default function TrainingPage() {
 
   useEffect(() => {
     const vParam = searchParams.get('view');
-    const newView = vParam === 'library' ? 'library' : 'sessions';
+    const newView = vParam === 'library' ? 'library' : (vParam === 'stats' ? 'stats' : 'sessions');
     setView(newView);
     setActiveSession(null); // Limpiar sesión activa al cambiar de pestaña desde el menú
+    if (newView !== 'library') {
+      setCameFromStats(false);
+    }
   }, [searchParams]);
 
   const handleViewChange = (newView: View) => {
     setView(newView);
     setActiveSession(null);
+    setCameFromStats(false);
     setSearchParams({ view: newView });
   };
 
@@ -89,15 +97,46 @@ export default function TrainingPage() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="text-2xl font-extrabold text-gray-900">{t('trainingPage.title')}</h1>
         <div className="flex gap-2">
-          <button onClick={() => handleViewChange('sessions')} className={`px-4 py-2 rounded-lg text-sm font-bold border-2 ${view === 'sessions' ? 'bg-blue-50 border-blue-600 text-blue-700' : 'bg-white border-gray-200 text-gray-500'}`}>{t('trainingPage.sessions')}</button>
-          <button onClick={() => handleViewChange('library')} className={`px-4 py-2 rounded-lg text-sm font-bold border-2 ${view === 'library' ? 'bg-blue-50 border-blue-600 text-blue-700' : 'bg-white border-gray-200 text-gray-500'}`}>{t('trainingPage.taskLibrary')}</button>
+          <button onClick={() => handleViewChange('sessions')} className={`px-4 py-2 rounded-lg text-sm font-bold border-2 ${view === 'sessions' ? 'bg-red-50 border-red-600 text-red-700' : 'bg-white border-gray-200 text-gray-500'}`}>{t('trainingPage.sessions')}</button>
+          <button onClick={() => handleViewChange('library')} className={`px-4 py-2 rounded-lg text-sm font-bold border-2 ${view === 'library' ? 'bg-red-50 border-red-600 text-red-700' : 'bg-white border-gray-200 text-gray-500'}`}>{t('trainingPage.taskLibrary')}</button>
+          <button onClick={() => handleViewChange('stats')} className={`px-4 py-2 rounded-lg text-sm font-bold border-2 ${view === 'stats' ? 'bg-red-50 border-red-600 text-red-700' : 'bg-white border-gray-200 text-gray-500'}`}>{t('trainingPage.taskStats', 'Estadísticas')}</button>
         </div>
       </div>
 
       {view === 'sessions' ? (
         <SessionsList sessions={sessions} onCreate={loadSessions} onOpen={setActiveSession} onDelete={async (id) => { await deleteTrainingSession(id); loadSessions(); }} />
+      ) : view === 'library' ? (
+        <TaskLibraryView
+          tasks={tasks}
+          onCreate={loadTasks}
+          onDelete={async (id) => { await deleteTask(id); loadTasks(); }}
+          initialOpenTaskId={selectedTaskId}
+          onClearInitialOpenTask={() => setSelectedTaskId(null)}
+          initialTypeFilter={initialTypeFilter}
+          onClearInitialTypeFilter={() => setInitialTypeFilter('todos')}
+          onBackToStats={cameFromStats ? () => {
+            setView('stats');
+            setSearchParams({ view: 'stats' });
+            setCameFromStats(false);
+          } : undefined}
+        />
       ) : (
-        <TaskLibraryView tasks={tasks} onCreate={loadTasks} onDelete={async (id) => { await deleteTask(id); loadTasks(); }} />
+        <TaskStatsView
+          tasks={tasks}
+          sessions={sessions}
+          onOpenTask={(tk) => {
+            setSelectedTaskId(tk.id);
+            setCameFromStats(true);
+            setView('library');
+            setSearchParams({ view: 'library' });
+          }}
+          onFilterByType={(type) => {
+            setInitialTypeFilter(type);
+            setCameFromStats(true);
+            setView('library');
+            setSearchParams({ view: 'library' });
+          }}
+        />
       )}
     </div>
   );
@@ -287,14 +326,51 @@ function SessionsList({ sessions, onCreate, onOpen, onDelete }: { sessions: Trai
   );
 }
 
-function TaskLibraryView({ tasks, onCreate, onDelete }: { tasks: TaskLibraryItem[]; onCreate: () => void; onDelete: (id: string) => void | Promise<void> }) {
+function TaskLibraryView({
+  tasks,
+  onCreate,
+  onDelete,
+  initialOpenTaskId,
+  onClearInitialOpenTask,
+  initialTypeFilter,
+  onClearInitialTypeFilter,
+  onBackToStats
+}: {
+  tasks: TaskLibraryItem[];
+  onCreate: () => void;
+  onDelete: (id: string) => void | Promise<void>;
+  initialOpenTaskId?: string | null;
+  onClearInitialOpenTask?: () => void;
+  initialTypeFilter?: string;
+  onClearInitialTypeFilter?: () => void;
+  onBackToStats?: () => void;
+}) {
   const { t } = useTranslation();
   const [showModal, setShowModal] = useState(false);
   const [editingTask, setEditingTask] = useState<TaskLibraryItem | undefined>(undefined);
+
+  useEffect(() => {
+    if (initialOpenTaskId) {
+      const task = tasks.find((t) => t.id === initialOpenTaskId);
+      if (task) {
+        setEditingTask(task);
+        setShowModal(true);
+      }
+      onClearInitialOpenTask?.();
+    }
+  }, [initialOpenTaskId, tasks, onClearInitialOpenTask]);
+
+  const [selectedTypeFilter, setSelectedTypeFilter] = useState<string>('todos');
+
+  useEffect(() => {
+    if (initialTypeFilter && initialTypeFilter !== 'todos') {
+      setSelectedTypeFilter(initialTypeFilter);
+      onClearInitialTypeFilter?.();
+    }
+  }, [initialTypeFilter, onClearInitialTypeFilter]);
+
   const [pendingDelete, setPendingDelete] = useState<TaskLibraryItem | null>(null);
   const [deleting, setDeleting] = useState(false);
-  
-  const [selectedTypeFilter, setSelectedTypeFilter] = useState<string>('todos');
   const [groupByType, setGroupByType] = useState<boolean>(false);
 
   const handleSave = async (taskData: Omit<TaskLibraryItem, 'id' | 'created_at'>) => {
@@ -400,6 +476,15 @@ function TaskLibraryView({ tasks, onCreate, onDelete }: { tasks: TaskLibraryItem
 
   return (
     <div className="space-y-4">
+      {onBackToStats && (
+        <button
+          onClick={onBackToStats}
+          className="inline-flex items-center gap-1 text-sm font-black text-gray-600 hover:text-red-600 transition-colors cursor-pointer"
+        >
+          <ChevronLeft size={18} /> Volver a Estadísticas
+        </button>
+      )}
+
       {/* Barra de Filtros y Agrupamiento */}
       <div className="flex flex-wrap items-center justify-between gap-4 bg-white border border-gray-200 p-4 rounded-2xl shadow-sm">
         <div className="flex items-center gap-4 flex-wrap">
@@ -447,6 +532,7 @@ function TaskLibraryView({ tasks, onCreate, onDelete }: { tasks: TaskLibraryItem
         onSave={handleSave}
         initialData={editingTask}
         onDelete={editingTask ? () => { setPendingDelete(editingTask); setShowModal(false); } : undefined}
+        readOnly={!!editingTask}
       />
 
       <ConfirmDialog
