@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { getPlayerWeights, createPlayerWeight, deletePlayerWeight, updatePlayerWeight } from '../../services/playerHealth';
 import type { PlayerWeight } from '../types';
 import { Weight, Plus, AlertTriangle, TrendingUp, TrendingDown, Minus, Scale, Trash2, Pencil } from 'lucide-react';
@@ -13,6 +14,7 @@ import {
 } from 'recharts';
 
 export default function PlayerWeightTab({ playerId }: { playerId: string }) {
+  const { t, i18n } = useTranslation();
   const [weights, setWeights] = useState<PlayerWeight[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -56,7 +58,7 @@ export default function PlayerWeightTab({ playerId }: { playerId: string }) {
       loadWeights();
     } catch (err) {
       console.error(err);
-      alert('Error al guardar el peso');
+      alert(t('weightTab.saveError'));
     }
   };
 
@@ -75,18 +77,18 @@ export default function PlayerWeightTab({ playerId }: { playerId: string }) {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('¿Estás seguro de que quieres eliminar este registro de peso?')) return;
+    if (!window.confirm(t('weightTab.confirmDelete'))) return;
     try {
       await deletePlayerWeight(id);
       loadWeights();
     } catch (err) {
       console.error(err);
-      alert('Error al eliminar peso');
+      alert(t('weightTab.deleteError'));
     }
   };
 
   const chartData = weights.map(w => ({
-    date: new Date(w.date).toLocaleDateString('es-ES', { month: 'short', day: 'numeric' }),
+    date: new Date(w.date).toLocaleDateString(i18n.language, { month: 'short', day: 'numeric' }),
     peso: w.weight
   }));
 
@@ -103,7 +105,7 @@ export default function PlayerWeightTab({ playerId }: { playerId: string }) {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <h2 className="text-2xl font-black flex items-center gap-3 text-gray-900 tracking-tight">
           <Weight className="text-blue-600 w-8 h-8" />
-          Control de Peso Corporal
+          {t('weightTab.title')}
         </h2>
         <button
           className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-colors shadow-sm"
@@ -114,22 +116,22 @@ export default function PlayerWeightTab({ playerId }: { playerId: string }) {
             setShowModal(true);
           }}
         >
-          <Plus size={18} /> Añadir Registro
+          <Plus size={18} /> {t('weightTab.addWeight')}
         </button>
       </div>
 
       {loading ? (
-        <div className="p-8 text-center text-gray-500">Cargando datos...</div>
+        <div className="p-8 text-center text-gray-500">{t('common.loading')}</div>
       ) : weights.length === 0 ? (
         <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-8 text-center text-gray-500">
           <AlertTriangle size={32} className="mx-auto mb-3 opacity-50 text-blue-500" />
-          <p>No hay registros de peso para este jugador.</p>
+          <p>{t('weightTab.noRecords')}</p>
         </div>
       ) : (
         <>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
             <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-5 hover:shadow-md transition-shadow">
-              <span className="text-xs text-gray-400 uppercase font-bold block mb-1">Actual</span>
+              <span className="text-xs text-gray-400 uppercase font-bold block mb-1">{t('weightTab.latestRecord')}</span>
               <div className="flex items-center gap-2">
                 <span className="text-3xl font-extrabold text-gray-900">{current}kg</span>
                 {diff !== null && diff !== 0 && (
@@ -142,15 +144,15 @@ export default function PlayerWeightTab({ playerId }: { playerId: string }) {
               </div>
             </div>
             <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-5 hover:shadow-md transition-shadow">
-              <span className="text-xs text-gray-400 uppercase font-bold block mb-1">Media</span>
+              <span className="text-xs text-gray-400 uppercase font-bold block mb-1">{t('weightTab.avg')}</span>
               <span className="text-3xl font-extrabold text-gray-900">{avg?.toFixed(1)}kg</span>
             </div>
             <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-5 hover:shadow-md transition-shadow">
-              <span className="text-xs text-gray-400 uppercase font-bold block mb-1">Mínimo</span>
+              <span className="text-xs text-gray-400 uppercase font-bold block mb-1">{t('weightTab.min')}</span>
               <span className="text-3xl font-extrabold text-blue-500">{min}kg</span>
             </div>
             <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-5 hover:shadow-md transition-shadow">
-              <span className="text-xs text-gray-400 uppercase font-bold block mb-1">Máximo</span>
+              <span className="text-xs text-gray-400 uppercase font-bold block mb-1">{t('weightTab.max')}</span>
               <span className="text-3xl font-extrabold text-red-500">{max}kg</span>
             </div>
           </div>
@@ -159,7 +161,7 @@ export default function PlayerWeightTab({ playerId }: { playerId: string }) {
               <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500 rounded-full blur-[100px] opacity-10 -mr-20 -mt-20 pointer-events-none" />
               <h3 className="text-base font-bold mb-6 text-gray-900 relative z-10 flex items-center gap-2">
                 <span className="w-2 h-6 bg-blue-600 rounded-full inline-block" />
-                Evolución del Peso
+                {t('weightTab.weightEvolution')}
               </h3>
               <div style={{ height: 320 }} className="relative z-10">
                 <ResponsiveContainer width="100%" height="100%">
@@ -216,17 +218,17 @@ export default function PlayerWeightTab({ playerId }: { playerId: string }) {
             <div className="flex flex-col gap-8">
               <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-6 text-center hover:shadow-md transition-shadow">
                 <Scale className="w-12 h-12 text-blue-500 mx-auto mb-3 opacity-80" />
-                <h3 className="text-lg font-bold text-gray-900 mb-2">Análisis Médico (IMC)</h3>
-                <p className="text-sm text-gray-500 mb-6 px-2">Basado en la estatura y el peso actual del jugador.</p>
+                <h3 className="text-lg font-bold text-gray-900 mb-2">{t('weightTab.medicalAnalysis')}</h3>
+                <p className="text-sm text-gray-500 mb-6 px-2">{t('weightTab.medicalAnalysisDesc')}</p>
                 <div className="inline-flex items-center justify-center w-24 h-24 rounded-full border-4 border-blue-50 shadow-inner">
                   <span className="text-2xl font-black text-blue-600">22.4</span>
                 </div>
-                <p className="text-sm font-bold text-emerald-600 uppercase tracking-widest mt-5 bg-emerald-50 py-1.5 px-4 rounded-full inline-block">Peso Ideal</p>
+                <p className="text-sm font-bold text-emerald-600 uppercase tracking-widest mt-5 bg-emerald-50 py-1.5 px-4 rounded-full inline-block">{t('weightTab.idealWeight')}</p>
               </div>
               <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-6 flex-1 flex flex-col">
                 <h3 className="text-base font-bold mb-4 text-gray-900 flex items-center gap-2">
                   <span className="w-2 h-6 bg-blue-600 rounded-full inline-block" />
-                  Historial de Registros
+                  {t('weightTab.latestRecord')}
                 </h3>
                 <div className="space-y-3 overflow-y-auto pr-2 custom-scrollbar flex-1 max-h-[300px]">
                   {weights.map((w, idx) => {
@@ -241,7 +243,7 @@ export default function PlayerWeightTab({ playerId }: { playerId: string }) {
                           <div>
                             <span className="text-lg font-extrabold text-gray-900 block group-hover:text-blue-700 transition-colors">{w.weight} kg</span>
                             <span className="text-sm text-gray-500 font-medium">
-                              {new Date(w.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
+                              {new Date(w.date).toLocaleDateString(i18n.language, { day: 'numeric', month: 'long', year: 'numeric' })}
                             </span>
                           </div>
                         </div>
@@ -252,10 +254,10 @@ export default function PlayerWeightTab({ playerId }: { playerId: string }) {
                               {Math.abs(wDiff).toFixed(1)}
                             </span>
                           )}
-                          <button onClick={() => handleEditClick(w)} className="p-2 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Editar registro">
+                          <button onClick={() => handleEditClick(w)} className="p-2 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title={t('common.edit', 'Editar')}>
                             <Pencil size={18} />
                           </button>
-                          <button onClick={() => handleDelete(w.id)} className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Eliminar registro">
+                          <button onClick={() => handleDelete(w.id)} className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title={t('common.delete', 'Eliminar')}>
                             <Trash2 size={18} />
                           </button>
                         </div>
@@ -273,10 +275,10 @@ export default function PlayerWeightTab({ playerId }: { playerId: string }) {
         <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white border border-gray-100 rounded-2xl shadow-xl max-w-sm w-full animate-in fade-in zoom-in-95 duration-200">
             <div className="p-6">
-              <h3 className="text-lg font-bold mb-4 text-gray-900">{editingId ? 'Editar Control de Peso' : 'Añadir Control de Peso'}</h3>
+              <h3 className="text-lg font-bold mb-4 text-gray-900">{editingId ? t('weightTab.editWeight') : t('weightTab.addWeight')}</h3>
               <form onSubmit={handleAdd} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">Fecha</label>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">{t('weightTab.date')}</label>
                   <input
                     type="date"
                     required
@@ -286,7 +288,7 @@ export default function PlayerWeightTab({ playerId }: { playerId: string }) {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">Peso (kg)</label>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">{t('weightTab.weightKg')}</label>
                   <input
                     type="number"
                     required
@@ -300,10 +302,10 @@ export default function PlayerWeightTab({ playerId }: { playerId: string }) {
                 </div>
                 <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
                   <button type="button" className="px-4 py-2 bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 rounded-lg text-sm font-semibold transition-colors" onClick={closeModal}>
-                    Cancelar
+                    {t('common.cancel')}
                   </button>
                   <button type="submit" className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-semibold transition-colors">
-                    {editingId ? 'Guardar Cambios' : 'Añadir Peso'}
+                    {editingId ? t('common.save') : t('common.add')}
                   </button>
                 </div>
               </form>

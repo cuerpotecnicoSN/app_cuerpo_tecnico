@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { getPlayerInjuries, createPlayerInjury, updatePlayerInjury, deletePlayerInjury } from '../../services/playerHealth';
 import type { PlayerInjury } from '../types';
 import { Stethoscope, Plus, AlertTriangle, Edit2, Trash2, Calendar, Activity } from 'lucide-react';
@@ -6,6 +7,7 @@ import { Stethoscope, Plus, AlertTriangle, Edit2, Trash2, Calendar, Activity } f
 import BodyMap, { BodyZoneMarker, BODY_ZONES_FRONT, BODY_ZONES_BACK } from './BodyMap';
 
 export default function PlayerInjuriesTab({ playerId }: { playerId: string }) {
+  const { t, i18n } = useTranslation();
   const [injuries, setInjuries] = useState<PlayerInjury[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -109,18 +111,18 @@ export default function PlayerInjuriesTab({ playerId }: { playerId: string }) {
       loadInjuries();
     } catch (err) {
       console.error(err);
-      alert('Error al guardar la lesión');
+      alert(t('injuriesTab.saveError'));
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('¿Eliminar este registro de lesión?')) return;
+    if (!window.confirm(t('injuriesTab.confirmDelete'))) return;
     try {
       await deletePlayerInjury(id);
       loadInjuries();
     } catch (err) {
       console.error(err);
-      alert('Error al eliminar');
+      alert(t('common.deleteError', 'Error al eliminar'));
     }
   };
 
@@ -158,29 +160,29 @@ export default function PlayerInjuriesTab({ playerId }: { playerId: string }) {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <h2 className="text-2xl font-black flex items-center gap-3 text-gray-900 tracking-tight">
           <Stethoscope className="text-blue-600 w-8 h-8" />
-          Registro Médico y Lesiones
+          {t('injuriesTab.title')}
         </h2>
         <button
           className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-colors shadow-sm"
           onClick={() => handleOpenModal()}
         >
-          <Plus size={18} /> Registrar Lesión
+          <Plus size={18} /> {t('injuriesTab.newInjury')}
         </button>
       </div>
 
       {loading ? (
-        <div className="p-12 text-center text-gray-500 text-lg">Cargando datos...</div>
+        <div className="p-12 text-center text-gray-500 text-lg">{t('common.loading')}</div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
           <div className="lg:col-span-2 bg-white border border-gray-100 shadow-sm rounded-2xl p-6">
             <p className="text-xs text-gray-500 mb-4">
-              Haz clic en el maniquí para registrar una lesión en esa zona, o sobre un punto marcado para editarla.
+              {t('injuriesTab.injuryMapInstructions', 'Haz clic en el maniquí para registrar una lesión en esa zona, o sobre un punto marcado para editarla.')}
             </p>
             <BodyMap markers={markers} onZoneClick={handleZoneClick} onMarkerClick={handleMarkerClick} />
             <div className="flex items-center justify-center gap-4 mt-4 text-[10px] text-gray-500">
-              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: '#facc15' }} />Leve</span>
-              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: '#f97316' }} />Moderada</span>
-              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: '#ef4444' }} />Grave</span>
+              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: '#facc15' }} />{t('injuriesTab.severities.Leve')}</span>
+              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: '#f97316' }} />{t('injuriesTab.severities.Moderada')}</span>
+              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: '#ef4444' }} />{t('injuriesTab.severities.Grave')}</span>
             </div>
           </div>
 
@@ -188,7 +190,7 @@ export default function PlayerInjuriesTab({ playerId }: { playerId: string }) {
             {injuries.length === 0 ? (
               <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-8 text-center text-gray-500 h-full flex flex-col items-center justify-center">
                 <AlertTriangle size={32} className="mx-auto mb-3 text-emerald-500" />
-                <p>No hay lesiones registradas. ¡El jugador está al 100%!</p>
+                <p>{t('injuriesTab.noInjuries')}</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -197,45 +199,45 @@ export default function PlayerInjuriesTab({ playerId }: { playerId: string }) {
                     <div className="flex-1">
                       <div className="flex flex-wrap items-center gap-3 mb-3">
                         <h3 className="text-lg font-extrabold text-gray-900">{injury.diagnosis}</h3>
-                        <span className={`px-3 py-1 rounded-lg text-xs font-bold uppercase border tracking-wide ${statusBadge(injury.status)}`}>{injury.status}</span>
-                        <span className={`px-3 py-1 rounded-lg text-xs font-bold uppercase border tracking-wide ${severityBadge(injury.severity)}`}>{injury.severity}</span>
+                        <span className={`px-3 py-1 rounded-lg text-xs font-bold uppercase border tracking-wide ${statusBadge(injury.status)}`}>{t(`injuriesTab.statuses.${injury.status}`, injury.status)}</span>
+                        <span className={`px-3 py-1 rounded-lg text-xs font-bold uppercase border tracking-wide ${severityBadge(injury.severity)}`}>{t(`injuriesTab.severities.${injury.severity}`, injury.severity)}</span>
                       </div>
 
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4 text-sm">
                         <div>
                           <div className="text-gray-400 font-semibold mb-1 text-[10px] uppercase flex items-center gap-1">
-                            <Activity size={12} /> Zona
+                            <Activity size={12} /> {t('injuriesTab.bodyZone')}
                           </div>
                           <div className="font-medium text-gray-800">{injury.body_zone}</div>
                         </div>
                         <div>
                           <div className="text-gray-400 font-semibold mb-1 text-[10px] uppercase flex items-center gap-1">
-                            <Calendar size={12} /> Fecha Lesión
+                            <Calendar size={12} /> {t('injuriesTab.injuryDate')}
                           </div>
-                          <div className="font-medium text-gray-800">{new Date(injury.injury_date).toLocaleDateString('es-ES')}</div>
+                          <div className="font-medium text-gray-800">{new Date(injury.injury_date).toLocaleDateString(i18n.language)}</div>
                         </div>
                         {injury.estimated_return && (
                           <div>
                             <div className="text-gray-400 font-semibold mb-1 text-[10px] uppercase flex items-center gap-1">
-                              <Calendar size={12} /> Est. Regreso
+                              <Calendar size={12} /> {t('injuriesTab.estimatedReturn')}
                             </div>
-                            <div className="font-medium text-gray-800">{new Date(injury.estimated_return).toLocaleDateString('es-ES')}</div>
+                            <div className="font-medium text-gray-800">{new Date(injury.estimated_return).toLocaleDateString(i18n.language)}</div>
                           </div>
                         )}
                       </div>
 
                       {injury.treatment && (
                         <div className="mt-4 pt-4 border-t border-gray-100">
-                          <div className="text-gray-400 font-semibold mb-1 text-[10px] uppercase">Tratamiento</div>
+                          <div className="text-gray-400 font-semibold mb-1 text-[10px] uppercase">{t('injuriesTab.treatment')}</div>
                           <p className="text-sm text-gray-600">{injury.treatment}</p>
                         </div>
                       )}
                     </div>
                     <div className="flex flex-row sm:flex-col gap-2 justify-end sm:justify-start">
-                      <button onClick={() => handleOpenModal(injury)} className="p-3 bg-white hover:bg-gray-50 border border-gray-200 text-gray-600 rounded-xl transition-colors shadow-sm" title="Editar">
+                      <button onClick={() => handleOpenModal(injury)} className="p-3 bg-white hover:bg-gray-50 border border-gray-200 text-gray-600 rounded-xl transition-colors shadow-sm" title={t('common.edit', 'Editar')}>
                         <Edit2 size={18} />
                       </button>
-                      <button onClick={() => handleDelete(injury.id)} className="p-3 bg-white hover:bg-red-50 border border-gray-200 hover:border-red-200 text-gray-600 hover:text-red-500 rounded-xl transition-colors shadow-sm" title="Eliminar">
+                      <button onClick={() => handleDelete(injury.id)} className="p-3 bg-white hover:bg-red-50 border border-gray-200 hover:border-red-200 text-gray-600 hover:text-red-500 rounded-xl transition-colors shadow-sm" title={t('common.delete', 'Eliminar')}>
                         <Trash2 size={18} />
                       </button>
                     </div>
@@ -251,11 +253,11 @@ export default function PlayerInjuriesTab({ playerId }: { playerId: string }) {
         <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white border border-gray-100 rounded-2xl shadow-xl max-w-lg w-full animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
             <div className="p-6">
-              <h3 className="text-lg font-bold mb-4 text-gray-900">{editingInjury ? 'Editar Lesión' : 'Registrar Lesión'}</h3>
+              <h3 className="text-lg font-bold mb-4 text-gray-900">{editingInjury ? t('injuriesTab.editInjury') : t('injuriesTab.newInjury')}</h3>
               <form onSubmit={handleSave} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">Zona Afectada</label>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">{t('injuriesTab.bodyZone')}</label>
                     <select
                       required
                       className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
@@ -270,13 +272,13 @@ export default function PlayerInjuriesTab({ playerId }: { playerId: string }) {
                         }
                       }}
                     >
-                      <option value="" disabled>Selecciona una zona...</option>
-                      <optgroup label="Frontal">
+                      <option value="" disabled>{t('common.selectPlaceholder', 'Selecciona...')}</option>
+                      <optgroup label={t('injuriesTab.front')}>
                         {BODY_ZONES_FRONT.map(z => (
                           <option key={z.key} value={z.key}>{z.label}</option>
                         ))}
                       </optgroup>
-                      <optgroup label="Posterior">
+                      <optgroup label={t('injuriesTab.back')}>
                         {BODY_ZONES_BACK.map(z => (
                           <option key={z.key} value={z.key}>{z.label}</option>
                         ))}
@@ -284,22 +286,22 @@ export default function PlayerInjuriesTab({ playerId }: { playerId: string }) {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">Lado</label>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">{t('injuriesTab.side')}</label>
                     <select
                       disabled
                       className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-500 cursor-not-allowed"
                       value={bodySide}
                       onChange={(e) => setBodySide(e.target.value as any)}
                     >
-                      <option value="frontal">Frontal</option>
-                      <option value="posterior">Posterior</option>
+                      <option value="frontal">{t('injuriesTab.sides.frontal')}</option>
+                      <option value="posterior">{t('injuriesTab.sides.posterior')}</option>
                     </select>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">Diagnóstico *</label>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">{t('injuriesTab.diagnosis')} *</label>
                     <input
                       type="text"
                       required
@@ -310,35 +312,35 @@ export default function PlayerInjuriesTab({ playerId }: { playerId: string }) {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">Gravedad</label>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">{t('injuriesTab.severity')}</label>
                     <select
                       className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                       value={severity}
                       onChange={(e) => setSeverity(e.target.value as any)}
                     >
-                      <option value="Leve">Leve</option>
-                      <option value="Moderada">Moderada</option>
-                      <option value="Grave">Grave</option>
+                      <option value="Leve">{t('injuriesTab.severities.Leve')}</option>
+                      <option value="Moderada">{t('injuriesTab.severities.Moderada')}</option>
+                      <option value="Grave">{t('injuriesTab.severities.Grave')}</option>
                     </select>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">Estado</label>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">{t('injuriesTab.status')}</label>
                     <select
                       className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                       value={status}
                       onChange={(e) => setStatus(e.target.value as any)}
                     >
-                      <option value="Activa">Activa</option>
-                      <option value="En tratamiento">En tratamiento</option>
-                      <option value="Baja">Baja</option>
-                      <option value="Recuperado">Recuperado</option>
+                      <option value="Activa">{t('injuriesTab.statuses.Activa')}</option>
+                      <option value="En tratamiento">{t('injuriesTab.statuses.En tratamiento')}</option>
+                      <option value="Baja">{t('injuriesTab.statuses.Baja')}</option>
+                      <option value="Recuperado">{t('injuriesTab.statuses.Recuperado')}</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">Fecha de Lesión *</label>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">{t('injuriesTab.injuryDate')} *</label>
                     <input
                       type="date"
                       required
@@ -351,7 +353,7 @@ export default function PlayerInjuriesTab({ playerId }: { playerId: string }) {
 
                 {status === 'Baja' && (
                   <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">Fecha de Baja Médica</label>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">{t('injuriesTab.bajaDate')}</label>
                     <input
                       type="date"
                       className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
@@ -362,7 +364,7 @@ export default function PlayerInjuriesTab({ playerId }: { playerId: string }) {
                 )}
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">Regreso Estimado</label>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">{t('injuriesTab.estimatedReturn')}</label>
                   <input
                     type="date"
                     className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
@@ -372,7 +374,7 @@ export default function PlayerInjuriesTab({ playerId }: { playerId: string }) {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">Tratamiento o Notas</label>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">{t('injuriesTab.treatment')}</label>
                   <textarea
                     rows={3}
                     className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
@@ -383,10 +385,10 @@ export default function PlayerInjuriesTab({ playerId }: { playerId: string }) {
 
                 <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
                   <button type="button" className="px-4 py-2 bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 rounded-lg text-sm font-semibold transition-colors" onClick={() => setShowModal(false)}>
-                    Cancelar
+                    {t('common.cancel')}
                   </button>
                   <button type="submit" className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-semibold transition-colors">
-                    Guardar
+                    {t('common.save')}
                   </button>
                 </div>
               </form>

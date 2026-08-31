@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Player, DevTask, MedicalRecord, SportsStats } from '../../components/types';
 import PlayersManagementView from '../../components/pro/PlayersManagementView';
 import GlobalIndividualMeetingsView from '../../components/pro/GlobalIndividualMeetingsView';
@@ -20,7 +21,7 @@ const getPositionOrder = (pos: string) => {
 };
 
 export default function PlayersPage() {
-  
+  const { t } = useTranslation();
   const [showImportModal, setShowImportModal] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [positionFilter, setPositionFilter] = useState('');
@@ -37,7 +38,7 @@ export default function PlayersPage() {
 
   // Mapeamos los datos de la base de datos al formato que espera el frontend
   const players = useMemo<Player[]>(() => {
-    return dbPlayers.map(p => ({
+    return (dbPlayers || []).map(p => ({
       id: p.id,
       name: `${p.first_name || ''} ${p.last_name || ''}`.trim(),
       footballName: p.football_name || '',
@@ -261,7 +262,7 @@ export default function PlayersPage() {
       doc.save("Plantilla_Club.pdf");
     } catch (err) {
       console.error("Error generating PDF:", err);
-      alert("Hubo un error al generar el PDF.");
+      alert(t('common.errorPdf', 'Hubo un error al generar el PDF.'));
     }
   };
 
@@ -270,9 +271,9 @@ export default function PlayersPage() {
     <div className="w-full mx-auto h-full space-y-6 animate-fade-in">
       <div className="staff-header" style={{ marginBottom: 0 }}>
         <div>
-          <p className="staff-breadcrumb">Jugadores</p>
+          <p className="staff-breadcrumb">{t('players.management.breadcrumb')}</p>
           <h1 className="staff-title">
-            {currentView === 'meetings' ? 'Reuniones Individuales' : 'Plantilla'} {loading && <span className="text-sm text-muted" style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 'normal' }}>(Cargando datos reales...)</span>}
+            {currentView === 'meetings' ? t('nav.meetings') : t('players.title')} {loading && <span className="text-sm text-muted" style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 'normal' }}>{t('players.management.loadingData')}</span>}
           </h1>
         </div>
         
@@ -283,14 +284,14 @@ export default function PlayersPage() {
               <button
                 onClick={() => setViewMode('grid')}
                 className={`p-2 rounded-xl flex items-center justify-center transition-all border-2 ${viewMode === 'grid' ? 'bg-white border-red-500 text-red-600 shadow-sm' : 'bg-white border-gray-200 text-gray-400 hover:text-gray-600 hover:border-gray-300'}`}
-                title="Vista de cuadrícula"
+                title={t('players.management.gridView')}
               >
                 <Grid size={22} />
               </button>
               <button
                 onClick={() => setViewMode('list')}
                 className={`p-2 rounded-xl flex items-center justify-center transition-all border-2 ${viewMode === 'list' ? 'bg-white border-red-500 text-red-600 shadow-sm' : 'bg-white border-gray-200 text-gray-400 hover:text-gray-600 hover:border-gray-300'}`}
-                title="Vista de lista"
+                title={t('players.management.listView')}
               >
                 <List size={22} />
               </button>
@@ -301,22 +302,22 @@ export default function PlayersPage() {
              className={`btn flex items-center gap-2 ${showFilters ? 'bg-gray-800 text-white border-gray-800 hover:bg-gray-700' : 'btn-outline bg-white hover:bg-gray-50 border-gray-300 text-gray-700'}`}
           >
              <Filter size={16} />
-             Filtrar
+             {t('players.filters')}
           </button>
           <button onClick={exportToPDF} className="btn btn-outline flex items-center gap-2 bg-white hover:bg-gray-50 border-gray-300 text-gray-700">
              <Download size={16} />
-             Exportar PDF
+             {t('placeholder.exportPdf', 'Exportar PDF')}
           </button>
           <button 
              onClick={() => setIsEditMode(!isEditMode)} 
              className={`btn flex items-center gap-2 transition-colors ${isEditMode ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100' : 'btn-outline bg-white hover:bg-gray-50 border-gray-300 text-gray-700'}`}
           >
              <Edit2 size={16} />
-             Editar jugador
+             {t('players.management.editPlayerTooltip')}
           </button>
           <button onClick={() => setShowImportModal(true)} className="btn btn-primary">
             <Plus size={16} />
-            Añadir jugador
+            {t('players.management.addPlayer')}
           </button>
         </div>
         )}
@@ -329,7 +330,7 @@ export default function PlayersPage() {
               <UsersIcon size={24} />
             </div>
             <div>
-              <p className="text-sm text-gray-500 font-medium">Total Jugadores</p>
+              <p className="text-sm text-gray-500 font-medium">{t('players.management.totalPlayers')}</p>
               <p className="text-2xl font-bold">{summaryStats.totalPlayers}</p>
             </div>
           </div>
@@ -339,18 +340,18 @@ export default function PlayersPage() {
               <Globe size={24} />
             </div>
             <div>
-              <p className="text-sm text-gray-500 font-medium">Nacionalidades</p>
+              <p className="text-sm text-gray-500 font-medium">{t('players.management.nationalities')}</p>
               <p className="text-2xl font-bold">{summaryStats.nationalities}</p>
             </div>
           </div>
 
           <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-center">
-             <p className="text-sm text-gray-500 font-medium mb-2">Desglose por Posición</p>
+             <p className="text-sm text-gray-500 font-medium mb-2">{t('players.management.positionBreakdown')}</p>
              <div className="flex flex-wrap justify-between items-center text-[11px] xl:text-sm font-medium text-gray-700 gap-1 mt-1">
-                <span className="flex items-center gap-1.5" title="Porteros"><span className="w-2 h-2 rounded-full bg-amber-400"></span> POR: {summaryStats.positions.porteros}</span>
-                <span className="flex items-center gap-1.5" title="Defensas"><span className="w-2 h-2 rounded-full bg-blue-400"></span> DEF: {summaryStats.positions.defensas}</span>
-                <span className="flex items-center gap-1.5" title="Centrocampistas"><span className="w-2 h-2 rounded-full bg-emerald-400"></span> MED: {summaryStats.positions.medios}</span>
-                <span className="flex items-center gap-1.5" title="Delanteros"><span className="w-2 h-2 rounded-full bg-rose-400"></span> DEL: {summaryStats.positions.delanteros}</span>
+                <span className="flex items-center gap-1.5" title={t('players.management.positionGK')}><span className="w-2 h-2 rounded-full bg-amber-400"></span> {t('players.management.positionGKAbbr')}: {summaryStats.positions.porteros}</span>
+                <span className="flex items-center gap-1.5" title={t('players.management.positionDEF')}><span className="w-2 h-2 rounded-full bg-blue-400"></span> {t('players.management.positionDEFAbbr')}: {summaryStats.positions.defensas}</span>
+                <span className="flex items-center gap-1.5" title={t('players.management.positionMID')}><span className="w-2 h-2 rounded-full bg-emerald-400"></span> {t('players.management.positionMIDAbbr')}: {summaryStats.positions.medios}</span>
+                <span className="flex items-center gap-1.5" title={t('players.management.positionFWD')}><span className="w-2 h-2 rounded-full bg-rose-400"></span> {t('players.management.positionFWDAbbr')}: {summaryStats.positions.delanteros}</span>
              </div>
           </div>
         </div>
@@ -360,7 +361,7 @@ export default function PlayersPage() {
         <div className="flex flex-wrap items-center gap-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm mt-4 animate-fade-in">
           <div className="flex items-center gap-2 text-gray-500">
             <Filter size={18} />
-            <span className="font-medium text-sm">Filtros:</span>
+            <span className="font-medium text-sm">{t('players.filters')}:</span>
           </div>
           
           <select 
@@ -368,18 +369,18 @@ export default function PlayersPage() {
             onChange={(e) => setPositionFilter(e.target.value)}
             className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm bg-gray-50 hover:bg-white transition-colors focus:ring-2 focus:ring-blue-500/20 outline-none"
           >
-            <option value="">Todas las demarcaciones</option>
-            <option value="Portero">Porteros</option>
-            <option value="Defensa">Defensas</option>
-            <option value="Centrocampista">Centrocampistas</option>
-            <option value="Delantero">Delanteros</option>
+            <option value="">{t('players.management.allPositions')}</option>
+            <option value="Portero">{t('players.management.positionGK')}</option>
+            <option value="Defensa">{t('players.management.positionDEF')}</option>
+            <option value="Centrocampista">{t('players.management.positionMID')}</option>
+            <option value="Delantero">{t('players.management.positionFWD')}</option>
           </select>
 
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
             <input
               type="text"
-              placeholder="Buscar jugador..."
+              placeholder={t('players.management.search') as string}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="!pl-10 pr-4 py-1.5 text-sm border border-gray-300 rounded-lg bg-gray-50 hover:bg-white focus:bg-white transition-colors focus:ring-2 focus:ring-blue-500/20 outline-none w-48"
@@ -387,7 +388,7 @@ export default function PlayersPage() {
           </div>
 
           <div className="flex items-center gap-3 bg-gradient-to-br from-[#1e1e24] to-[#16161b] px-4 py-2.5 rounded-xl text-white shadow-[inset_0_1px_2px_rgba(0,0,0,0.4),0_1px_0_rgba(255,255,255,0.03)] border border-white/5">
-            <span className="text-xs font-semibold uppercase tracking-wide text-white/50">Edad</span>
+            <span className="text-xs font-semibold uppercase tracking-wide text-white/50">{t('players.management.ageLabel')}</span>
 
             <span className="text-sm font-bold min-w-[26px] text-right bg-red-500/20 text-red-200 rounded-md px-1.5 py-0.5">{ageRange[0]}</span>
 
@@ -466,7 +467,7 @@ export default function PlayersPage() {
               onClick={() => { setPositionFilter(''); setAgeRange([15, 45]); }}
               className="text-sm text-gray-500 hover:text-red-600 transition-colors ml-auto flex-shrink-0"
             >
-              Limpiar filtros
+              {t('players.management.clearFilters')}
             </button>
           )}
         </div>
@@ -475,9 +476,9 @@ export default function PlayersPage() {
       {!loading && players.length === 0 && (
         <div className="card staff-empty">
           <UsersIcon size={32} className="text-muted" />
-          <p className="h3 mt-4">No hay jugadores en la base de datos</p>
+          <p className="h3 mt-4">{t('players.management.noPlayersTitle')}</p>
           <p className="text-muted mt-2">
-            Puedes añadirlos importándolos de BeSoccer o desde el panel de administración.
+            {t('players.management.noPlayersSubtitle')}
           </p>
         </div>
       )}
@@ -502,12 +503,12 @@ export default function PlayersPage() {
           {filteredPlayers.length === 0 ? (
             <div className="card staff-empty mt-6">
               <UsersIcon size={32} className="text-muted" />
-              <p className="h3 mt-4">No hay jugadores que coincidan con los filtros</p>
+              <p className="h3 mt-4">{t('players.management.noPlayersFilteredTitle')}</p>
               <button 
                 onClick={() => { setPositionFilter(''); setAgeRange([15, 45]); }}
                 className="btn btn-outline mt-4"
               >
-                Limpiar filtros
+                {t('players.management.clearFilters')}
               </button>
             </div>
           ) : (

@@ -292,6 +292,31 @@ export interface MatchDataPoint {
 
 // ===== Dinámicas / Reuniones =====
 
+export const MEETING_INSIGHT_CATEGORIES = [
+  'Actitud y compromiso',
+  'Físico',
+  'Técnico',
+  'Táctico',
+  'Mental / Confianza',
+  'Social / Grupo',
+  'Regularidad',
+] as const;
+
+export type MeetingInsightCategory = typeof MEETING_INSIGHT_CATEGORIES[number];
+
+export interface MeetingInsightItem {
+  category: MeetingInsightCategory;
+  sentiment: 'positive' | 'negative' | 'neutral';
+  text: string;
+}
+
+export interface MeetingAiInsights {
+  summary: string;
+  items: MeetingInsightItem[];
+  overallScore: number; // 1-10
+  generatedAt: string;
+}
+
 export interface MeetingDB {
   id: string;
   season_id: string;
@@ -312,6 +337,7 @@ export interface MeetingDB {
   follow_up_date?: string;
   created_by?: string;
   created_at?: string;
+  ai_insights?: MeetingAiInsights | null;
 }
 
 export interface MeetingPlayer {

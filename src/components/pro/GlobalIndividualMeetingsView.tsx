@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Plus, Users2, MapPin, Search, Trash2, CalendarDays, ChevronRight, BarChart2, List } from 'lucide-react';
-import DOMPurify from 'dompurify';
 import type { MeetingDB, Player } from '../types';
+import TranslatedText from '../common/TranslatedText';
 import { getMeetings, createMeeting, updateMeeting, deleteMeeting, addMeetingPlayer } from '../../services/meetings';
 import { supabase } from '../../lib/supabase';
 import RichTextEditor from '../common/RichTextEditor';
@@ -12,6 +13,7 @@ interface GlobalIndividualMeetingsViewProps {
 }
 
 export default function GlobalIndividualMeetingsView({ players }: GlobalIndividualMeetingsViewProps) {
+  const { t, i18n } = useTranslation();
   const [meetings, setMeetings] = useState<MeetingDB[]>([]);
   const [meetingPlayersMap, setMeetingPlayersMap] = useState<Record<string, string[]>>({});
   const [showForm, setShowForm] = useState(false);
@@ -116,14 +118,15 @@ export default function GlobalIndividualMeetingsView({ players }: GlobalIndividu
       loadData();
     } catch (err) {
       console.error(err);
-      alert('Error al guardar la reunión');
+      alert(t('meetingsTab.errorSave'));
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm('¿Eliminar esta reunión?')) {
+    if (window.confirm(t('playerTabs.confirmDeleteMeeting'))) {
       try {
         await deleteMeeting(id);
+        resetForm();
         loadData();
       } catch (err) {
         console.error(err);
@@ -132,7 +135,7 @@ export default function GlobalIndividualMeetingsView({ players }: GlobalIndividu
   };
 
   const getPlayerName = (playerId: string) => {
-    return players.find(p => p.id === playerId)?.name || 'Jugador eliminado';
+    return players.find(p => p.id === playerId)?.name || t('meetingsTab.deletedPlayer');
   };
 
   const getPlayerAvatar = (playerId: string) => {
@@ -195,9 +198,8 @@ export default function GlobalIndividualMeetingsView({ players }: GlobalIndividu
   }, [meetings]);
 
   const formatMonthName = (yearMonth: string) => {
-    const [year, month] = yearMonth.split('-');
-    const date = new Date(parseInt(year), parseInt(month) - 1, 1);
-    return date.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }).replace(/^\w/, c => c.toUpperCase());
+    const date = new Date(yearMonth + '-02'); // Use 2nd day of month to avoid timezone shifts
+    return date.toLocaleDateString(i18n.language, { month: 'long', year: 'numeric' }).replace(/^\w/, c => c.toUpperCase());
   };
 
   // Agrupar reuniones por jugador para el panel de resumen
@@ -240,13 +242,13 @@ export default function GlobalIndividualMeetingsView({ players }: GlobalIndividu
           onClick={() => setActiveTab('list')}
           className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm transition-all ${activeTab === 'list' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'}`}
         >
-          <List size={18} /> Listado de Reuniones
+          <List size={18} /> {t('meetingsTab.meetingsList')}
         </button>
         <button
           onClick={() => setActiveTab('summary')}
           className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm transition-all ${activeTab === 'summary' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'}`}
         >
-          <BarChart2 size={18} /> Resumen por Jugador
+          <BarChart2 size={18} /> {t('meetingsTab.summaryByPlayer')}
         </button>
       </div>
 
@@ -260,7 +262,7 @@ export default function GlobalIndividualMeetingsView({ players }: GlobalIndividu
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
             <input
               type="text"
-              placeholder="Buscar general..."
+              placeholder={t('meetingsTab.searchGeneral')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
@@ -274,21 +276,21 @@ export default function GlobalIndividualMeetingsView({ players }: GlobalIndividu
             className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-sm transition-all transform hover:scale-[1.02] shrink-0"
           >
             <Plus size={18} className={showForm ? 'rotate-45 transition-transform' : 'transition-transform'} /> 
-            {showForm ? 'Cancelar' : 'Agendar Reunión'}
+            {showForm ? t('common.cancel') : t('playerTabs.scheduleMeeting')}
           </button>
         </div>
 
         {/* Filtros avanzados */}
         {!showForm && (
           <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-wrap gap-3 items-center">
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider mr-2">Filtros:</span>
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider mr-2">{t('players.filters')}:</span>
             
             <select
               value={filterPlayerId}
               onChange={(e) => setFilterPlayerId(e.target.value)}
               className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">Jugador (Todos)</option>
+              <option value="">{t('meetingsTab.playerAll')}</option>
               {players.sort((a,b) => a.name.localeCompare(b.name)).map(p => (
                 <option key={p.id} value={p.id}>{p.name}</option>
               ))}
@@ -299,7 +301,7 @@ export default function GlobalIndividualMeetingsView({ players }: GlobalIndividu
               onChange={(e) => setFilterCoach(e.target.value)}
               className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">Entrenador (Todos)</option>
+              <option value="">{t('meetingsTab.coachAll')}</option>
               {uniqueCoaches.map(c => (
                 <option key={c} value={c}>{c}</option>
               ))}
@@ -313,7 +315,7 @@ export default function GlobalIndividualMeetingsView({ players }: GlobalIndividu
               }}
               className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">Mes (Todos)</option>
+              <option value="">{t('meetingsTab.monthAll')}</option>
               {uniqueMonths.map(m => (
                 <option key={m} value={m}>{formatMonthName(m)}</option>
               ))}
@@ -341,7 +343,7 @@ export default function GlobalIndividualMeetingsView({ players }: GlobalIndividu
                 }}
                 className="text-xs text-red-500 hover:text-red-700 font-bold ml-auto px-2"
               >
-                Limpiar
+                {t('common.clear', 'Limpiar')}
               </button>
             )}
           </div>
@@ -352,20 +354,20 @@ export default function GlobalIndividualMeetingsView({ players }: GlobalIndividu
             <div className="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
             <h3 className="text-lg font-bold text-gray-800 mb-5 flex items-center gap-2">
               <Users2 className="text-blue-500" size={20} />
-              {editingId ? 'Editar Reunión' : 'Nueva Reunión Individual'}
+              {editingId ? t('playerTabs.editMeeting') : t('playerTabs.newMeeting')}
             </h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-4">
               <div className="flex flex-col gap-1.5 xl:col-span-2">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Jugador *</label>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('meetingsTab.playerAsterisk')}</label>
                 <select 
                   value={selectedPlayerId}
                   onChange={(e) => setSelectedPlayerId(e.target.value)}
-                  disabled={!!editingId} // No permitimos cambiar el jugador si estamos editando (simplificación)
+                  disabled={!!editingId}
                   className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors disabled:opacity-60"
                   required
                 >
-                  <option value="">-- Seleccionar jugador --</option>
+                  <option value="">{t('meetingsTab.selectPlayerPlaceholder')}</option>
                   {players.sort((a,b) => a.name.localeCompare(b.name)).map(p => (
                     <option key={p.id} value={p.id}>{p.name}</option>
                   ))}
@@ -373,7 +375,7 @@ export default function GlobalIndividualMeetingsView({ players }: GlobalIndividu
               </div>
               
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Fecha *</label>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('meetingsTab.dateAsterisk')}</label>
                 <input 
                   type="date" 
                   value={date}
@@ -384,7 +386,7 @@ export default function GlobalIndividualMeetingsView({ players }: GlobalIndividu
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Hora</label>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('meetingsTab.time')}</label>
                 <input 
                   type="time" 
                   value={time}
@@ -396,10 +398,10 @@ export default function GlobalIndividualMeetingsView({ players }: GlobalIndividu
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Lugar</label>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('playerTabs.location')}</label>
                 <input 
                   type="text" 
-                  placeholder="Ej. Despacho Míster..."
+                  placeholder={t('playerTabs.locationPlaceholder') as string}
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                   className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
@@ -407,10 +409,10 @@ export default function GlobalIndividualMeetingsView({ players }: GlobalIndividu
               </div>
               
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Entrenador/es a cargo</label>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('playerTabs.coachInCharge')}</label>
                 <input 
                   type="text" 
-                  placeholder="Ej. Míster y Segundo Entrenador"
+                  placeholder={t('playerTabs.coachPlaceholder') as string}
                   value={coach}
                   onChange={(e) => setCoach(e.target.value)}
                   className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
@@ -420,24 +422,24 @@ export default function GlobalIndividualMeetingsView({ players }: GlobalIndividu
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               <div className="flex flex-col gap-1.5 h-full">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Contenido / Tema principal</label>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('playerTabs.mainTopic')}</label>
                 <div className="h-full min-h-[250px]">
                   <RichTextEditor 
                     value={objective}
                     onChange={setObjective}
-                    placeholder="Motivo de la reunión..."
+                    placeholder={t('playerTabs.meetingReasonPlaceholder') as string}
                     className="h-full"
                   />
                 </div>
               </div>
               
               <div className="flex flex-col gap-1.5 h-full">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Observaciones / Notas</label>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('playerTabs.notes')}</label>
                 <div className="h-full min-h-[250px]">
                   <RichTextEditor 
                     value={development}
                     onChange={setDevelopment}
-                    placeholder="Conclusiones, desarrollo..."
+                    placeholder={t('playerTabs.notesPlaceholder') as string}
                     className="h-full"
                   />
                 </div>
@@ -450,7 +452,7 @@ export default function GlobalIndividualMeetingsView({ players }: GlobalIndividu
                   onClick={() => handleDelete(editingId)}
                   className="px-4 py-2.5 text-red-600 bg-red-50 hover:bg-red-100 rounded-xl text-sm font-bold transition-colors flex items-center gap-2"
                 >
-                  <Trash2 size={16} /> Eliminar
+                  <Trash2 size={16} /> {t('common.delete')}
                 </button>
               ) : <div></div>}
               <div className="flex gap-3">
@@ -458,14 +460,14 @@ export default function GlobalIndividualMeetingsView({ players }: GlobalIndividu
                   onClick={resetForm} 
                   className="px-5 py-2.5 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl text-sm font-bold transition-colors"
                 >
-                  Cancelar
+                  {t('common.cancel')}
                 </button>
                 <button 
                   onClick={handleSave} 
                   disabled={!date || !selectedPlayerId}
                   className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed shadow-sm transition-colors"
                 >
-                  {editingId ? 'Guardar Cambios' : 'Agendar Reunión'}
+                  {editingId ? t('playerTabs.saveChanges') : t('playerTabs.scheduleMeeting')}
                 </button>
               </div>
             </div>
@@ -481,11 +483,11 @@ export default function GlobalIndividualMeetingsView({ players }: GlobalIndividu
             <div className="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
               <Users2 size={32} />
             </div>
-            <h3 className="text-xl font-bold text-gray-800 mb-2">No hay reuniones</h3>
+            <h3 className="text-xl font-bold text-gray-800 mb-2">{t('meetingsTab.noMeetings')}</h3>
             <p className="text-gray-500 mb-6 max-w-md mx-auto">
               {searchQuery 
-                ? 'No se han encontrado reuniones que coincidan con tu búsqueda.' 
-                : 'Aún no has agendado ninguna reunión individual con tus jugadores.'}
+                ? t('meetingsTab.noMeetingsFiltered')
+                : t('meetingsTab.noMeetingsYet')}
             </p>
           </div>
         ) : (
@@ -493,7 +495,7 @@ export default function GlobalIndividualMeetingsView({ players }: GlobalIndividu
             {filteredMeetings.map(m => {
               const pIds = meetingPlayersMap[m.id] || [];
               const primaryPlayerId = pIds[0];
-              const pName = primaryPlayerId ? getPlayerName(primaryPlayerId) : 'Sin asignar';
+              const pName = primaryPlayerId ? getPlayerName(primaryPlayerId) : t('meetingsTab.unassigned');
               const pAvatar = primaryPlayerId ? getPlayerAvatar(primaryPlayerId) : '';
 
               return (
@@ -514,7 +516,7 @@ export default function GlobalIndividualMeetingsView({ players }: GlobalIndividu
                     )}
                     <div>
                       <h4 className="font-bold text-gray-900 text-[15px] leading-tight">{pName}</h4>
-                      {m.created_by && <span className="text-xs text-gray-500 mt-0.5 block">Entrenador: {m.created_by}</span>}
+                      {m.created_by && <span className="text-xs text-gray-500 mt-0.5 block">{t('meetingsTab.coach')}: {m.created_by}</span>}
                     </div>
                   </div>
                   
@@ -545,17 +547,17 @@ export default function GlobalIndividualMeetingsView({ players }: GlobalIndividu
           <div className="bg-gray-50 border-b border-gray-200 p-5">
             <h3 className="font-black text-gray-900 flex items-center gap-2">
               <Users2 className="text-blue-600" size={20} />
-              Resumen por Jugador
+              {t('meetingsTab.summaryByPlayer')}
             </h3>
             <p className="text-xs text-gray-500 mt-1">
-              Información acumulada de las últimas reuniones individuales.
+              {t('meetingsTab.accumulatedInfo')}
             </p>
           </div>
 
           <div className="p-2 max-h-[calc(100vh-200px)] overflow-y-auto">
             {playerSummaries.length === 0 ? (
               <div className="p-6 text-center text-sm text-gray-500">
-                No hay datos acumulados todavía.
+                {t('meetingsTab.noAccumulatedData')}
               </div>
             ) : (
               <div className="space-y-1">
@@ -576,9 +578,9 @@ export default function GlobalIndividualMeetingsView({ players }: GlobalIndividu
                         <div className="flex-1 min-w-0">
                           <h4 className="font-bold text-sm text-gray-900 truncate">{pName}</h4>
                           <p className="text-xs text-blue-600 font-medium">
-                            {summary.count} {summary.count === 1 ? 'reunión' : 'reuniones'} 
+                            {summary.count} {summary.count === 1 ? t('meetingsTab.meetingSingular') : t('meetingsTab.meetingPlural')} 
                             <span className="text-gray-400 mx-1">•</span> 
-                            <span className="text-gray-500 font-normal">Última: {summary.lastDate}</span>
+                            <span className="text-gray-500 font-normal">{t('weightTab.latestRecord')}: {summary.lastDate}</span>
                           </p>
                         </div>
                       </div>
@@ -589,9 +591,9 @@ export default function GlobalIndividualMeetingsView({ players }: GlobalIndividu
                           <div className="bg-gray-100/80 rounded-lg p-2.5 text-xs text-gray-600 border border-gray-200/50">
                             <div className="flex gap-1.5 items-start">
                               <ChevronRight size={14} className="text-gray-400 shrink-0 mt-0.5" />
-                              <div 
+                              <TranslatedText 
+                                html={summary.lastDevelopment || summary.lastObjective || ''}
                                 className="line-clamp-3 prose prose-sm max-w-none prose-p:my-0 prose-headings:my-0 text-xs"
-                                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(summary.lastDevelopment || summary.lastObjective || '') }}
                               />
                             </div>
                           </div>
@@ -626,6 +628,7 @@ function PlayerSummaryView({ players, meetings, meetingPlayersMap, summaryPlayer
   summaryPlayerId: string;
   setSummaryPlayerId: (id: string) => void;
 }) {
+  const { t, i18n } = useTranslation();
   const getPlayerName = (id: string) => players.find(p => p.id === id)?.name || '';
 
   // Calculate feedback data for selected player
@@ -665,15 +668,15 @@ function PlayerSummaryView({ players, meetings, meetingPlayersMap, summaryPlayer
     <div className="space-y-6 animate-fade-in bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
       <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-gray-50 p-4 rounded-xl border border-gray-100">
         <div>
-          <h3 className="text-lg font-bold text-gray-800">Selecciona un Jugador</h3>
-          <p className="text-sm text-gray-500">Visualiza el resumen histórico de sus reuniones</p>
+          <h3 className="text-lg font-bold text-gray-800">{t('meetingsTab.selectPlayerTitle')}</h3>
+          <p className="text-sm text-gray-500">{t('meetingsTab.selectPlayerSubtitle')}</p>
         </div>
         <select
           value={summaryPlayerId}
           onChange={(e) => setSummaryPlayerId(e.target.value)}
           className="w-full md:w-64 border border-gray-200 rounded-xl px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium"
         >
-          <option value="">-- Jugador --</option>
+          <option value="">{t('meetingsTab.selectPlayerDropdown')}</option>
           {players.sort((a,b) => a.name.localeCompare(b.name)).map(p => (
             <option key={p.id} value={p.id}>{p.name}</option>
           ))}
@@ -683,26 +686,26 @@ function PlayerSummaryView({ players, meetings, meetingPlayersMap, summaryPlayer
       {!summaryPlayerId ? (
         <div className="py-20 text-center text-gray-400">
           <BarChart2 size={48} className="mx-auto mb-4 opacity-20" />
-          <p>Selecciona un jugador en el menú desplegable para ver su resumen.</p>
+          <p>{t('meetingsTab.selectPlayerPrompt')}</p>
         </div>
       ) : feedbackData ? (
         <div className="space-y-8 mt-8">
           <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100">
             <h2 className="text-2xl font-bold text-gray-900">{getPlayerName(summaryPlayerId)}</h2>
-            <span className="bg-blue-100 text-blue-700 px-3 py-1 text-xs font-bold rounded-full uppercase tracking-wider">Historial de Feedback</span>
+            <span className="bg-blue-100 text-blue-700 px-3 py-1 text-xs font-bold rounded-full uppercase tracking-wider">{t('playerTabs.feedbackTimeline')}</span>
           </div>
 
           {feedbackData.totalPositives === 0 && feedbackData.totalNegatives === 0 ? (
             <div className="text-center py-10 bg-gray-50 rounded-xl border border-gray-100 border-dashed">
-              <p className="text-gray-500">No hay feedback registrado en las reuniones de este jugador todavía.</p>
+              <p className="text-gray-500">{t('meetingsTab.noFeedbackYet')}</p>
             </div>
           ) : (
             <>
               {/* Gráfica */}
               <div className="max-w-2xl">
                 <div className="flex justify-between mb-2 text-sm font-bold">
-                  <span className="text-emerald-600">{feedbackData.totalPositives} Puntos Positivos</span>
-                  <span className="text-red-600">{feedbackData.totalNegatives} Puntos A Mejorar</span>
+                  <span className="text-emerald-600">{feedbackData.totalPositives} {t('playerTabs.positives')}</span>
+                  <span className="text-red-600">{feedbackData.totalNegatives} {t('playerTabs.toImprove')}</span>
                 </div>
                 <div className="h-5 w-full bg-gray-100 rounded-full overflow-hidden flex">
                   {feedbackData.totalPositives + feedbackData.totalNegatives > 0 && (
@@ -716,19 +719,19 @@ function PlayerSummaryView({ players, meetings, meetingPlayersMap, summaryPlayer
 
               {/* Timeline */}
               <div className="space-y-8 mt-10">
-                <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-6">Detalle por Fecha</h4>
+                <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-6">{t('meetingsTab.detailByDate')}</h4>
                 {Object.entries(feedbackData.grouped).map(([date, items]) => (
                   <div key={date} className="relative pl-6 border-l-2 border-gray-100 pb-2">
                     <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-blue-100 border-2 border-blue-500"></div>
-                    <h5 className="font-bold text-gray-900 mb-4">{new Date(date).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</h5>
+                    <h5 className="font-bold text-gray-900 mb-4">{new Date(date).toLocaleDateString(i18n.language, { year: 'numeric', month: 'long', day: 'numeric' })}</h5>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {items.filter(i => i.type === 'positive').length > 0 && (
                         <div className="bg-emerald-50/50 border border-emerald-100 rounded-xl p-5 shadow-sm">
-                          <span className="text-xs font-bold uppercase tracking-wider text-emerald-600 block mb-3 flex items-center gap-2"><Plus size={14}/> Positivo</span>
+                          <span className="text-xs font-bold uppercase tracking-wider text-emerald-600 block mb-3 flex items-center gap-2"><Plus size={14}/> {t('playerTabs.positive')}</span>
                           <ul className="space-y-2.5">
                             {items.filter(i => i.type === 'positive').map((item, idx) => (
                               <li key={idx} className="flex items-start gap-2 text-sm text-emerald-900 font-medium">
-                                <span className="text-emerald-500 mt-0.5 shrink-0">•</span> {item.text}
+                                <span className="text-emerald-500 mt-0.5 shrink-0">•</span> <TranslatedText text={item.text} as="span" />
                               </li>
                             ))}
                           </ul>
@@ -736,11 +739,11 @@ function PlayerSummaryView({ players, meetings, meetingPlayersMap, summaryPlayer
                       )}
                       {items.filter(i => i.type === 'negative').length > 0 && (
                         <div className="bg-red-50/50 border border-red-100 rounded-xl p-5 shadow-sm">
-                          <span className="text-xs font-bold uppercase tracking-wider text-red-600 block mb-3 flex items-center gap-2"><Trash2 size={14}/> A Mejorar</span>
+                          <span className="text-xs font-bold uppercase tracking-wider text-red-600 block mb-3 flex items-center gap-2"><Trash2 size={14}/> {t('playerTabs.toImprove')}</span>
                           <ul className="space-y-2.5">
                             {items.filter(i => i.type === 'negative').map((item, idx) => (
                               <li key={idx} className="flex items-start gap-2 text-sm text-red-900 font-medium">
-                                <span className="text-red-500 mt-0.5 shrink-0">•</span> {item.text}
+                                <span className="text-red-500 mt-0.5 shrink-0">•</span> <TranslatedText text={item.text} as="span" />
                               </li>
                             ))}
                           </ul>

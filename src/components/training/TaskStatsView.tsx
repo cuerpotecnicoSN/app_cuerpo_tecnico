@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import {
   BarChart,
   Bar,
@@ -7,12 +6,9 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer
 } from 'recharts';
 import {
-  Calendar,
-  Tag,
   Clock,
   Award,
   BookOpen,
@@ -34,7 +30,6 @@ interface TaskStatsViewProps {
 }
 
 export function TaskStatsView({ tasks, sessions, onOpenTask, onFilterByType }: TaskStatsViewProps) {
-  const { t } = useTranslation();
   const [sessionTasks, setSessionTasks] = useState<SessionTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -114,13 +109,9 @@ export function TaskStatsView({ tasks, sessions, onOpenTask, onFilterByType }: T
     return matchesTypeFilter(task, typeFilter);
   });
 
-  // 3. Biblioteca filtrada por tipo
-  const filteredLibraryTasks = tasks.filter((t) => matchesTypeFilter(t, typeFilter));
+
 
   // --- CÁLCULO DE MÉTRICAS ---
-
-  // Total Tareas
-  const totalTasks = filteredLibraryTasks.length;
 
   // Total Usos
   const totalUsages = filteredActiveSessionTasks.length;
@@ -421,7 +412,7 @@ export function TaskStatsView({ tasks, sessions, onOpenTask, onFilterByType }: T
                 barGap={4}
                 onClick={(state) => {
                   if (state && state.activeLabel) {
-                    onFilterByType(state.activeLabel);
+                    onFilterByType(state.activeLabel.toString());
                   }
                 }}
                 className="cursor-pointer"

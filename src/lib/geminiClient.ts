@@ -35,6 +35,49 @@ Devuelve ÚNICAMENTE un JSON con la siguiente estructura:
   }
 };
 
+export const analyzeMeetingWithGemini = async (meeting: { objective?: string; development?: string }) => {
+  try {
+    const ai = getClient();
+    const plainText = `${meeting.objective || ''}\n${meeting.development || ''}`
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    const prompt = `Actúa como un psicólogo deportivo y analista de rendimiento. Analiza las notas de esta reunión individual con un jugador de fútbol y extrae valoraciones estructuradas.
+
+Categorías permitidas (usa EXACTAMENTE estos nombres): "Actitud y compromiso", "Físico", "Técnico", "Táctico", "Mental / Confianza", "Social / Grupo", "Regularidad".
+
+Para cada frase o idea relevante del texto, clasifícala en una de esas categorías y asígnale un sentimiento: "positive", "negative" o "neutral".
+
+Devuelve ÚNICAMENTE un JSON con esta estructura:
+{
+  "summary": "Resumen breve (2-3 frases) del estado del jugador en esta reunión",
+  "items": [ { "category": "Actitud y compromiso", "sentiment": "positive", "text": "frase resumida" } ],
+  "overallScore": 7
+}
+
+overallScore es una nota de 1 a 10 del estado general del jugador según esta reunión.
+
+Notas de la reunión:
+${plainText}`;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: { responseMimeType: "application/json" }
+    });
+
+    if (response.text) {
+      const parsed = JSON.parse(response.text);
+      return { ...parsed, generatedAt: new Date().toISOString() };
+    }
+    return null;
+  } catch (error) {
+    console.error("Gemini Meeting Analysis Error:", error);
+    throw error;
+  }
+};
+
 export const analyzePlayerWithGemini = async (contextData: any) => {
   try {
     const ai = getClient();

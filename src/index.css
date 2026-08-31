@@ -328,3 +328,11 @@ h1, h2, h3, h4, .font-display {
   }
 }
 
+/* Custom class to force selected tab style (Black background, red letters and icon) */
+.active-tab-black-red {
+  background-color: #000000 !important;
+  border-color: #000000 !important;
+  color: #ef4444 !important; /* bright red */
+}
+
+

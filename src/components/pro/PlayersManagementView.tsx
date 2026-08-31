@@ -1,4 +1,5 @@
 
+import { useTranslation } from 'react-i18next';
 import type { Player, DevTask, MedicalRecord, SportsStats } from '../types';
 import { useNavigate } from 'react-router-dom';
 import { Edit2, Trash2 } from 'lucide-react';
@@ -92,6 +93,7 @@ export const getPositionColor = (position?: string) => {
 
 export default function PlayersManagementView({ players, onUpdatePlayer, onDeletePlayer, viewMode = 'grid', isEditMode = false }: PlayersManagementViewProps) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   if (viewMode === 'list') {
     return (
@@ -100,11 +102,11 @@ export default function PlayersManagementView({ players, onUpdatePlayer, onDelet
           <table className="w-full text-left text-sm text-gray-500">
             <thead className="bg-gray-50 text-xs text-gray-700 uppercase">
               <tr>
-                <th className="px-6 py-3 font-semibold">Jugador</th>
-                <th className="px-6 py-3 font-semibold">Posición</th>
-                <th className="px-6 py-3 font-semibold">Edad</th>
-                <th className="px-6 py-3 font-semibold">Pie Dominante</th>
-                <th className="px-6 py-3 font-semibold text-right">Acciones</th>
+                <th className="px-6 py-3 font-semibold">{t('players.management.colPlayer')}</th>
+                <th className="px-6 py-3 font-semibold">{t('players.management.colPosition')}</th>
+                <th className="px-6 py-3 font-semibold">{t('players.management.colAge')}</th>
+                <th className="px-6 py-3 font-semibold">{t('players.management.colDominantFoot')}</th>
+                <th className="px-6 py-3 font-semibold text-right">{t('players.management.colActions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -147,7 +149,7 @@ export default function PlayersManagementView({ players, onUpdatePlayer, onDelet
                     </span>
                   </td>
                   <td className="px-6 py-3 whitespace-nowrap text-gray-600">
-                    {player.age ? `${player.age} años` : '-'}
+                    {player.age ? `${player.age} ${t('players.management.yearsSuffix')}` : '-'}
                   </td>
                   <td className="px-6 py-3 whitespace-nowrap">
                     {player.dominantFoot ? (
@@ -162,7 +164,7 @@ export default function PlayersManagementView({ players, onUpdatePlayer, onDelet
                         <button 
                           onClick={(e) => { e.stopPropagation(); onUpdatePlayer(player); }}
                           className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
-                          title="Editar jugador"
+                          title={t('players.management.editPlayerTooltip')}
                         >
                           <Edit2 size={16} />
                         </button>
@@ -171,7 +173,7 @@ export default function PlayersManagementView({ players, onUpdatePlayer, onDelet
                         <button 
                           onClick={(e) => { e.stopPropagation(); onDeletePlayer(player.id); }}
                           className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
-                          title="Eliminar jugador"
+                          title={t('players.management.deletePlayerTooltip')}
                         >
                           <Trash2 size={16} />
                         </button>
@@ -212,7 +214,7 @@ export default function PlayersManagementView({ players, onUpdatePlayer, onDelet
                   <button 
                     onClick={(e) => { e.stopPropagation(); onUpdatePlayer(player); }}
                     className="p-1.5 bg-white/90 hover:bg-white text-gray-700 hover:text-blue-600 rounded-md backdrop-blur-md transition-colors shadow-sm"
-                    title="Editar jugador"
+                    title={t('players.management.editPlayerTooltip')}
                   >
                     <Edit2 size={14} />
                   </button>
@@ -221,7 +223,7 @@ export default function PlayersManagementView({ players, onUpdatePlayer, onDelet
                   <button 
                     onClick={(e) => { e.stopPropagation(); onDeletePlayer(player.id); }}
                     className="p-1.5 bg-white/90 hover:bg-white text-gray-700 hover:text-red-600 rounded-md backdrop-blur-md transition-colors shadow-sm"
-                    title="Eliminar jugador"
+                    title={t('players.management.deletePlayerTooltip')}
                   >
                     <Trash2 size={14} />
                   </button>
@@ -255,7 +257,7 @@ export default function PlayersManagementView({ players, onUpdatePlayer, onDelet
               </span>
             </div>
             <div className="flex items-center justify-center mt-1 gap-1.5">
-              <span className="text-gray-500 font-medium text-[10px]">{player.age ? `${player.age}a` : '-'}</span>
+              <span className="text-gray-500 font-medium text-[10px]">{player.age ? `${player.age}${t('players.management.yearsSuffix').charAt(0)}` : '-'}</span>
               {player.dominantFoot && (
                 <span className="px-1 text-gray-500 text-[9px] rounded-sm border border-gray-200 uppercase tracking-wider font-bold bg-gray-50">
                   {player.dominantFoot.charAt(0)}

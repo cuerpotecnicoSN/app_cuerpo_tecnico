@@ -1,17 +1,20 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { User, Weight, Stethoscope, ArrowLeft, Edit2, Target, Users2, FileText, Plus, Trash2, CalendarDays, MapPin, BarChart2 } from 'lucide-react';
-import type { Player, PlayerObjective, MeetingDB, SeasonReport } from '../../components/types';
+import { User, Weight, Stethoscope, ArrowLeft, Edit2, Target, Users2, FileText, Plus, Trash2, CalendarDays, MapPin, BarChart2, Sparkles, Loader2 } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import type { Player, PlayerObjective, MeetingDB, SeasonReport, MeetingInsightCategory } from '../../components/types';
+import { MEETING_INSIGHT_CATEGORIES } from '../../components/types';
+import { analyzeMeetingWithGemini } from '../../lib/geminiClient';
 import PlayerWeightTab from '../../components/pro/PlayerWeightTab';
 import PlayerInjuriesTab from '../../components/pro/PlayerInjuriesTab';
 import { useSupabaseData } from '../../hooks/useSupabaseData';
 import { getPlayerObjectives, createPlayerObjective, updatePlayerObjective, deletePlayerObjective, getSeasonReports, createSeasonReport, deleteSeasonReport } from '../../services/playerObjectives';
 import { getMeetingsForPlayer, createMeeting, deleteMeeting, addMeetingPlayer, updateMeeting } from '../../services/meetings';
 import { getFlagEmoji } from '../../components/pro/PlayersManagementView';
-import DOMPurify from 'dompurify';
 import RichTextEditor from '../../components/common/RichTextEditor';
 import { extractFeedbackFromHtml } from '../../utils/feedbackExtractor';
+import TranslatedText from '../../components/common/TranslatedText';
 
 import PlayerImportModal from '../../components/pro/PlayerImportModal';
 
@@ -45,7 +48,7 @@ export default function PlayerProfilePage() {
   };
 
   const players = useMemo<Player[]>(() => {
-    return dbPlayers.map(p => ({
+    return (dbPlayers || []).map(p => ({
       id: p.id,
       name: `${p.first_name || ''} ${p.last_name || ''}`.trim(),
       position: p.main_position || 'Sin definir',
@@ -90,95 +93,84 @@ export default function PlayerProfilePage() {
       <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4">
         {/* Main Tabs */}
         <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto">
-          <button
-            className={`flex-1 sm:flex-none px-6 py-3 font-bold text-base rounded-xl transition-all duration-300 flex items-center justify-center gap-2 border-2 ${
-              activeTab === 'ficha'
-                ? 'bg-blue-50 border-blue-600 text-blue-700 shadow-md'
-                : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-800 shadow-sm'
-            }`}
-            onClick={() => handleTabChange('ficha')}
-          >
-            <User size={20} className={activeTab === 'ficha' ? 'text-blue-600' : 'text-gray-400'} />
-            Ficha Técnica
-          </button>
-          <button
-            className={`flex-1 sm:flex-none px-6 py-3 font-bold text-base rounded-xl transition-all duration-300 flex items-center justify-center gap-2 border-2 ${
-              activeTab === 'peso'
-                ? 'bg-blue-50 border-blue-600 text-blue-700 shadow-md'
-                : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-800 shadow-sm'
-            }`}
-            onClick={() => handleTabChange('peso')}
-          >
-            <Weight size={20} className={activeTab === 'peso' ? 'text-blue-600' : 'text-gray-400'} />
-            Control de Peso
-          </button>
-          <button
-            className={`flex-1 sm:flex-none px-6 py-3 font-bold text-base rounded-xl transition-all duration-300 flex items-center justify-center gap-2 border-2 ${
-              activeTab === 'lesiones'
-                ? 'bg-blue-50 border-blue-600 text-blue-700 shadow-md'
-                : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-800 shadow-sm'
-            }`}
-            onClick={() => handleTabChange('lesiones')}
-          >
-            <Stethoscope size={20} className={activeTab === 'lesiones' ? 'text-blue-600' : 'text-gray-400'} />
-            Lesiones Médicas
-          </button>
-          <button
-            className={`flex-1 sm:flex-none px-6 py-3 font-bold text-base rounded-xl transition-all duration-300 flex items-center justify-center gap-2 border-2 ${
-              activeTab === 'plan'
-                ? 'bg-blue-50 border-blue-600 text-blue-700 shadow-md'
-                : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-800 shadow-sm'
-            }`}
-            onClick={() => handleTabChange('plan')}
-          >
-            <Target size={20} className={activeTab === 'plan' ? 'text-blue-600' : 'text-gray-400'} />
-            {t('playerTabs.individualPlan')}
-          </button>
-          <button
-            className={`flex-1 sm:flex-none px-6 py-3 font-bold text-base rounded-xl transition-all duration-300 flex items-center justify-center gap-2 border-2 ${
-              activeTab === 'reuniones'
-                ? 'bg-blue-50 border-blue-600 text-blue-700 shadow-md'
-                : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-800 shadow-sm'
-            }`}
-            onClick={() => handleTabChange('reuniones')}
-          >
-            <Users2 size={20} className={activeTab === 'reuniones' ? 'text-blue-600' : 'text-gray-400'} />
-            {t('playerTabs.individualMeetings')}
-          </button>
-          <button
-            className={`flex-1 sm:flex-none px-6 py-3 font-bold text-base rounded-xl transition-all duration-300 flex items-center justify-center gap-2 border-2 ${
-              activeTab === 'informes'
-                ? 'bg-blue-50 border-blue-600 text-blue-700 shadow-md'
-                : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-800 shadow-sm'
-            }`}
-            onClick={() => handleTabChange('informes')}
-          >
-            <FileText size={20} className={activeTab === 'informes' ? 'text-blue-600' : 'text-gray-400'} />
-            {t('playerTabs.pastSeasonReports')}
-          </button>
-          <button
-            className={`flex-1 sm:flex-none px-6 py-3 font-bold text-base rounded-xl transition-all duration-300 flex items-center justify-center gap-2 border-2 ${
-              activeTab === 'feedback'
-                ? 'bg-blue-50 border-blue-600 text-blue-700 shadow-md'
-                : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-800 shadow-sm'
-            }`}
-            onClick={() => handleTabChange('feedback')}
-          >
-            <BarChart2 size={20} className={activeTab === 'feedback' ? 'text-blue-600' : 'text-gray-400'} />
-            Feedback
-          </button>
+          {[
+            {
+              id: 'ficha' as Tab,
+              label: t('playerTabs.technicalSheet'),
+              icon: User,
+              inactiveClass: 'bg-white border-gray-200 text-gray-500 hover:border-indigo-400 hover:bg-indigo-50/40 hover:text-indigo-700 shadow-sm',
+              iconInactiveColor: 'text-gray-400 group-hover:text-indigo-500',
+            },
+            {
+              id: 'peso' as Tab,
+              label: t('playerTabs.weightControl'),
+              icon: Weight,
+              inactiveClass: 'bg-white border-gray-200 text-gray-500 hover:border-emerald-400 hover:bg-emerald-50/40 hover:text-emerald-700 shadow-sm',
+              iconInactiveColor: 'text-gray-400 group-hover:text-emerald-500',
+            },
+            {
+              id: 'lesiones' as Tab,
+              label: t('playerTabs.medicalInjuries'),
+              icon: Stethoscope,
+              inactiveClass: 'bg-white border-gray-200 text-gray-500 hover:border-rose-400 hover:bg-rose-50/40 hover:text-rose-700 shadow-sm',
+              iconInactiveColor: 'text-gray-400 group-hover:text-rose-500',
+            },
+            {
+              id: 'plan' as Tab,
+              label: t('playerTabs.individualPlan'),
+              icon: Target,
+              inactiveClass: 'bg-white border-gray-200 text-gray-500 hover:border-amber-400 hover:bg-amber-50/40 hover:text-amber-700 shadow-sm',
+              iconInactiveColor: 'text-gray-400 group-hover:text-amber-500',
+            },
+            {
+              id: 'reuniones' as Tab,
+              label: t('playerTabs.individualMeetings'),
+              icon: Users2,
+              inactiveClass: 'bg-white border-gray-200 text-gray-500 hover:border-violet-400 hover:bg-violet-50/40 hover:text-violet-700 shadow-sm',
+              iconInactiveColor: 'text-gray-400 group-hover:text-violet-500',
+            },
+            {
+              id: 'informes' as Tab,
+              label: t('playerTabs.pastSeasonReports'),
+              icon: FileText,
+              inactiveClass: 'bg-white border-gray-200 text-gray-500 hover:border-sky-400 hover:bg-sky-50/40 hover:text-sky-700 shadow-sm',
+              iconInactiveColor: 'text-gray-400 group-hover:text-sky-500',
+            },
+            {
+              id: 'feedback' as Tab,
+              label: t('playerTabs.feedbackTab'),
+              icon: BarChart2,
+              inactiveClass: 'bg-white border-gray-200 text-gray-500 hover:border-fuchsia-400 hover:bg-fuchsia-50/40 hover:text-fuchsia-700 shadow-sm',
+              iconInactiveColor: 'text-gray-400 group-hover:text-fuchsia-500',
+            },
+          ].map((tabConfig) => {
+            const Icon = tabConfig.icon;
+            const isActive = activeTab === tabConfig.id;
+            return (
+              <button
+                key={tabConfig.id}
+                className={`group flex-1 sm:flex-none px-6 py-3 font-bold text-base rounded-xl transition-all duration-300 flex items-center justify-center gap-2 border-2 ${
+                  isActive ? 'active-tab-black-red shadow-lg scale-[1.02]' : tabConfig.inactiveClass
+                }`}
+                onClick={() => handleTabChange(tabConfig.id)}
+              >
+                <Icon size={20} className={`${isActive ? '!text-red-500' : tabConfig.iconInactiveColor} transition-colors duration-300`} />
+                {tabConfig.label}
+              </button>
+            );
+          })}
         </div>
 
         {/* Action Buttons */}
         <div className="flex items-center gap-3 w-full xl:w-auto justify-start xl:justify-end">
           <button onClick={() => navigate('/players')} className="px-5 py-3 bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 rounded-xl text-sm font-bold flex items-center gap-2 transition-colors shadow-sm">
-            <ArrowLeft size={16} /> Volver a Plantilla
+            <ArrowLeft size={16} /> {t('playerProfile.backToRoster')}
           </button>
           <button
             onClick={() => setShowEditModal(true)}
             className="px-5 py-3 bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 rounded-xl text-sm font-bold flex items-center gap-2 transition-colors shadow-sm"
           >
-            <Edit2 size={16} /> Editar Perfil
+            <Edit2 size={16} /> {t('playerProfile.editProfile')}
           </button>
         </div>
       </div>
@@ -196,9 +188,9 @@ export default function PlayerProfilePage() {
             {activePlayer.name.split(',')[0]}
           </h2>
           {isPlayerBaja ? (
-            <span className="px-3 py-1 bg-red-100 text-red-700 border border-red-200 text-xs font-black uppercase rounded-lg animate-pulse mt-2 sm:mt-0">Baja</span>
+            <span className="px-3 py-1 bg-red-100 text-red-700 border border-red-200 text-xs font-black uppercase rounded-lg animate-pulse mt-2 sm:mt-0">{t('playerProfile.unavailable')}</span>
           ) : (
-            <span className="px-3 py-1 bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs font-black uppercase rounded-lg mt-2 sm:mt-0">Disponible</span>
+            <span className="px-3 py-1 bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs font-black uppercase rounded-lg mt-2 sm:mt-0">{t('playerProfile.available')}</span>
           )}
         </div>
 
@@ -219,29 +211,29 @@ export default function PlayerProfilePage() {
             </div>
             
             <div className="text-center w-full bg-gray-50 p-4 rounded-xl border border-gray-100">
-              <p className="text-xs text-gray-400 uppercase font-bold tracking-wider mb-1">Nombre Completo</p>
+              <p className="text-xs text-gray-400 uppercase font-bold tracking-wider mb-1">{t('playerProfile.fullName')}</p>
               <p className="text-sm text-gray-800 font-bold mb-4">{activePlayer.name}</p>
-              
-              <p className="text-xs text-gray-400 uppercase font-bold tracking-wider mb-1">Demarcación</p>
+
+              <p className="text-xs text-gray-400 uppercase font-bold tracking-wider mb-1">{t('playerProfile.position')}</p>
               <p className="text-sm text-blue-600 uppercase font-black tracking-wider">{activePlayer.position}</p>
             </div>
           </div>
 
           {/* Right: Data (Mini stats) */}
           <div className="flex-1 flex flex-col justify-center w-full pt-2">
-            <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2 text-center md:text-left">Resumen de Rendimiento</h3>
+            <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2 text-center md:text-left">{t('playerProfile.performanceSummary')}</h3>
             {/* Mini stats */}
             <div className="flex flex-wrap gap-8 justify-center md:justify-start">
               <div className="text-center md:text-left bg-white border border-gray-100 shadow-sm p-4 rounded-xl min-w-[120px]">
-                <span className="text-xs text-gray-400 uppercase font-bold block mb-1 tracking-wider">Partidos Jugados</span>
+                <span className="text-xs text-gray-400 uppercase font-bold block mb-1 tracking-wider">{t('playerProfile.matchesPlayed')}</span>
                 <span className="text-3xl font-extrabold text-gray-800 block leading-none">0</span>
               </div>
               <div className="text-center md:text-left bg-white border border-gray-100 shadow-sm p-4 rounded-xl min-w-[120px]">
-                <span className="text-xs text-gray-400 uppercase font-bold block mb-1 tracking-wider">Goles</span>
+                <span className="text-xs text-gray-400 uppercase font-bold block mb-1 tracking-wider">{t('playerProfile.goals')}</span>
                 <span className="text-3xl font-extrabold text-emerald-600 block leading-none">0</span>
               </div>
               <div className="text-center md:text-left bg-white border border-gray-100 shadow-sm p-4 rounded-xl min-w-[120px]">
-                <span className="text-xs text-gray-400 uppercase font-bold block mb-1 tracking-wider">Asistencias</span>
+                <span className="text-xs text-gray-400 uppercase font-bold block mb-1 tracking-wider">{t('playerProfile.assists')}</span>
                 <span className="text-3xl font-extrabold text-blue-600 block leading-none">0</span>
               </div>
             </div>
@@ -273,29 +265,13 @@ export default function PlayerProfilePage() {
                 ) return null;
 
                 const formatLabel = (str: string) => {
-                  const translations: Record<string, string> = {
-                    first_name: 'Nombre',
-                    last_name: 'Apellidos',
-                    main_position: 'Posición Principal',
-                    birth_date: 'Fecha de Nac.',
-                    weight_kg: 'Peso (kg)',
-                    height_cm: 'Altura (cm)',
-                    medical_status: 'Estado Médico',
-                    nationality: 'Nacionalidad',
-                    birth_place: 'Lugar de Nac.',
-                    dominant_foot: 'Pie Dominante',
-                    current_club: 'Club Actual',
-                    market_value: 'Valor de Mercado',
-                    rating: 'Valoración',
-                    dorsal: 'Dorsal'
-                  };
-                  return translations[str] || str.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                  return t(`playerProfile.fields.${str}`, str.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()));
                 };
 
                 let displayValue: React.ReactNode = String(value);
 
                 if (typeof value === 'boolean') {
-                  displayValue = value ? 'Sí' : 'No';
+                  displayValue = value ? t('playerProfile.yes') : t('playerProfile.no');
                 }
 
                 if (key === 'nationality') {
@@ -332,7 +308,7 @@ export default function PlayerProfilePage() {
 
             {activeDbPlayer?.career_clubs && Array.isArray(activeDbPlayer.career_clubs) && activeDbPlayer.career_clubs.length > 0 && (
               <div className="bg-white border border-gray-100 shadow-sm p-5 rounded-xl mt-6">
-                <span className="text-xs text-gray-400 uppercase font-bold block mb-4 tracking-wider">Historial de Clubes (Trayectoria)</span>
+                <span className="text-xs text-gray-400 uppercase font-bold block mb-4 tracking-wider">{t('playerProfile.clubHistory')}</span>
                 <div className="flex flex-col gap-3">
                   {[...activeDbPlayer.career_clubs].reverse().map((club: any, idx: number) => (
                     <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100">
@@ -352,8 +328,8 @@ export default function PlayerProfilePage() {
                         </div>
                       </div>
                       <div className="text-right hidden sm:block">
-                        {club.matches > 0 && <span className="text-xs text-gray-500 font-bold block">PJ: {club.matches}</span>}
-                        {club.goals > 0 && <span className="text-xs text-gray-500 font-bold block">Goles: {club.goals}</span>}
+                        {club.matches > 0 && <span className="text-xs text-gray-500 font-bold block">{t('playerProfile.matchesAbbr')}: {club.matches}</span>}
+                        {club.goals > 0 && <span className="text-xs text-gray-500 font-bold block">{t('playerProfile.goals')}: {club.goals}</span>}
                       </div>
                     </div>
                   ))}
@@ -456,10 +432,69 @@ function PlayerObjectivesTab({ playerId }: { playerId: string }) {
   );
 }
 
+const INSIGHT_CATEGORY_COLORS: Record<MeetingInsightCategory, string> = {
+  'Actitud y compromiso': '#3b82f6',
+  'Físico': '#f97316',
+  'Técnico': '#a855f7',
+  'Táctico': '#14b8a6',
+  'Mental / Confianza': '#ec4899',
+  'Social / Grupo': '#22c55e',
+  'Regularidad': '#eab308',
+};
+
+function sentimentScore(sentiment: 'positive' | 'negative' | 'neutral') {
+  if (sentiment === 'positive') return 1;
+  if (sentiment === 'negative') return -1;
+  return 0;
+}
+
+function MeetingInsightsChart({ meetings }: { meetings: MeetingDB[] }) {
+  const { t } = useTranslation();
+  const analyzed = meetings.filter((m) => m.ai_insights?.items?.length).sort((a, b) => a.date.localeCompare(b.date));
+  if (analyzed.length < 2) return null;
+
+  const overallScoreKey = t('playerTabs.aiOverallScore');
+  const data = analyzed.map((m) => {
+    const row: Record<string, number | string> = { date: m.date };
+    MEETING_INSIGHT_CATEGORIES.forEach((cat) => {
+      const items = (m.ai_insights?.items || []).filter((i) => i.category === cat);
+      if (items.length > 0) {
+        row[cat] = items.reduce((sum, i) => sum + sentimentScore(i.sentiment), 0);
+      }
+    });
+    row[overallScoreKey] = m.ai_insights?.overallScore ?? 0;
+    return row;
+  });
+
+  return (
+    <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+      <h4 className="font-bold text-gray-800 mb-1 flex items-center gap-2">
+        <Sparkles size={16} className="text-purple-500" /> {t('playerTabs.aiEvolutionTitle')}
+      </h4>
+      <p className="text-xs text-gray-400 mb-4">{t('playerTabs.aiEvolutionDesc')}</p>
+      <ResponsiveContainer width="100%" height={280}>
+        <LineChart data={data}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+          <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+          <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+          <Tooltip />
+          <Legend wrapperStyle={{ fontSize: 11 }} />
+          {MEETING_INSIGHT_CATEGORIES.map((cat) => (
+            <Line key={cat} type="monotone" dataKey={cat} stroke={INSIGHT_CATEGORY_COLORS[cat]} strokeWidth={2} connectNulls dot={{ r: 3 }} />
+          ))}
+          <Line type="monotone" dataKey={overallScoreKey} stroke="#0f172a" strokeWidth={2} strokeDasharray="4 3" dot={{ r: 3 }} />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
 function PlayerMeetingsTab({ playerId }: { playerId: string }) {
+  const { t } = useTranslation();
   const [meetings, setMeetings] = useState<MeetingDB[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [analyzingId, setAnalyzingId] = useState<string | null>(null);
   
   // Form State
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -522,8 +557,27 @@ function PlayerMeetingsTab({ playerId }: { playerId: string }) {
     load();
   };
 
+  const handleAnalyze = async (m: MeetingDB, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (analyzingId) return;
+    setAnalyzingId(m.id);
+    try {
+      const insights = await analyzeMeetingWithGemini({ objective: m.objective, development: m.development });
+      if (insights) {
+        await updateMeeting(m.id, { ai_insights: insights });
+        load();
+      }
+    } catch (err) {
+      console.error(err);
+      window.alert(t('playerTabs.aiAnalyzeError') as string);
+    } finally {
+      setAnalyzingId(null);
+    }
+  };
+
   return (
     <div className="space-y-6 animate-fade-in pb-8">
+      <MeetingInsightsChart meetings={meetings} />
       <div className="flex justify-end mt-2">
         <button 
           onClick={() => {
@@ -532,8 +586,8 @@ function PlayerMeetingsTab({ playerId }: { playerId: string }) {
           }} 
           className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-sm transition-all transform hover:scale-[1.02]"
         >
-          <Plus size={18} className={showForm ? 'rotate-45 transition-transform' : 'transition-transform'} /> 
-          {showForm ? 'Cancelar' : 'Agendar Reunión'}
+          <Plus size={18} className={showForm ? 'rotate-45 transition-transform' : 'transition-transform'} />
+          {showForm ? t('common.cancel') : t('playerTabs.scheduleMeeting')}
         </button>
       </div>
 
@@ -542,14 +596,14 @@ function PlayerMeetingsTab({ playerId }: { playerId: string }) {
           <div className="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
           <h3 className="text-lg font-bold text-gray-800 mb-5 flex items-center gap-2">
             <Users2 className="text-blue-500" size={20} />
-            {editingId ? 'Editar Reunión' : 'Nueva Reunión Individual'}
+            {editingId ? t('playerTabs.editMeeting') : t('playerTabs.newMeeting')}
           </h3>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Fecha *</label>
-              <input 
-                type="date" 
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('common.date')} *</label>
+              <input
+                type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
                 className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
@@ -558,9 +612,9 @@ function PlayerMeetingsTab({ playerId }: { playerId: string }) {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Hora</label>
-              <input 
-                type="time" 
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('common.time')}</label>
+              <input
+                type="time"
                 value={time}
                 onChange={(e) => setTime(e.target.value)}
                 className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
@@ -570,21 +624,21 @@ function PlayerMeetingsTab({ playerId }: { playerId: string }) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Lugar</label>
-              <input 
-                type="text" 
-                placeholder="Ej. Despacho Míster, Sala de vídeo..."
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('playerTabs.location')}</label>
+              <input
+                type="text"
+                placeholder={t('playerTabs.locationPlaceholder') as string}
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
                 className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
               />
             </div>
-            
+
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Entrenador/es a cargo</label>
-              <input 
-                type="text" 
-                placeholder="Ej. Míster y Segundo Entrenador"
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('playerTabs.coachInCharge')}</label>
+              <input
+                type="text"
+                placeholder={t('playerTabs.coachPlaceholder') as string}
                 value={coach}
                 onChange={(e) => setCoach(e.target.value)}
                 className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
@@ -594,24 +648,24 @@ function PlayerMeetingsTab({ playerId }: { playerId: string }) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <div className="flex flex-col gap-1.5 h-full">
-              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Contenido / Tema principal</label>
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('playerTabs.mainTopic')}</label>
               <div className="h-full min-h-[250px]">
-                <RichTextEditor 
+                <RichTextEditor
                   value={objective}
                   onChange={setObjective}
-                  placeholder="Motivo de la reunión..."
+                  placeholder={t('playerTabs.meetingReasonPlaceholder') as string}
                   className="h-full"
                 />
               </div>
             </div>
-            
+
             <div className="flex flex-col gap-1.5 h-full">
-              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Observaciones / Notas</label>
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('playerTabs.notes')}</label>
               <div className="h-full min-h-[250px]">
-                <RichTextEditor 
+                <RichTextEditor
                   value={development}
                   onChange={setDevelopment}
-                  placeholder="Conclusiones, desarrollo..."
+                  placeholder={t('playerTabs.notesPlaceholder') as string}
                   className="h-full"
                 />
               </div>
@@ -621,10 +675,10 @@ function PlayerMeetingsTab({ playerId }: { playerId: string }) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             {/* Puntos Positivos */}
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-bold text-emerald-600">Puntos Positivos</label>
+              <label className="text-sm font-bold text-emerald-600">{t('playerTabs.positivePoints')}</label>
               <div className="flex gap-2">
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={newPositive}
                   onChange={(e) => setNewPositive(e.target.value)}
                   onKeyDown={(e) => {
@@ -634,7 +688,7 @@ function PlayerMeetingsTab({ playerId }: { playerId: string }) {
                     }
                   }}
                   className="flex-1 border border-emerald-200 bg-emerald-50/50 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
-                  placeholder="Añadir punto positivo..."
+                  placeholder={t('playerTabs.addPositivePlaceholder') as string}
                 />
                 <button 
                   type="button"
@@ -656,10 +710,10 @@ function PlayerMeetingsTab({ playerId }: { playerId: string }) {
 
             {/* Puntos Negativos / A Mejorar */}
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-bold text-red-600">A Mejorar / Puntos Críticos</label>
+              <label className="text-sm font-bold text-red-600">{t('playerTabs.improvementPoints')}</label>
               <div className="flex gap-2">
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={newNegative}
                   onChange={(e) => setNewNegative(e.target.value)}
                   onKeyDown={(e) => {
@@ -669,7 +723,7 @@ function PlayerMeetingsTab({ playerId }: { playerId: string }) {
                     }
                   }}
                   className="flex-1 border border-red-200 bg-red-50/50 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-red-500 outline-none"
-                  placeholder="Añadir punto a mejorar..."
+                  placeholder={t('playerTabs.addImprovementPlaceholder') as string}
                 />
                 <button 
                   type="button"
@@ -692,9 +746,9 @@ function PlayerMeetingsTab({ playerId }: { playerId: string }) {
 
           <div className="flex justify-between items-center gap-3 pt-4 border-t border-gray-100 mt-4">
             {editingId ? (
-              <button 
+              <button
                 onClick={async () => {
-                  if (window.confirm('¿Eliminar esta reunión?')) {
+                  if (window.confirm(t('playerTabs.confirmDeleteMeeting') as string)) {
                     await deleteMeeting(editingId);
                     resetForm();
                     load();
@@ -702,22 +756,22 @@ function PlayerMeetingsTab({ playerId }: { playerId: string }) {
                 }}
                 className="px-4 py-2.5 text-red-600 bg-red-50 hover:bg-red-100 rounded-xl text-sm font-bold transition-colors flex items-center gap-2"
               >
-                <Trash2 size={16} /> Eliminar
+                <Trash2 size={16} /> {t('common.delete')}
               </button>
             ) : <div></div>}
             <div className="flex gap-3">
-              <button 
-                onClick={resetForm} 
+              <button
+                onClick={resetForm}
                 className="px-5 py-2.5 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl text-sm font-bold transition-colors"
               >
-                Cancelar
+                {t('common.cancel')}
               </button>
-              <button 
-                onClick={handleSave} 
+              <button
+                onClick={handleSave}
                 disabled={!date}
                 className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed shadow-sm transition-colors"
               >
-                {editingId ? 'Guardar Cambios' : 'Agendar Reunión'}
+                {editingId ? t('playerTabs.saveChanges') : t('playerTabs.scheduleMeeting')}
               </button>
             </div>
           </div>
@@ -729,12 +783,12 @@ function PlayerMeetingsTab({ playerId }: { playerId: string }) {
           <div className="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
             <Users2 size={32} />
           </div>
-          <h3 className="text-xl font-bold text-gray-800 mb-2">No hay reuniones</h3>
+          <h3 className="text-xl font-bold text-gray-800 mb-2">{t('playerTabs.noMeetingsTitle')}</h3>
           <p className="text-gray-500 mb-6 max-w-md mx-auto">
-            Este jugador aún no tiene reuniones individuales registradas.
+            {t('playerTabs.noMeetingsDesc')}
           </p>
           <button onClick={() => setShowForm(true)} className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold inline-flex items-center gap-2 transition-colors">
-            <Plus size={18} /> Agendar la primera
+            <Plus size={18} /> {t('playerTabs.scheduleFirst')}
           </button>
         </div>
       ) : (
@@ -761,30 +815,68 @@ function PlayerMeetingsTab({ playerId }: { playerId: string }) {
               <div className="flex-1 space-y-3">
                 {m.created_by && (
                   <div className="inline-flex items-center px-2.5 py-1 rounded-md bg-indigo-50 text-indigo-700 text-xs font-bold border border-indigo-100">
-                    Dirigida por: {m.created_by}
+                    {t('playerTabs.ledBy')}: {m.created_by}
                   </div>
                 )}
-                
+
                 {m.objective && m.objective !== '<p><br></p>' && (
                   <div>
-                    <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">Contenido / Tema</p>
-                    <div 
+                    <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">{t('playerTabs.content')}</p>
+                    <TranslatedText
+                      html={m.objective}
                       className="text-sm text-gray-800 leading-relaxed prose prose-sm max-w-none"
-                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(m.objective) }}
                     />
                   </div>
                 )}
 
                 {m.development && m.development !== '<p><br></p>' && (
                   <div className="bg-blue-50/50 rounded-xl p-3.5 border border-blue-100/50 mt-2">
-                    <p className="text-[11px] font-bold text-blue-600/70 uppercase tracking-wider mb-1">Observaciones</p>
-                    <div 
+                    <p className="text-[11px] font-bold text-blue-600/70 uppercase tracking-wider mb-1">{t('playerTabs.observations')}</p>
+                    <TranslatedText
+                      html={m.development}
                       className="text-sm text-gray-700 leading-relaxed prose prose-sm max-w-none"
-                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(m.development) }}
                     />
                   </div>
                 )}
-                
+
+                {m.ai_insights ? (
+                  <div className="mt-2 border-t border-gray-100 pt-3">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <p className="text-[11px] font-bold text-purple-500 uppercase tracking-wider flex items-center gap-1">
+                        <Sparkles size={12} /> {t('playerTabs.aiInsight')}
+                      </p>
+                      <span className="text-[11px] font-bold text-gray-500">{m.ai_insights.overallScore}/10</span>
+                    </div>
+                    <p className="text-xs text-gray-600 leading-relaxed mb-2">{m.ai_insights.summary}</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {m.ai_insights.items.map((item, idx) => (
+                        <span
+                          key={idx}
+                          title={item.text}
+                          className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+                            item.sentiment === 'positive'
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                              : item.sentiment === 'negative'
+                              ? 'bg-red-50 text-red-700 border-red-100'
+                              : 'bg-gray-50 text-gray-600 border-gray-100'
+                          }`}
+                        >
+                          {item.category}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={(e) => handleAnalyze(m, e)}
+                    disabled={analyzingId === m.id}
+                    className="mt-2 w-full flex items-center justify-center gap-2 text-xs font-bold text-purple-600 bg-purple-50 hover:bg-purple-100 disabled:opacity-60 border border-purple-100 rounded-xl py-2 transition-colors"
+                  >
+                    {analyzingId === m.id ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+                    {analyzingId === m.id ? t('playerTabs.analyzing') : t('playerTabs.analyzeWithAI')}
+                  </button>
+                )}
+
                 </div>
             </div>
           ))}
@@ -821,7 +913,7 @@ function PlayerReportsTab({ playerId }: { playerId: string }) {
       {showForm && (
         <div className="bg-white border border-gray-100 rounded-xl p-4 space-y-3 shadow-sm">
           <textarea className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" placeholder={t('playerTabs.summary') as string} value={summary} onChange={(e) => setSummary(e.target.value)} />
-          <input className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" placeholder="URL (opcional)" value={fileUrl} onChange={(e) => setFileUrl(e.target.value)} />
+          <input className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" placeholder={t('playerTabs.urlOptional') as string} value={fileUrl} onChange={(e) => setFileUrl(e.target.value)} />
           <button onClick={handleAdd} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold">{t('common.save')}</button>
         </div>
       )}
@@ -844,6 +936,7 @@ function PlayerReportsTab({ playerId }: { playerId: string }) {
 }
 
 function PlayerFeedbackTab({ playerId }: { playerId: string }) {
+  const { t, i18n } = useTranslation();
   const [meetings, setMeetings] = useState<MeetingDB[]>([]);
 
   useEffect(() => {
@@ -889,18 +982,18 @@ function PlayerFeedbackTab({ playerId }: { playerId: string }) {
       <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
         <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
           <BarChart2 className="text-blue-500" />
-          Resumen Estadístico de Feedback
+          {t('playerTabs.statsSummaryTitle')}
         </h3>
-        
+
         {total === 0 ? (
-          <p className="text-gray-500 text-center py-4">Aún no hay feedback registrado en las reuniones de este jugador.</p>
+          <p className="text-gray-500 text-center py-4">{t('playerTabs.noFeedbackYet')}</p>
         ) : (
           <div className="space-y-8">
             {/* Gráfica de Barras */}
             <div>
               <div className="flex justify-between mb-2 text-sm font-bold">
-                <span className="text-emerald-600">{feedbackData.totalPositives} Positivos ({Math.round(posPercent)}%)</span>
-                <span className="text-red-600">{feedbackData.totalNegatives} A Mejorar ({Math.round(negPercent)}%)</span>
+                <span className="text-emerald-600">{feedbackData.totalPositives} {t('playerTabs.positives')} ({Math.round(posPercent)}%)</span>
+                <span className="text-red-600">{feedbackData.totalNegatives} {t('playerTabs.toImprove')} ({Math.round(negPercent)}%)</span>
               </div>
               <div className="h-4 w-full bg-gray-100 rounded-full overflow-hidden flex">
                 <div style={{ width: `${posPercent}%` }} className="bg-emerald-500 transition-all duration-1000"></div>
@@ -914,15 +1007,15 @@ function PlayerFeedbackTab({ playerId }: { playerId: string }) {
               {Object.entries(feedbackData.grouped).map(([date, items]) => (
                 <div key={date} className="relative pl-6 border-l-2 border-gray-100 pb-2">
                   <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-blue-100 border-2 border-blue-500"></div>
-                  <h5 className="font-bold text-gray-900 mb-3">{new Date(date).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</h5>
+                  <h5 className="font-bold text-gray-900 mb-3">{new Date(date).toLocaleDateString(i18n.language, { year: 'numeric', month: 'long', day: 'numeric' })}</h5>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {items.filter(i => i.type === 'positive').length > 0 && (
                       <div className="bg-emerald-50/50 border border-emerald-100 rounded-xl p-4">
-                        <span className="text-xs font-bold uppercase text-emerald-600 block mb-2">Positivo</span>
+                        <span className="text-xs font-bold uppercase text-emerald-600 block mb-2">{t('playerTabs.positive', 'Positivo')}</span>
                         <ul className="space-y-2">
                           {items.filter(i => i.type === 'positive').map((item, idx) => (
                             <li key={idx} className="flex items-start gap-2 text-sm text-gray-700">
-                              <span className="text-emerald-500 mt-1">•</span> {item.text}
+                              <span className="text-emerald-500 mt-1">•</span> <TranslatedText text={item.text} as="span" />
                             </li>
                           ))}
                         </ul>
@@ -930,11 +1023,11 @@ function PlayerFeedbackTab({ playerId }: { playerId: string }) {
                     )}
                     {items.filter(i => i.type === 'negative').length > 0 && (
                       <div className="bg-red-50/50 border border-red-100 rounded-xl p-4">
-                        <span className="text-xs font-bold uppercase text-red-600 block mb-2">A Mejorar</span>
+                        <span className="text-xs font-bold uppercase text-red-600 block mb-2">{t('playerTabs.toImprove', 'A Mejorar')}</span>
                         <ul className="space-y-2">
                           {items.filter(i => i.type === 'negative').map((item, idx) => (
                             <li key={idx} className="flex items-start gap-2 text-sm text-gray-700">
-                              <span className="text-red-500 mt-1">•</span> {item.text}
+                              <span className="text-red-500 mt-1">•</span> <TranslatedText text={item.text} as="span" />
                             </li>
                           ))}
                         </ul>
