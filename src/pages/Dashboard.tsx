@@ -10,8 +10,16 @@ import './Dashboard.css';
 type UserRole = 'Entrenador' | 'Preparador Físico' | 'Analista';
 
 const Dashboard: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [currentRole, setCurrentRole] = useState<UserRole>('Entrenador');
+
+  const formatDynamicText = (text: string) => {
+    if (!text) return '';
+    return text
+      .replace(/\bJornada\b/gi, t('dashboard.matchday', 'Jornada'))
+      .replace(/\bGrupo\b/gi, t('dashboard.group', 'Grupo'))
+      .replace(/\bLiga\b/gi, t('dashboard.league', 'Liga'));
+  };
 
   const { data: players = [] } = useSupabaseData<any>('players');
   const { data: profiles = [] } = useSupabaseData<any>('profiles');
@@ -69,10 +77,10 @@ const Dashboard: React.FC = () => {
         const currentYearBirthday = new Date(today.getFullYear(), birthDate.getMonth(), birthDate.getDate());
         events.push({
           id: `bday-${player.id}`,
-          title: `Cumpleaños: ${player.first_name} ${player.last_name}`,
+          title: `${t('calendarPage.birthday', 'Cumpleaños')}: ${player.first_name} ${player.last_name}`,
           date: currentYearBirthday,
           type: 'birthday',
-          description: `${player.first_name} cumple años!`
+          description: `${player.first_name} ${t('dashboard.hasBirthday', 'cumple años!')}`
         });
       }
     });
@@ -83,10 +91,10 @@ const Dashboard: React.FC = () => {
         const currentYearBirthday = new Date(today.getFullYear(), birthDate.getMonth(), birthDate.getDate());
         events.push({
           id: `bday-staff-${profile.id}`,
-          title: `Cumpleaños Staff: ${profile.full_name || 'Entrenador'}`,
+          title: `${t('calendarPage.birthday', 'Cumpleaños')} Staff: ${profile.full_name || t('dashboard.roleTrainer', 'Entrenador')}`,
           date: currentYearBirthday,
           type: 'birthday',
-          description: `¡El entrenador ${profile.full_name || ''} cumple años!`
+          description: `${t('dashboard.theTrainer', 'El entrenador')} ${profile.full_name || ''} ${t('dashboard.hasBirthday', 'cumple años!')}`
         });
       }
     });
@@ -100,7 +108,7 @@ const Dashboard: React.FC = () => {
     });
 
     return events;
-  }, [players, matches, sessions, profiles]);
+  }, [players, matches, sessions, profiles, t]);
 
   // Find next match for the Hero section
   const nextMatch = useMemo(() => {
@@ -122,8 +130,8 @@ const Dashboard: React.FC = () => {
     meetings.forEach((m: any) => {
       activities.push({
         id: `meeting-${m.id}`,
-        type: 'Reunión',
-        title: m.topic || 'Reunión Individual',
+        type: t('calendarPage.meeting', 'Reunión'),
+        title: m.topic || t('playerTabs.newMeeting', 'Reunión Individual'),
         date: new Date(m.created_at),
         icon: Users,
         color: 'text-blue-600 bg-blue-50 border-blue-200'
@@ -133,7 +141,7 @@ const Dashboard: React.FC = () => {
     dynamics.forEach((d: any) => {
       activities.push({
         id: `dynamic-${d.id}`,
-        type: 'Dinámica',
+        type: t('dashboard.dynamic', 'Dinámica'),
         title: d.title,
         date: new Date(d.created_at),
         icon: Activity,
@@ -144,7 +152,7 @@ const Dashboard: React.FC = () => {
     matchFocuses.forEach((f: any) => {
       activities.push({
         id: `focus-${f.id}`,
-        type: 'Foco de Partido',
+        type: t('dashboard.matchFocus', 'Foco de Partido'),
         title: f.title,
         date: new Date(f.created_at),
         icon: Target,
@@ -155,7 +163,7 @@ const Dashboard: React.FC = () => {
     return activities
       .sort((a, b) => b.date.getTime() - a.date.getTime())
       .slice(0, 6);
-  }, [meetings, dynamics, matchFocuses]);
+  }, [meetings, dynamics, matchFocuses, t]);
 
   return (
     <div className="hero-gradient flex flex-col p-2 sm:p-4 lg:p-6 animate-fade-in text-[var(--color-text-primary)] rounded-3xl min-h-[calc(100vh-120px)] border border-[var(--color-border)] shadow-sm">
@@ -165,11 +173,11 @@ const Dashboard: React.FC = () => {
         <div className="flex-1 max-w-2xl">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--color-bg-surface)] backdrop-blur-md border border-[var(--color-border)] mb-4 shadow-sm">
             <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-            <span className="text-sm font-medium tracking-wide uppercase text-[var(--color-text-secondary)]">Temporada 2026/27</span>
+            <span className="text-sm font-medium tracking-wide uppercase text-[var(--color-text-secondary)]">{t('dashboard.season', 'Temporada 2026/27')}</span>
           </div>
           {nextMatch && (
             <p className="text-2xl sm:text-3xl font-black text-[var(--color-text-primary)] uppercase tracking-tight">
-              Próximo partido: {nextMatch.is_home ? 'vs' : '@'} {nextMatch.opponent}
+              {t('dashboard.nextMatch')}: {nextMatch.is_home ? 'vs' : '@'} {nextMatch.opponent}
             </p>
           )}
         </div>
@@ -221,7 +229,7 @@ const Dashboard: React.FC = () => {
           <div className="flex justify-between items-center mb-6">
              <div className="flex items-center gap-3">
                <Clock className="text-[var(--color-primary)]" size={24} />
-               <h3 className="text-lg font-black uppercase tracking-wider text-[var(--color-text-primary)]">Actividad Reciente</h3>
+               <h3 className="text-lg font-black uppercase tracking-wider text-[var(--color-text-primary)]">{t('dashboard.recentActivity', 'Actividad Reciente')}</h3>
              </div>
           </div>
           
@@ -235,7 +243,7 @@ const Dashboard: React.FC = () => {
                   <div className="flex items-center justify-between mb-0.5">
                     <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)]">{act.type}</span>
                     <span className="text-[10px] text-[var(--color-text-muted)] font-medium">
-                      {act.date.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}
+                      {act.date.toLocaleDateString(i18n.language, { day: 'numeric', month: 'short' })}
                     </span>
                   </div>
                   <h4 className="text-sm font-bold text-[var(--color-text-primary)] truncate">{act.title}</h4>
@@ -244,7 +252,7 @@ const Dashboard: React.FC = () => {
             )) : (
               <div className="flex-1 flex flex-col items-center justify-center text-[var(--color-text-muted)] opacity-50 p-6 text-center">
                 <Clock size={32} className="mb-3" />
-                <p className="text-sm font-medium">No hay actividad reciente registrada en el sistema.</p>
+                <p className="text-sm font-medium">{t('dashboard.noRecentActivity', 'No hay actividad reciente registrada en el sistema.')}</p>
               </div>
             )}
           </div>
@@ -269,16 +277,16 @@ const Dashboard: React.FC = () => {
                  </div>
                  <div className="flex-1 min-w-0">
                    <h4 className="text-base font-bold text-[var(--color-text-primary)] truncate">{event.title}</h4>
-                   <p className="text-sm text-[var(--color-text-secondary)] truncate">{event.description}</p>
+                   <p className="text-sm text-[var(--color-text-secondary)] truncate">{formatDynamicText(event.description)}</p>
                  </div>
                  <div className="text-right shrink-0">
-                   <p className="text-sm font-bold text-[var(--color-text-primary)]">{event.date.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })}</p>
+                   <p className="text-sm font-bold text-[var(--color-text-primary)]">{event.date.toLocaleDateString(i18n.language, { weekday: 'short', day: 'numeric', month: 'short' })}</p>
                    {event.time && <p className="text-xs text-[var(--color-text-muted)]">{event.time}</p>}
                  </div>
                </div>
              )) : (
                <div className="flex-1 flex items-center justify-center text-[var(--color-text-muted)] font-medium">
-                 No hay próximos eventos programados.
+                 {t('dashboard.noUpcomingEventsScheduled', 'No hay próximos eventos programados.')}
                </div>
              )}
           </div>

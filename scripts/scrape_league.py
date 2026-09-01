@@ -223,9 +223,23 @@ def run():
                 }
                 
                 if supabase:
-                    existing = supabase.table("matches").select("id").eq("date", date_part).eq("opponent", opponent).execute()
-                    if existing and existing.data and len(existing.data) > 0:
-                        supabase.table("matches").update(match_data).eq("id", existing.data[0]['id']).execute()
+                    existing = supabase.table("matches").select("id, date").eq("season_id", SEASON_ID).eq("opponent", opponent).eq("is_home", is_home).execute()
+                    match_id = None
+                    if existing and existing.data:
+                        if len(existing.data) == 1:
+                            match_id = existing.data[0]['id']
+                        else:
+                            def date_diff(m):
+                                try:
+                                    return abs((datetime.strptime(m['date'], "%Y-%m-%d") - datetime.strptime(date_part, "%Y-%m-%d")).days)
+                                except:
+                                    return 999
+                            sorted_matches = sorted(existing.data, key=date_diff)
+                            if date_diff(sorted_matches[0]) <= 30:
+                                match_id = sorted_matches[0]['id']
+                    
+                    if match_id:
+                        supabase.table("matches").update(match_data).eq("id", match_id).execute()
                         logging.info(f"Actualizado: {opponent} el {date_part} (Jornada {jornada_text})")
                     else:
                         supabase.table("matches").insert(match_data).execute()

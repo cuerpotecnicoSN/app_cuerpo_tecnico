@@ -31,10 +31,10 @@ interface CalEvent {
 }
 
 const EVENT_TYPE_OPTIONS = [
-  { value: 'Partido', label: 'Partido', hint: 'Competición', Icon: Activity, active: 'border-blue-500 bg-blue-50 text-blue-700 ring-4 ring-blue-500/10', iconBg: 'bg-blue-100 text-blue-600' },
-  { value: 'Sesión entrenamiento', label: 'Entrenamiento', hint: 'Sesión', Icon: Dumbbell, active: 'border-red-500 bg-red-50 text-red-700 ring-4 ring-red-500/10', iconBg: 'bg-red-100 text-red-600' },
-  { value: 'Dinámicas', label: 'Dinámica', hint: 'Grupal', Icon: Users2, active: 'border-emerald-500 bg-emerald-50 text-emerald-700 ring-4 ring-emerald-500/10', iconBg: 'bg-emerald-100 text-emerald-600' },
-  { value: 'Reunión individual', label: 'Reunión', hint: 'Individual', Icon: MessageCircle, active: 'border-indigo-500 bg-indigo-50 text-indigo-700 ring-4 ring-indigo-500/10', iconBg: 'bg-indigo-100 text-indigo-600' },
+  { value: 'Partido', labelKey: 'calendarPage.match', defaultLabel: 'Partido', hintKey: 'matchesPage.competition', defaultHint: 'Competición', Icon: Activity, active: 'border-blue-500 bg-blue-50 text-blue-700 ring-4 ring-blue-500/10', iconBg: 'bg-blue-100 text-blue-600' },
+  { value: 'Sesión entrenamiento', labelKey: 'calendarPage.training', defaultLabel: 'Entrenamiento', hintKey: 'trainingPage.sessions', defaultHint: 'Sesión', Icon: Dumbbell, active: 'border-red-500 bg-red-50 text-red-700 ring-4 ring-red-500/10', iconBg: 'bg-red-100 text-red-600' },
+  { value: 'Dinámicas', labelKey: 'dashboard.dynamic', defaultLabel: 'Dinámica', hintKey: 'dynamicsPage.subtitle', defaultHint: 'Grupal', Icon: Users2, active: 'border-emerald-500 bg-emerald-50 text-emerald-700 ring-4 ring-emerald-500/10', iconBg: 'bg-emerald-100 text-emerald-600' },
+  { value: 'Reunión individual', labelKey: 'calendarPage.meeting', defaultLabel: 'Reunión', hintKey: 'playerTabs.individualPlan', defaultHint: 'Individual', Icon: MessageCircle, active: 'border-indigo-500 bg-indigo-50 text-indigo-700 ring-4 ring-indigo-500/10', iconBg: 'bg-indigo-100 text-indigo-600' },
 ];
 
 const inputCls = 'w-full rounded-xl border border-gray-200 bg-gray-50/80 px-3.5 py-2.5 text-sm font-medium text-gray-900 outline-none transition-all placeholder:font-normal placeholder:text-gray-400 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10';
@@ -42,6 +42,15 @@ const labelCls = 'mb-1.5 flex items-center gap-1.5 text-[11px] font-black upperc
 
 export default function CalendarPage() {
   const { t, i18n } = useTranslation();
+
+  const formatDynamicText = (text: string) => {
+    if (!text) return '';
+    return text
+      .replace(/\bJornada\b/gi, t('dashboard.matchday', 'Jornada'))
+      .replace(/\bGrupo\b/gi, t('dashboard.group', 'Grupo'))
+      .replace(/\bLiga\b/gi, t('dashboard.league', 'Liga'));
+  };
+
   const [cursor, setCursor] = useState(new Date());
   const [events, setEvents] = useState<CalEvent[]>([]);
   const { data: dbPlayers } = useSupabaseData<any>('players');
@@ -325,6 +334,7 @@ export default function CalendarPage() {
 
   const birthdays = useMemo<CalEvent[]>(() => {
     const year = cursor.getFullYear();
+    const prefix = t('calendarPage.birthday', 'Cumpleaños').toUpperCase();
     return (dbPlayers || [])
       .filter((p: any) => p.birth_date)
       .map((p: any) => {
@@ -332,9 +342,9 @@ export default function CalendarPage() {
         const thisYear = new Date(year, bd.getMonth(), bd.getDate());
         // Formato local: toISOString() desplaza el día en zonas horarias UTC+
         const iso = `${thisYear.getFullYear()}-${String(thisYear.getMonth() + 1).padStart(2, '0')}-${String(thisYear.getDate()).padStart(2, '0')}`;
-        return { id: `bday-${p.id}`, date: iso, type: 'birthday' as const, label: `CUMPLEAÑOS: ${p.first_name || ''} ${p.last_name || ''}`.trim() };
+        return { id: `bday-${p.id}`, date: iso, type: 'birthday' as const, label: `${prefix}: ${p.first_name || ''} ${p.last_name || ''}`.trim() };
       });
-  }, [dbPlayers, cursor]);
+  }, [dbPlayers, cursor, t]);
 
   const allEvents = [...events, ...birthdays];
 
@@ -388,7 +398,7 @@ export default function CalendarPage() {
           date: e.date, 
           time: e.time, 
           type: 'match', 
-          typeLabel: e.competition || 'Partido', 
+          typeLabel: formatDynamicText(e.competition || t('calendarPage.match', 'Partido')), 
           title: e.label, 
           meta: e.location, 
           homeLogo: e.home_logo, 
@@ -400,13 +410,13 @@ export default function CalendarPage() {
             : undefined
         };
       case 'training':
-        return { date: e.date, time: e.time, type: 'training', typeLabel: 'Entrenamiento', title: e.title || 'Entrenamiento', meta: join(e.objective, e.location) };
+        return { date: e.date, time: e.time, type: 'training', typeLabel: t('calendarPage.training', 'Entrenamiento'), title: e.title || t('calendarPage.training', 'Entrenamiento'), meta: join(e.objective, e.location) };
       case 'meeting':
-        return { date: e.date, time: e.time, type: 'meeting', typeLabel: 'Reunión individual', title: e.playerName ? `Reunión · ${e.playerName}` : 'Reunión individual', meta: join(e.coach, e.location) };
+        return { date: e.date, time: e.time, type: 'meeting', typeLabel: t('calendarPage.meeting', 'Reunión individual'), title: e.playerName ? `${t('calendarPage.meeting', 'Reunión')} · ${e.playerName}` : t('calendarPage.meeting', 'Reunión individual'), meta: join(e.coach, e.location) };
       case 'dynamics':
-        return { date: e.date, time: e.time, type: 'dynamics', typeLabel: 'Dinámica', title: e.objective || 'Dinámica de grupo', meta: e.location };
+        return { date: e.date, time: e.time, type: 'dynamics', typeLabel: t('dashboard.dynamic', 'Dinámica'), title: e.objective || t('dashboard.dynamic', 'Dinámica de grupo'), meta: e.location };
       case 'birthday':
-        return { date: e.date, type: 'birthday', typeLabel: 'Cumpleaños', title: e.label.replace(/^CUMPLEAÑOS:\s*/i, '') };
+        return { date: e.date, type: 'birthday', typeLabel: t('calendarPage.birthday', 'Cumpleaños'), title: e.label.replace(/^([^:]+):\s*/i, '') };
     }
   };
 
@@ -532,17 +542,17 @@ export default function CalendarPage() {
         >
           <p className="font-extrabold text-sm border-b border-gray-700 pb-2 mb-2 break-words">{hoveredEvent.event.label}</p>
           <div className="space-y-1.5">
-            {hoveredEvent.event.time && <p className="flex items-start gap-2"><span className="text-gray-400 w-16 shrink-0">Hora:</span> <span>{hoveredEvent.event.time}</span></p>}
-            {hoveredEvent.event.location && <p className="flex items-start gap-2"><span className="text-gray-400 w-16 shrink-0">Lugar:</span> <span>{hoveredEvent.event.location}</span></p>}
-            {hoveredEvent.event.type === 'match' && hoveredEvent.event.competition && <p className="flex items-start gap-2"><span className="text-gray-400 w-16 shrink-0">Torneo:</span> <span>{hoveredEvent.event.competition}</span></p>}
-            {hoveredEvent.event.type === 'meeting' && hoveredEvent.event.playerName && <p className="flex items-start gap-2"><span className="text-gray-400 w-16 shrink-0">Jugador:</span> <span className="font-bold text-blue-300">{hoveredEvent.event.playerName}</span></p>}
-            {(hoveredEvent.event.type === 'meeting' || hoveredEvent.event.type === 'dynamics') && hoveredEvent.event.coach && <p className="flex items-start gap-2"><span className="text-gray-400 w-16 shrink-0">Entrenador:</span> <span>{hoveredEvent.event.coach}</span></p>}
-            {hoveredEvent.event.objective && <p className="flex items-start gap-2"><span className="text-gray-400 w-16 shrink-0">Objetivo:</span> <span className="italic">{hoveredEvent.event.objective}</span></p>}
+            {hoveredEvent.event.time && <p className="flex items-start gap-2"><span className="text-gray-400 w-16 shrink-0">{t('common.time', 'Hora')}:</span> <span>{hoveredEvent.event.time}</span></p>}
+            {hoveredEvent.event.location && <p className="flex items-start gap-2"><span className="text-gray-400 w-16 shrink-0">{t('dynamicsPage.location', 'Lugar')}:</span> <span>{hoveredEvent.event.location}</span></p>}
+            {hoveredEvent.event.type === 'match' && hoveredEvent.event.competition && <p className="flex items-start gap-2"><span className="text-gray-400 w-16 shrink-0">{t('matchesPage.competition', 'Torneo')}:</span> <span>{formatDynamicText(hoveredEvent.event.competition)}</span></p>}
+            {hoveredEvent.event.type === 'meeting' && hoveredEvent.event.playerName && <p className="flex items-start gap-2"><span className="text-gray-400 w-16 shrink-0">{t('trainingPage.players', 'Jugador')}:</span> <span className="font-bold text-blue-300">{hoveredEvent.event.playerName}</span></p>}
+            {(hoveredEvent.event.type === 'meeting' || hoveredEvent.event.type === 'dynamics') && hoveredEvent.event.coach && <p className="flex items-start gap-2"><span className="text-gray-400 w-16 shrink-0">{t('playerTabs.coachInCharge', 'Entrenador')}:</span> <span>{hoveredEvent.event.coach}</span></p>}
+            {hoveredEvent.event.objective && <p className="flex items-start gap-2"><span className="text-gray-400 w-16 shrink-0">{t('trainingPage.objective', 'Objetivo')}:</span> <span className="italic">{hoveredEvent.event.objective}</span></p>}
           </div>
 
           {hoveredEvent.event.type !== 'birthday' && (
             <p className="mt-2.5 flex items-center gap-1.5 border-t border-gray-700 pt-2 text-[10px] font-semibold text-gray-400">
-              <Pencil size={10} /> Pulsa para editar o eliminar
+              <Pencil size={10} /> {t('calendarPage.clickToEdit', 'Pulsa para editar o eliminar')}
             </p>
           )}
 
@@ -558,11 +568,11 @@ export default function CalendarPage() {
           
           {/* Legend */}
           <div className="flex flex-wrap items-center gap-3 text-[10px] font-bold uppercase tracking-wider">
-            <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-blue-500"></div> Partido</div>
-            <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-red-500"></div> Entrenamiento</div>
-            <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div> Dinámica</div>
-            <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-indigo-500"></div> Reunión</div>
-            <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-amber-500"></div> Cumpleaños</div>
+            <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-blue-500"></div> {t('calendarPage.match', 'Partido')}</div>
+            <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-red-500"></div> {t('calendarPage.training', 'Entrenamiento')}</div>
+            <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div> {t('dashboard.dynamic', 'Dinámica')}</div>
+            <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-indigo-500"></div> {t('calendarPage.meeting', 'Reunión')}</div>
+            <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-amber-500"></div> {t('calendarPage.birthday', 'Cumpleaños')}</div>
           </div>
         </div>
 
@@ -582,7 +592,7 @@ export default function CalendarPage() {
 
         <div className="flex-1 flex items-center justify-end flex-wrap gap-3 mt-4 xl:mt-0">
           <span className="hidden 2xl:flex items-center gap-1.5 text-[11px] font-semibold text-gray-400">
-            <Sparkles size={13} className="text-gray-300" /> Pulsa un evento para editarlo o eliminarlo
+            <Sparkles size={13} className="text-gray-300" /> {t('calendarPage.clickToEdit', 'Pulsa un evento para editarlo o eliminarlo')}
           </span>
           <button
             onClick={openExport}
@@ -591,7 +601,7 @@ export default function CalendarPage() {
             <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-100 text-gray-500 transition-colors group-hover:bg-gray-900 group-hover:text-white">
               <FileDown size={14} strokeWidth={2.5} />
             </span>
-            Exportar PDF
+            {t('calendarPage.exportPdf', 'Exportar PDF')}
           </button>
           <button
             onClick={() => openCreateForm()}
@@ -600,7 +610,7 @@ export default function CalendarPage() {
             <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/20 transition-transform duration-200 group-hover:rotate-90">
               <Plus size={15} strokeWidth={3} />
             </span>
-            Añadir evento
+            {t('calendarPage.addEvent', 'Añadir evento')}
           </button>
         </div>
       </div>
@@ -619,15 +629,15 @@ export default function CalendarPage() {
                   {editingEvent ? <Pencil size={19} /> : <CalendarDays size={19} />}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h2 className="text-lg font-extrabold leading-tight">{editingEvent ? 'Editar evento' : 'Nuevo evento'}</h2>
+                  <h2 className="text-lg font-extrabold leading-tight">{editingEvent ? t('calendarPage.editEvent', 'Editar evento') : t('calendarPage.newEvent', 'Nuevo evento')}</h2>
                   <p className="mt-0.5 truncate text-xs font-medium text-gray-400">
-                    {editingEvent ? editingEvent.label : 'Elige el tipo y completa los datos'}
+                    {editingEvent ? editingEvent.label : t('calendarPage.chooseTypeSubtitle', 'Elige el tipo y completa los datos')}
                   </p>
                 </div>
                 <button
                   onClick={closeForm}
                   className="-mr-1 -mt-1 rounded-xl p-2 text-gray-400 transition-colors hover:bg-white/10 hover:text-white"
-                  aria-label="Cerrar"
+                  aria-label={t('common.close', 'Cerrar')}
                 >
                   <X size={19} />
                 </button>
@@ -637,7 +647,7 @@ export default function CalendarPage() {
             {/* Cuerpo */}
             <div className="custom-scrollbar flex-1 space-y-5 overflow-y-auto px-5 py-5 sm:px-6">
               <div>
-                <label className={labelCls}>Tipo de evento</label>
+                <label className={labelCls}>{t('calendarPage.eventTypeLabel', 'Tipo de evento')}</label>
                 <div className="grid grid-cols-2 gap-2.5">
                   {EVENT_TYPE_OPTIONS.map((opt) => {
                     const isActive = eventType === opt.value;
@@ -656,34 +666,34 @@ export default function CalendarPage() {
                           <opt.Icon size={17} />
                         </span>
                         <span className="min-w-0">
-                          <span className="block truncate text-sm font-bold leading-tight">{opt.label}</span>
-                          <span className="block truncate text-[10px] font-semibold uppercase tracking-wider opacity-60">{opt.hint}</span>
+                          <span className="block truncate text-sm font-bold leading-tight">{t(opt.labelKey, opt.defaultLabel)}</span>
+                          <span className="block truncate text-[10px] font-semibold uppercase tracking-wider opacity-60">{t(opt.hintKey, opt.defaultHint)}</span>
                         </span>
                       </button>
                     );
                   })}
                 </div>
                 {editingEvent && (
-                  <p className="mt-2 text-[11px] font-medium text-gray-400">El tipo de evento no se puede cambiar al editar.</p>
+                  <p className="mt-2 text-[11px] font-medium text-gray-400">{t('calendarPage.cantChangeTypeNote', 'El tipo de evento no se puede cambiar al editar.')}</p>
                 )}
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className={labelCls}><CalendarDays size={12} /> Fecha *</label>
+                  <label className={labelCls}><CalendarDays size={12} /> {t('common.date', 'Fecha')} *</label>
                   <input type="date" className={inputCls} value={eventDate} onChange={(e) => setEventDate(e.target.value)} />
                 </div>
                 <div>
-                  <label className={labelCls}><Clock size={12} /> Hora</label>
+                  <label className={labelCls}><Clock size={12} /> {t('common.time', 'Hora')}</label>
                   <input type="time" className={inputCls} value={eventTime} onChange={(e) => setEventTime(e.target.value)} />
                 </div>
               </div>
 
               <div>
-                <label className={labelCls}><MapPin size={12} /> Lugar</label>
+                <label className={labelCls}><MapPin size={12} /> {t('dynamicsPage.location', 'Lugar')}</label>
                 <input
                   type="text"
-                  placeholder="Ej: Ciudad Deportiva, Estadio..."
+                  placeholder={t('calendarPage.locationPlaceholder', 'Ej: Ciudad Deportiva, Estadio...')}
                   className={inputCls}
                   value={eventLocation}
                   onChange={(e) => setEventLocation(e.target.value)}
@@ -693,41 +703,41 @@ export default function CalendarPage() {
               {eventType === 'Partido' && (
                 <div className="space-y-4 rounded-2xl bg-blue-50/50 p-4 ring-1 ring-blue-100">
                   <div>
-                    <label className={labelCls}><Users2 size={12} /> Equipo rival *</label>
+                    <label className={labelCls}><Users2 size={12} /> {t('calendarPage.opponentTeam', 'Equipo rival')} *</label>
                     <input
                       type="text"
-                      placeholder="Nombre del rival"
+                      placeholder={t('calendarPage.opponentPlaceholder', 'Nombre del rival')}
                       className={inputCls}
                       value={opponent}
                       onChange={(e) => setOpponent(e.target.value)}
                     />
                   </div>
                   <div>
-                    <label className={labelCls}><Trophy size={12} /> Competición</label>
+                    <label className={labelCls}><Trophy size={12} /> {t('matchesPage.competition', 'Competición')}</label>
                     <input
                       type="text"
-                      placeholder="Ej: Liga, Copa, Amistoso..."
+                      placeholder={t('calendarPage.competitionPlaceholder', 'Ej: Liga, Copa, Amistoso...')}
                       className={inputCls}
                       value={competition}
                       onChange={(e) => setCompetition(e.target.value)}
                     />
                   </div>
                   <div>
-                    <label className={labelCls}>¿Dónde se juega?</label>
+                    <label className={labelCls}>{t('calendarPage.wherePlayed', '¿Dónde se juega?')}</label>
                     <div className="grid grid-cols-2 gap-2 rounded-xl bg-white p-1 ring-1 ring-gray-200">
                       <button
                         type="button"
                         onClick={() => setIsHome(true)}
                         className={`flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-bold transition-all ${isHome ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50'}`}
                       >
-                        <Home size={14} /> Local
+                        <Home size={14} /> {t('matchesPage.home', 'Local')}
                       </button>
                       <button
                         type="button"
                         onClick={() => setIsHome(false)}
                         className={`flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-bold transition-all ${!isHome ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50'}`}
                       >
-                        <Plane size={14} /> Visitante
+                        <Plane size={14} /> {t('matchesPage.away', 'Visitante')}
                       </button>
                     </div>
                   </div>
@@ -737,20 +747,20 @@ export default function CalendarPage() {
               {eventType === 'Sesión entrenamiento' && (
                 <div className="space-y-4 rounded-2xl bg-red-50/50 p-4 ring-1 ring-red-100">
                   <div>
-                    <label className={labelCls}><Dumbbell size={12} /> Título de la sesión</label>
+                    <label className={labelCls}><Dumbbell size={12} /> {t('calendarPage.sessionTitle', 'Título de la sesión')}</label>
                     <input
                       type="text"
-                      placeholder="Ej: Entrenamiento"
+                      placeholder={t('calendarPage.sessionTitlePlaceholder', 'Ej: Entrenamiento')}
                       className={inputCls}
                       value={eventTitle}
                       onChange={(e) => setEventTitle(e.target.value)}
                     />
                   </div>
                   <div>
-                    <label className={labelCls}>Objetivo</label>
+                    <label className={labelCls}>{t('trainingPage.objective', 'Objetivo')}</label>
                     <input
                       type="text"
-                      placeholder="Ej: Presión tras pérdida"
+                      placeholder={t('calendarPage.objectivePlaceholder', 'Ej: Presión tras pérdida')}
                       className={inputCls}
                       value={eventObjective}
                       onChange={(e) => setEventObjective(e.target.value)}
@@ -762,29 +772,29 @@ export default function CalendarPage() {
               {eventType === 'Reunión individual' && (
                 <div className="space-y-4 rounded-2xl bg-indigo-50/50 p-4 ring-1 ring-indigo-100">
                   <div>
-                    <label className={labelCls}><User size={12} /> Jugador *</label>
+                    <label className={labelCls}><User size={12} /> {t('trainingPage.players', 'Jugador')} *</label>
                     <select className={inputCls} value={meetingPlayerId} onChange={(e) => setMeetingPlayerId(e.target.value)}>
-                      <option value="">Selecciona un jugador</option>
+                      <option value="">{t('calendarPage.selectPlayer', 'Selecciona un jugador')}</option>
                       {(dbPlayers || []).map((p: any) => (
                         <option key={p.id} value={p.id}>{p.first_name} {p.last_name}</option>
                       ))}
                     </select>
                   </div>
                   <div>
-                    <label className={labelCls}>Entrenador</label>
+                    <label className={labelCls}>{t('calendarPage.coach', 'Entrenador')}</label>
                     <input
                       type="text"
-                      placeholder="Nombre del entrenador"
+                      placeholder={t('calendarPage.coachPlaceholder', 'Nombre del entrenador')}
                       className={inputCls}
                       value={meetingCoach}
                       onChange={(e) => setMeetingCoach(e.target.value)}
                     />
                   </div>
                   <div>
-                    <label className={labelCls}>Objetivo</label>
+                    <label className={labelCls}>{t('trainingPage.objective', 'Objetivo')}</label>
                     <input
                       type="text"
-                      placeholder="Ej: Seguimiento del plan individual"
+                      placeholder={t('calendarPage.meetingObjectivePlaceholder', 'Ej: Seguimiento del plan individual')}
                       className={inputCls}
                       value={eventObjective}
                       onChange={(e) => setEventObjective(e.target.value)}
@@ -795,10 +805,10 @@ export default function CalendarPage() {
 
               {eventType === 'Dinámicas' && (
                 <div className="rounded-2xl bg-emerald-50/50 p-4 ring-1 ring-emerald-100">
-                  <label className={labelCls}><Users2 size={12} /> Objetivo de la dinámica</label>
+                  <label className={labelCls}><Users2 size={12} /> {t('calendarPage.dynamicsObjectiveLabel', 'Objetivo de la dinámica')}</label>
                   <input
                     type="text"
-                    placeholder="Ej: Cohesión de grupo"
+                    placeholder={t('calendarPage.dynamicsObjectivePlaceholder', 'Ej: Cohesión de grupo')}
                     className={inputCls}
                     value={eventObjective}
                     onChange={(e) => setEventObjective(e.target.value)}
@@ -814,7 +824,7 @@ export default function CalendarPage() {
                   onClick={closeForm}
                   className="flex-1 rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-bold text-gray-600 shadow-sm transition-colors hover:bg-gray-50 sm:flex-none"
                 >
-                  Cancelar
+                  {t('common.cancel', 'Cancelar')}
                 </button>
                 <button
                   onClick={requestSaveEvent}
@@ -822,7 +832,7 @@ export default function CalendarPage() {
                   className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-blue-500/25 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-blue-500/35 active:translate-y-0 disabled:pointer-events-none disabled:opacity-40 disabled:shadow-none"
                 >
                   <Check size={16} strokeWidth={3} />
-                  {saving ? 'Guardando...' : editingEvent ? 'Guardar cambios' : 'Crear evento'}
+                  {saving ? t('calendarPage.saving', 'Guardando...') : editingEvent ? t('calendarPage.saveChanges', 'Guardar cambios') : t('calendarPage.createEvent', 'Crear evento')}
                 </button>
               </div>
             </div>
@@ -843,8 +853,8 @@ export default function CalendarPage() {
                   <FileDown size={19} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h2 className="text-lg font-extrabold leading-tight">Exportar calendario</h2>
-                  <p className="mt-0.5 text-xs font-medium text-gray-400">PDF horizontal, siempre en una sola página</p>
+                  <h2 className="text-lg font-extrabold leading-tight">{t('calendarPage.exportCalendar', 'Exportar calendario')}</h2>
+                  <p className="mt-0.5 text-xs font-medium text-gray-400">{t('calendarPage.exportSubtitle', 'PDF horizontal, siempre en una sola página')}</p>
                 </div>
                 <button
                   onClick={() => setShowExport(false)}
@@ -858,12 +868,12 @@ export default function CalendarPage() {
 
             <div className="space-y-5 px-5 py-5 sm:px-6">
               <div>
-                <label className={labelCls}>Atajos</label>
+                <label className={labelCls}>{t('calendarPage.shortcuts', 'Atajos')}</label>
                 <div className="flex flex-wrap gap-2">
                   {([
-                    { key: 'month' as const, label: 'Mes visible' },
-                    { key: 'week' as const, label: 'Próximos 7 días' },
-                    { key: 'next30' as const, label: 'Próximos 30 días' },
+                    { key: 'month' as const, label: t('calendarPage.visibleMonth', 'Mes visible') },
+                    { key: 'week' as const, label: t('calendarPage.next7Days', 'Próximos 7 días') },
+                    { key: 'next30' as const, label: t('calendarPage.next30Days', 'Próximos 30 días') },
                   ]).map((p) => (
                     <button
                       key={p.key}
@@ -878,11 +888,11 @@ export default function CalendarPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className={labelCls}><CalendarDays size={12} /> Desde</label>
+                  <label className={labelCls}><CalendarDays size={12} /> {t('calendarPage.from', 'Desde')}</label>
                   <input type="date" className={inputCls} value={exportFrom} onChange={(e) => setExportFrom(e.target.value)} />
                 </div>
                 <div>
-                  <label className={labelCls}><CalendarDays size={12} /> Hasta</label>
+                  <label className={labelCls}><CalendarDays size={12} /> {t('calendarPage.to', 'Hasta')}</label>
                   <input type="date" className={inputCls} value={exportTo} onChange={(e) => setExportTo(e.target.value)} />
                 </div>
               </div>
@@ -891,21 +901,21 @@ export default function CalendarPage() {
                 <div className="flex items-center gap-4 rounded-2xl bg-gray-50 p-4 ring-1 ring-gray-100">
                   <div className="text-center">
                     <p className="text-2xl font-black leading-none text-gray-900">{eventsInRange.length}</p>
-                    <p className="mt-1 text-[10px] font-black uppercase tracking-wider text-gray-400">Eventos</p>
+                    <p className="mt-1 text-[10px] font-black uppercase tracking-wider text-gray-400">{t('calendarPage.events', 'Eventos')}</p>
                   </div>
                   <div className="h-8 w-px bg-gray-200" />
                   <div className="text-center">
                     <p className="text-2xl font-black leading-none text-gray-900">{rangeDays}</p>
-                    <p className="mt-1 text-[10px] font-black uppercase tracking-wider text-gray-400">Días</p>
+                    <p className="mt-1 text-[10px] font-black uppercase tracking-wider text-gray-400">{t('calendarPage.days', 'Días')}</p>
                   </div>
                   <p className="flex-1 text-right text-[11px] font-medium leading-snug text-gray-500">
-                    El diseño se ajusta solo<br />para caber en una hoja
+                    {t('calendarPage.exportFitNote', 'El diseño se ajusta solo para caber en una hoja')}
                   </p>
                 </div>
               ) : (
                 <div className="flex items-center gap-2.5 rounded-2xl bg-amber-50 p-4 text-xs font-bold text-amber-700 ring-1 ring-amber-100">
                   <AlertTriangle size={16} className="shrink-0" />
-                  La fecha de inicio debe ser anterior a la de fin.
+                  {t('calendarPage.invalidDateRange', 'La fecha de inicio debe ser anterior a la de fin.')}
                 </div>
               )}
 
@@ -1120,7 +1130,7 @@ export default function CalendarPage() {
                             >
                               <div className="flex justify-between items-center mb-1">
                                 <span className="text-[9px] font-black uppercase tracking-widest opacity-80 truncate pr-1">
-                                  {e.competition || 'PARTIDO'}
+                                  {formatDynamicText(e.competition || t('calendarPage.match', 'PARTIDO'))}
                                 </span>
                                 {e.time && <span className="text-[10px] font-bold opacity-80 shrink-0">{e.time}</span>}
                               </div>
@@ -1208,7 +1218,7 @@ export default function CalendarPage() {
                         className={`group flex flex-col gap-3 p-4 rounded-2xl border shadow-sm relative cursor-pointer transition-all active:scale-[0.99] ${getEventStyles(e.type, e.competition)}`}
                       >
                         <div className="flex justify-between items-center">
-                          <span className="text-xs font-black uppercase tracking-widest opacity-80">{e.competition || 'PARTIDO'}</span>
+                          <span className="text-xs font-black uppercase tracking-widest opacity-80">{formatDynamicText(e.competition || t('calendarPage.match', 'PARTIDO'))}</span>
                           {e.time && <span className="text-xs font-bold opacity-80 flex items-center gap-1"><Clock size={12}/> {e.time}</span>}
                         </div>
                         <div className="flex items-center justify-between gap-4 mt-2 mb-1">
