@@ -15,6 +15,7 @@ import { getFlagEmoji } from '../../components/pro/PlayersManagementView';
 import RichTextEditor from '../../components/common/RichTextEditor';
 import { extractFeedbackFromHtml } from '../../utils/feedbackExtractor';
 import TranslatedText from '../../components/common/TranslatedText';
+import SubNavTabs from '../../components/common/SubNavTabs';
 
 import PlayerImportModal from '../../components/pro/PlayerImportModal';
 
@@ -89,91 +90,36 @@ export default function PlayerProfilePage() {
 
   return (
     <div className="w-full h-full space-y-6">
-      {/* Action Bar & Tabs */}
-      <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4">
-        {/* Main Tabs */}
-        <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto">
-          {[
-            {
-              id: 'ficha' as Tab,
-              label: t('playerTabs.technicalSheet'),
-              icon: User,
-              inactiveClass: 'bg-white border-gray-200 text-gray-500 hover:border-indigo-400 hover:bg-indigo-50/40 hover:text-indigo-700 shadow-sm',
-              iconInactiveColor: 'text-gray-400 group-hover:text-indigo-500',
-            },
-            {
-              id: 'peso' as Tab,
-              label: t('playerTabs.weightControl'),
-              icon: Weight,
-              inactiveClass: 'bg-white border-gray-200 text-gray-500 hover:border-emerald-400 hover:bg-emerald-50/40 hover:text-emerald-700 shadow-sm',
-              iconInactiveColor: 'text-gray-400 group-hover:text-emerald-500',
-            },
-            {
-              id: 'lesiones' as Tab,
-              label: t('playerTabs.medicalInjuries'),
-              icon: Stethoscope,
-              inactiveClass: 'bg-white border-gray-200 text-gray-500 hover:border-rose-400 hover:bg-rose-50/40 hover:text-rose-700 shadow-sm',
-              iconInactiveColor: 'text-gray-400 group-hover:text-rose-500',
-            },
-            {
-              id: 'plan' as Tab,
-              label: t('playerTabs.individualPlan'),
-              icon: Target,
-              inactiveClass: 'bg-white border-gray-200 text-gray-500 hover:border-amber-400 hover:bg-amber-50/40 hover:text-amber-700 shadow-sm',
-              iconInactiveColor: 'text-gray-400 group-hover:text-amber-500',
-            },
-            {
-              id: 'reuniones' as Tab,
-              label: t('playerTabs.individualMeetings'),
-              icon: Users2,
-              inactiveClass: 'bg-white border-gray-200 text-gray-500 hover:border-violet-400 hover:bg-violet-50/40 hover:text-violet-700 shadow-sm',
-              iconInactiveColor: 'text-gray-400 group-hover:text-violet-500',
-            },
-            {
-              id: 'informes' as Tab,
-              label: t('playerTabs.pastSeasonReports'),
-              icon: FileText,
-              inactiveClass: 'bg-white border-gray-200 text-gray-500 hover:border-sky-400 hover:bg-sky-50/40 hover:text-sky-700 shadow-sm',
-              iconInactiveColor: 'text-gray-400 group-hover:text-sky-500',
-            },
-            {
-              id: 'feedback' as Tab,
-              label: t('playerTabs.feedbackTab'),
-              icon: BarChart2,
-              inactiveClass: 'bg-white border-gray-200 text-gray-500 hover:border-fuchsia-400 hover:bg-fuchsia-50/40 hover:text-fuchsia-700 shadow-sm',
-              iconInactiveColor: 'text-gray-400 group-hover:text-fuchsia-500',
-            },
-          ].map((tabConfig) => {
-            const Icon = tabConfig.icon;
-            const isActive = activeTab === tabConfig.id;
-            return (
-              <button
-                key={tabConfig.id}
-                className={`group flex-1 sm:flex-none px-6 py-3 font-bold text-base rounded-xl transition-all duration-300 flex items-center justify-center gap-2 border-2 ${
-                  isActive ? 'active-tab-black-red shadow-lg scale-[1.02]' : tabConfig.inactiveClass
-                }`}
-                onClick={() => handleTabChange(tabConfig.id)}
-              >
-                <Icon size={20} className={`${isActive ? '!text-red-500' : tabConfig.iconInactiveColor} transition-colors duration-300`} />
-                {tabConfig.label}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex items-center gap-3 w-full xl:w-auto justify-start xl:justify-end">
-          <button onClick={() => navigate('/players')} className="px-5 py-3 bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 rounded-xl text-sm font-bold flex items-center gap-2 transition-colors shadow-sm">
-            <ArrowLeft size={16} /> {t('playerProfile.backToRoster')}
-          </button>
-          <button
-            onClick={() => setShowEditModal(true)}
-            className="px-5 py-3 bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 rounded-xl text-sm font-bold flex items-center gap-2 transition-colors shadow-sm"
-          >
-            <Edit2 size={16} /> {t('playerProfile.editProfile')}
-          </button>
-        </div>
-      </div>
+      {/* Modern Sub-Navigation Tabs Bar */}
+      <SubNavTabs
+        tabs={[
+          { id: 'ficha', label: t('playerTabs.technicalSheet', 'Ficha Técnica'), icon: User },
+          { id: 'peso', label: t('playerTabs.weightControl', 'Control de Peso'), icon: Weight },
+          { id: 'lesiones', label: t('playerTabs.medicalInjuries', 'Lesiones'), icon: Stethoscope },
+          { id: 'plan', label: t('playerTabs.individualPlan', 'Plan Individual'), icon: Target },
+          { id: 'reuniones', label: t('playerTabs.individualMeetings', 'Reuniones'), icon: Users2 },
+          { id: 'informes', label: t('playerTabs.pastSeasonReports', 'Informes Pasados'), icon: FileText },
+          { id: 'feedback', label: t('playerTabs.feedbackTab', 'Feedback & Métricas'), icon: BarChart2 },
+        ]}
+        activeTab={activeTab}
+        onChange={(t) => handleTabChange(t as Tab)}
+        rightSlot={
+          <div className="flex items-center gap-2.5">
+            <button 
+              onClick={() => navigate('/players')} 
+              className="px-4 py-2.5 bg-white dark:bg-neutral-800 hover:bg-gray-50 dark:hover:bg-neutral-700 border border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-200 rounded-xl text-xs font-bold flex items-center gap-2 transition-all shadow-xs"
+            >
+              <ArrowLeft size={15} /> {t('playerProfile.backToRoster', 'Volver')}
+            </button>
+            <button
+              onClick={() => setShowEditModal(true)}
+              className="px-4 py-2.5 bg-[var(--color-primary,#db0030)] hover:bg-[#b80028] text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow-md shadow-[var(--color-primary,#db0030)]/25 transition-all active:scale-95"
+            >
+              <Edit2 size={15} /> {t('playerProfile.editProfile', 'Editar Ficha')}
+            </button>
+          </div>
+        }
+      />
 
       {/* Header Info (Ficha) */}
       <div className="bg-white p-6 border border-gray-100 shadow-sm rounded-2xl mb-6 flex flex-col">

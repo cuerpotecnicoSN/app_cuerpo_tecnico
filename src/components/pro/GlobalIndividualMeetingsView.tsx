@@ -7,6 +7,7 @@ import { getMeetings, createMeeting, updateMeeting, deleteMeeting, addMeetingPla
 import { supabase } from '../../lib/supabase';
 import RichTextEditor from '../common/RichTextEditor';
 import { extractFeedbackFromHtml } from '../../utils/feedbackExtractor';
+import SubNavTabs from '../common/SubNavTabs';
 
 interface GlobalIndividualMeetingsViewProps {
   players: Player[];
@@ -237,20 +238,25 @@ export default function GlobalIndividualMeetingsView({ players }: GlobalIndividu
     <div className="w-full mx-auto h-full animate-fade-in pb-8 flex flex-col mt-4">
       
       {/* TABS */}
-      <div className="flex bg-gray-100 p-1.5 rounded-2xl w-full md:w-fit mb-6">
-        <button
-          onClick={() => setActiveTab('list')}
-          className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm transition-all ${activeTab === 'list' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'}`}
-        >
-          <List size={18} /> {t('meetingsTab.meetingsList')}
-        </button>
-        <button
-          onClick={() => setActiveTab('summary')}
-          className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm transition-all ${activeTab === 'summary' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'}`}
-        >
-          <BarChart2 size={18} /> {t('meetingsTab.summaryByPlayer')}
-        </button>
-      </div>
+      <SubNavTabs
+        tabs={[
+          {
+            id: 'list',
+            label: t('meetingsTab.meetingsList', 'Lista de Reuniones'),
+            icon: List,
+            count: meetings.length,
+          },
+          {
+            id: 'summary',
+            label: t('meetingsTab.summaryByPlayer', 'Resumen por Jugador'),
+            icon: BarChart2,
+            count: playerSummaries.length,
+          },
+        ]}
+        activeTab={activeTab}
+        onChange={(t) => setActiveTab(t as 'list' | 'summary')}
+        className="mb-6"
+      />
 
       {activeTab === 'list' ? (
         <div className="flex flex-col xl:flex-row gap-6">

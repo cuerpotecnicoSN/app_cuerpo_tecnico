@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { Play, Pause, Edit2, Trash2, Check, X, Clock, Filter, Flag, ChevronLeft, AlertTriangle, Sliders, MapPinned, Grid3x3, Hash, UserPlus, MessageSquare, ThumbsUp, ThumbsDown, Minus, BarChart3, FileDown, Flame } from 'lucide-react';
+import { Play, Pause, Edit2, Trash2, Check, X, Clock, Filter, Flag, ChevronLeft, AlertTriangle, Sliders, MapPinned, Grid3x3, Hash, UserPlus, MessageSquare, ThumbsUp, ThumbsDown, Minus, BarChart3, FileDown, Flame, Radio } from 'lucide-react';
 import type { MatchDB, MatchFocus, MatchDataPoint } from '../types';
 import { createMatchDataPoint, deleteMatchDataPoint, deleteAllMatchDataPoints, updateMatchDataPoint, updateMatchFocus, isTimerPersistenceAvailable } from '../../services/matches';
 import { useSupabaseData } from '../../hooks/useSupabaseData';
@@ -7,6 +7,7 @@ import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tool
 import MatchDataEditModal from './MatchDataEditModal';
 import PitchGraph from './PitchGraph';
 import { exportLiveRegistrationPdf, type FocusStatRow } from '../../utils/liveRegistrationPdf';
+import SubNavTabs from '../common/SubNavTabs';
 
 interface Props {
   match: MatchDB;
@@ -421,20 +422,14 @@ export default function MatchLiveRegistrationView({ match, focuses, dataPoints, 
       )}
 
       {/* Tabs */}
-      <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-xl">
-        <button 
-          onClick={() => setActiveTab('registro')}
-          className={`flex-1 py-2 text-sm font-bold rounded-lg transition-colors ${activeTab === 'registro' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-        >
-          Registro y Cronología
-        </button>
-        <button 
-          onClick={() => setActiveTab('vision_general')}
-          className={`flex-1 py-2 text-sm font-bold rounded-lg transition-colors flex items-center justify-center gap-2 ${activeTab === 'vision_general' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-        >
-          <BarChart3 size={16} /> Visión General
-        </button>
-      </div>
+      <SubNavTabs
+        tabs={[
+          { id: 'registro', label: 'Registro y Cronología', icon: Radio },
+          { id: 'vision_general', label: 'Visión General y Métricas', icon: BarChart3 },
+        ]}
+        activeTab={activeTab}
+        onChange={(t) => setActiveTab(t as any)}
+      />
 
       {timer.running && (
         <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-2">

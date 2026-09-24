@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Trash2, ChevronLeft, MapPin, Swords, Pencil, User, Radio, Target, Award } from 'lucide-react';
+import { Plus, Trash2, ChevronLeft, MapPin, Swords, Pencil, User, Radio, Target, Award, Globe2, BarChart2, FileDown, Trophy, FileText, Filter } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import type { MatchDB, MatchFocus, MatchDataPoint } from '../../components/types';
 import { getMatches, createMatch, updateMatch, getMatchFocuses, createMatchFocus, updateMatchFocus, deleteMatchFocus, getMatchDataPoints } from '../../services/matches';
@@ -12,9 +12,11 @@ import FocusStatisticsView from '../../components/matches/FocusStatisticsView';
 import LiveRegistrationFlow from '../../components/matches/LiveRegistrationFlow';
 import FocusPlanningFlow from '../../components/matches/FocusPlanningFlow';
 import PaniniReportView from '../../components/matches/PaniniReportView';
+import PaniniImportModal from '../../components/matches/panini/PaniniImportModal';
 import { getPaniniReportForMatch } from '../../services/paniniReports';
 import type { PaniniMatchReport } from '../../types/paniniReport';
 import type { FocusDetails } from '../../components/types';
+import SubNavTabs from '../../components/common/SubNavTabs';
 
 export default function MatchesPage() {
   const { t } = useTranslation();
@@ -53,9 +55,46 @@ export default function MatchesPage() {
     }
   }, [searchParams, activeMatch]);
 
-  const openFocusPlanning = () => { setShowFocusPlanning(true); setSearchParams({ view: 'focuses' }); };
-  const openLiveFlow = () => { setShowLiveFlow(true); setSearchParams({ view: 'data' }); };
-  const closeFlows = () => { setShowFocusPlanning(false); setShowLiveFlow(false); setSearchParams({}); load(); };
+  const openFocusPlanning = () => { setShowFocusPlanning(true); setShowLiveFlow(false); setShowGlobalFocuses(false); setShowFocusStats(false); setSearchParams({ view: 'focuses' }); };
+  const openLiveFlow = () => { setShowLiveFlow(true); setShowFocusPlanning(false); setShowGlobalFocuses(false); setShowFocusStats(false); setSearchParams({ view: 'data' }); };
+  const closeFlows = () => { setShowFocusPlanning(false); setShowLiveFlow(false); setShowGlobalFocuses(false); setShowFocusStats(false); setSearchParams({}); load(); };
+
+  const handleMainTabChange = (tabId: string) => {
+    if (tabId === 'matches') {
+      closeFlows();
+    } else if (tabId === 'live') {
+      openLiveFlow();
+    } else if (tabId === 'focus_planning') {
+      openFocusPlanning();
+    } else if (tabId === 'global_focuses') {
+      setShowGlobalFocuses(true);
+      setShowFocusStats(false);
+      setShowFocusPlanning(false);
+      setShowLiveFlow(false);
+    } else if (tabId === 'focus_stats') {
+      setShowFocusStats(true);
+      setShowGlobalFocuses(false);
+      setShowFocusPlanning(false);
+      setShowLiveFlow(false);
+    }
+  };
+
+  const currentMainTab = showFocusPlanning
+    ? 'focus_planning'
+    : showLiveFlow
+    ? 'live'
+    : showGlobalFocuses
+    ? 'global_focuses'
+    : showFocusStats
+    ? 'focus_stats'
+    : 'matches';
+
+  const counts = {
+    all: matches.filter(m => m.date >= '2026-08-01').length,
+    league: matches.filter(m => m.date >= '2026-08-01' && !((m.competition || '').toLowerCase().includes('amistoso') || (m.competition || '').toLowerCase().includes('copa'))).length,
+    cup: matches.filter(m => m.date >= '2026-08-01' && ((m.competition || '').toLowerCase().includes('copa') || (m.competition || '').toLowerCase().includes('coppa'))).length,
+    friendly: matches.filter(m => m.date >= '2026-08-01' && (m.competition || '').toLowerCase().includes('amistoso')).length,
+  };
 
   const filteredMatches = matches
     .filter(m => m.date >= '2026-08-01')
@@ -134,84 +173,81 @@ export default function MatchesPage() {
     );
   }
 
+  const subNavItems = [
+    { id: 'matches', label: t('nav.matches', 'Partidos'), icon: Trophy, count: filteredMatches.length },
+    { id: 'live', label: 'Registro en Vivo', icon: Radio },
+    { id: 'focus_planning', label: 'Planificar Focos', icon: Target },
+    { id: 'global_focuses', label: 'Focos Globales', icon: Globe2 },
+    { id: 'focus_stats', label: 'Estadísticas Focos', icon: BarChart2 },
+  ];
+
   return (
-    <div className="space-y-4">
-      {/* Header Container */}
-      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
-        
-        {/* Left Side: Title & Filters */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-          <h1 className="text-2xl font-extrabold text-gray-900 shrink-0">{t('matchesPage.title')}</h1>
-          
-          <div className="flex bg-gray-100 p-1.5 rounded-xl gap-1 overflow-x-auto w-full sm:w-auto shadow-inner">
-            <button 
-              onClick={() => setFilterType('all')} 
-              className={`px-5 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all ${filterType === 'all' ? 'bg-blue-600 text-white shadow-md scale-105' : 'text-gray-500 hover:bg-gray-200 hover:text-gray-800'}`}
-            >
-              Todos
-            </button>
-            <button 
-              onClick={() => setFilterType('league')} 
-              className={`px-5 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all ${filterType === 'league' ? 'bg-blue-600 text-white shadow-md scale-105' : 'text-gray-500 hover:bg-gray-200 hover:text-gray-800'}`}
-            >
-              Liga
-            </button>
-            <button 
-              onClick={() => setFilterType('cup')} 
-              className={`px-5 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all ${filterType === 'cup' ? 'bg-blue-600 text-white shadow-md scale-105' : 'text-gray-500 hover:bg-gray-200 hover:text-gray-800'}`}
-            >
-              Copa
-            </button>
-            <button 
-              onClick={() => setFilterType('friendly')} 
-              className={`px-5 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all ${filterType === 'friendly' ? 'bg-blue-600 text-white shadow-md scale-105' : 'text-gray-500 hover:bg-gray-200 hover:text-gray-800'}`}
-            >
-              Amistosos
-            </button>
+    <div className="space-y-5 animate-fade-in">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight uppercase">
+              {t('matchesPage.title', 'Partidos')}
+            </h1>
+            <span className="px-3 py-1 bg-red-50 dark:bg-red-950/40 text-[var(--color-primary,#db0030)] text-xs font-black uppercase tracking-wider rounded-full border border-red-200/60 dark:border-red-800/40">
+              Temporada 2026/27
+            </span>
           </div>
+          <p className="text-xs text-gray-500 font-medium mt-1">
+            Gestión completa de encuentros, focos tácticos y toma de datos en directo
+          </p>
         </div>
 
-        {/* Right Side: Action Buttons */}
-        <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto justify-start sm:justify-end">
-          <button 
-            onClick={openLiveFlow}
-            className="px-5 py-2.5 bg-red-50 text-red-700 rounded-xl text-sm font-bold shadow-sm border border-red-200 hover:bg-red-100 transition-all flex-1 sm:flex-none text-center flex items-center justify-center gap-2"
-          >
-            <Radio size={16} /> Registro en Vivo
-          </button>
-          <button 
-            onClick={openFocusPlanning}
-            className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-md hover:bg-indigo-500 transition-all flex-1 sm:flex-none text-center flex items-center justify-center gap-2"
-          >
-            <Target size={16} /> Planificar Focos
-          </button>
-          <button 
-            onClick={() => setShowGlobalFocuses(true)}
-            className="px-5 py-2.5 bg-indigo-50 text-indigo-700 rounded-xl text-sm font-bold shadow-sm border border-indigo-200 hover:bg-indigo-100 transition-all flex-1 sm:flex-none text-center"
-          >
-            Focos Globales
-          </button>
-          <button 
-            onClick={() => setShowFocusStats(true)}
-            className="px-5 py-2.5 bg-blue-50 text-blue-700 rounded-xl text-sm font-bold shadow-sm border border-blue-200 hover:bg-blue-100 transition-all flex-1 sm:flex-none text-center"
-          >
-            Estadísticas Focos
-          </button>
+        {/* Primary Action Buttons */}
+        <div className="flex items-center gap-2.5 flex-wrap">
           <button 
             onClick={handleExport}
             disabled={exporting || filteredMatches.length === 0}
-            className="px-5 py-2.5 bg-gray-900 text-white rounded-xl text-sm font-bold shadow-md hover:bg-gray-800 transition-all active:scale-95 disabled:opacity-50 disabled:active:scale-100 flex-1 sm:flex-none text-center"
+            className="px-4 py-2.5 bg-white dark:bg-neutral-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-neutral-700 border border-gray-200 dark:border-white/10 rounded-xl text-sm font-bold shadow-xs hover:shadow-sm transition-all active:scale-95 disabled:opacity-50 disabled:active:scale-100 flex items-center gap-2"
           >
+            <FileDown size={16} />
             {exporting ? 'Exportando...' : 'Exportar PDF'}
           </button>
           <button 
             onClick={() => setShowForm((v) => !v)} 
-            className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all active:scale-95 flex-1 sm:flex-none"
+            className="px-5 py-2.5 bg-[var(--color-primary,#db0030)] hover:bg-[#b80028] text-white rounded-xl text-sm font-black tracking-wide flex items-center justify-center gap-2 shadow-md shadow-[var(--color-primary,#db0030)]/25 hover:shadow-lg transition-all active:scale-95"
           >
-            <Plus size={16} strokeWidth={3} /> {t('matchesPage.newMatch')}
+            <Plus size={16} strokeWidth={3} /> {t('matchesPage.newMatch', 'Nuevo partido')}
           </button>
         </div>
       </div>
+
+      {/* Modern Sub-Navigation Tabs Bar */}
+      <SubNavTabs
+        tabs={subNavItems}
+        activeTab={currentMainTab}
+        onChange={handleMainTabChange}
+        rightSlot={
+          <div className="flex items-center gap-1 bg-gray-100/80 dark:bg-neutral-900/80 p-1 rounded-xl border border-gray-200/80 dark:border-white/10">
+            <span className="text-[10px] font-black uppercase text-gray-400 px-2 flex items-center gap-1">
+              <Filter size={11} /> Filtro:
+            </span>
+            {(['all', 'league', 'cup', 'friendly'] as const).map((filterKey) => {
+              const labels = { all: 'Todos', league: 'Liga', cup: 'Copa', friendly: 'Amistosos' };
+              const isSelected = filterType === filterKey;
+              return (
+                <button
+                  key={filterKey}
+                  onClick={() => setFilterType(filterKey)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    isSelected
+                      ? 'bg-white dark:bg-neutral-800 text-gray-900 dark:text-white shadow-xs'
+                      : 'text-gray-500 hover:text-gray-800 dark:hover:text-gray-200'
+                  }`}
+                >
+                  {labels[filterKey]} ({counts[filterKey]})
+                </button>
+              );
+            })}
+          </div>
+        }
+      />
 
       {showForm && (
         <div className="bg-white border border-gray-100 rounded-xl p-4 space-y-3 shadow-sm">
@@ -321,6 +357,7 @@ function MatchDetail({ match, onBack, onUpdate }: { match: MatchDB; onBack: () =
   const [paniniReport, setPaniniReport] = useState<PaniniMatchReport | null>(null);
   
   const [isEditingInfo, setIsEditingInfo] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [editDate, setEditDate] = useState(match.date);
   const [editTime, setEditTime] = useState(match.time || '');
   const [scoutingNotes, setScoutingNotes] = useState(match.scouting_notes || '');
@@ -475,19 +512,69 @@ function MatchDetail({ match, onBack, onUpdate }: { match: MatchDB; onBack: () =
         </div>
       </div>
 
-      <div className="flex gap-2 flex-wrap">
-        <button onClick={() => handleTabChange('panini')} className={`px-4 py-2 rounded-lg text-sm font-bold border-2 flex items-center gap-2 transition-all ${tab === 'panini' ? 'bg-indigo-50 border-indigo-600 text-indigo-700 shadow-sm' : 'bg-white border-gray-200 text-gray-500'}`}>
-          <Award size={16} /> Panini Match Analysis
-          {hasPaniniData && <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.8)]"></span>}
-        </button>
-        <button onClick={() => handleTabChange('info')} className={`px-4 py-2 rounded-lg text-sm font-bold border-2 ${tab === 'info' ? 'bg-blue-50 border-blue-600 text-blue-700' : 'bg-white border-gray-200 text-gray-500'}`}>{t('matchesPage.info')}</button>
-        <button onClick={() => handleTabChange('focuses')} className={`px-4 py-2 rounded-lg text-sm font-bold border-2 ${tab === 'focuses' ? 'bg-blue-50 border-blue-600 text-blue-700' : 'bg-white border-gray-200 text-gray-500'}`}>{t('matchesPage.focuses')}</button>
-        <button onClick={() => handleTabChange('data')} className={`px-4 py-2 rounded-lg text-sm font-bold border-2 ${tab === 'data' ? 'bg-blue-50 border-blue-600 text-blue-700' : 'bg-white border-gray-200 text-gray-500'}`}>{t('matchesPage.dataCollection')}</button>
-      </div>
+      <SubNavTabs
+        tabs={[
+          {
+            id: 'panini',
+            label: 'Panini Match Analysis',
+            icon: Award,
+            badge: hasPaniniData ? 'IA Pro' : undefined,
+          },
+          {
+            id: 'info',
+            label: t('matchesPage.info', 'Info Partido'),
+            icon: FileText,
+          },
+          {
+            id: 'focuses',
+            label: t('matchesPage.focuses', 'Focos del Partido'),
+            icon: Target,
+            count: focuses.length,
+          },
+          {
+            id: 'data',
+            label: t('matchesPage.dataCollection', 'Registro de Datos'),
+            icon: Radio,
+            count: dataPoints.length,
+          },
+        ]}
+        activeTab={tab}
+        onChange={(newTab) => handleTabChange(newTab as any)}
+      />
 
-      {tab === 'panini' && paniniReport && (
-        <PaniniReportView matchId={match.id} report={paniniReport} onRefresh={loadPanini} />
+      {tab === 'panini' && (
+        paniniReport ? (
+          <PaniniReportView matchId={match.id} report={paniniReport} onRefresh={loadPanini} />
+        ) : (
+          <div className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-white/10 rounded-3xl p-8 md:p-12 text-center max-w-xl mx-auto space-y-5 shadow-sm">
+            <div className="w-16 h-16 rounded-3xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mx-auto shadow-inner">
+              <Award size={32} />
+            </div>
+            <div>
+              <h3 className="text-lg font-black text-gray-900 dark:text-white">Sin Informe Panini para este Encuentro</h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 max-w-md mx-auto">
+                Puedes importar el documento PDF o JSON de Panini Digital Match Analysis para sincronizar métricas, campogramas y jugadores con la base de datos.
+              </p>
+            </div>
+            <button
+              onClick={() => setShowImportModal(true)}
+              className="px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white text-xs font-black shadow-lg transition-all inline-flex items-center gap-2"
+            >
+              <Award size={16} /> Importar Informe Panini (PDF / JSON)
+            </button>
+          </div>
+        )
       )}
+
+      <PaniniImportModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        currentMatchId={match.id}
+        onImportSuccess={() => {
+          loadPanini();
+          setShowImportModal(false);
+        }}
+      />
 
       {tab === 'info' && (
         <div className="bg-white border border-gray-100 rounded-xl p-4 space-y-3 shadow-sm">

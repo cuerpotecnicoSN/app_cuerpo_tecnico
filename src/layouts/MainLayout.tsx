@@ -71,13 +71,22 @@ const MainLayout: React.FC = () => {
         {/* Dropdown for Desktop & Accordion for Mobile */}
         {hasChildren && (
           <div className={`
-            lg:absolute lg:top-full lg:left-0 lg:w-64 lg:bg-[#111] lg:border-t-2 lg:border-[var(--color-primary,#db0030)] lg:shadow-xl
+            lg:absolute lg:top-[calc(100%+8px)] lg:left-0 lg:w-80 lg:bg-[#121215]/95 lg:backdrop-blur-2xl lg:border lg:border-white/10 lg:rounded-2xl lg:shadow-[0_20px_50px_rgba(0,0,0,0.6)] lg:p-2
             transition-all duration-200 overflow-hidden z-50
-            ${isOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0 lg:hidden'}
+            ${isOpen ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0 lg:hidden'}
           `}>
-            <ul className="flex flex-col py-2 lg:py-4 px-8 lg:px-0 bg-gray-900 lg:bg-transparent">
+            {/* Top glowing accent line for desktop */}
+            <div className="hidden lg:block absolute -top-[1px] inset-x-6 h-[2px] bg-gradient-to-r from-transparent via-[var(--color-primary,#db0030)] to-transparent rounded-full shadow-[0_0_10px_var(--color-primary,#db0030)]" />
+
+            <div className="hidden lg:flex items-center justify-between px-3 py-1.5 mb-1.5 border-b border-white/5">
+              <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">{t(section.labelKey)}</span>
+              <span className="text-[10px] font-bold text-gray-500">{section.children?.length} opciones</span>
+            </div>
+
+            <ul className="flex flex-col gap-1 py-2 lg:py-0 px-4 lg:px-0 bg-gray-900/60 lg:bg-transparent rounded-xl">
               {section.children?.map((child) => {
                 const childActive = location.search === child.path.split('?')[1] || (location.search === '' && child.path === section.path);
+                const IconComponent = child.icon;
                 return (
                   <li key={child.path}>
                     <button
@@ -85,13 +94,32 @@ const MainLayout: React.FC = () => {
                         navigate(child.path);
                         setOpenMenu(null);
                       }}
-                      className={`w-full text-left px-6 py-3 text-[0.95rem] font-bold uppercase tracking-widest transition-colors ${
+                      className={`group/item w-full text-left p-2.5 rounded-xl flex items-center gap-3 transition-all duration-200 ${
                         childActive 
-                          ? '!text-white bg-[var(--color-primary,#db0030)]' 
-                          : '!text-gray-300 hover:!text-white hover:bg-gray-800'
+                          ? 'bg-gradient-to-r from-[var(--color-primary,#db0030)]/20 to-[var(--color-primary,#db0030)]/5 border border-[var(--color-primary,#db0030)]/40 shadow-sm' 
+                          : 'hover:bg-white/5 border border-transparent hover:border-white/10'
                       }`}
                     >
-                      {t(child.labelKey)}
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all duration-200 ${
+                        childActive
+                          ? 'bg-[var(--color-primary,#db0030)] text-white shadow-[0_0_12px_rgba(219,0,48,0.4)] scale-105'
+                          : 'bg-white/5 text-gray-400 group-hover/item:text-white group-hover/item:bg-[var(--color-primary,#db0030)] group-hover/item:scale-105'
+                      }`}>
+                        {IconComponent && <IconComponent size={18} />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm font-bold tracking-tight transition-colors ${
+                          childActive ? 'text-white' : 'text-gray-200 group-hover/item:text-white'
+                        }`}>
+                          {t(child.labelKey)}
+                        </p>
+                        <p className="text-[11px] text-gray-400 font-normal truncate mt-0.5">
+                          {child.descKey ? t(child.descKey, child.defaultDesc || '') : (child.defaultDesc || '')}
+                        </p>
+                      </div>
+                      {childActive && (
+                        <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-primary,#db0030)] shadow-[0_0_6px_var(--color-primary,#db0030)] shrink-0" />
+                      )}
                     </button>
                   </li>
                 );

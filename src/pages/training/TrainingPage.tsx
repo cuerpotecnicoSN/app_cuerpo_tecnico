@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
-import { Plus, Trash2, ChevronLeft, MapPin, X, Download, Save, FolderSearch, ClipboardList, Edit2, ArrowUp, ArrowDown, ListOrdered, AlertTriangle, Settings } from 'lucide-react';
+import { Plus, Trash2, ChevronLeft, MapPin, X, Download, Save, FolderSearch, ClipboardList, Edit2, ArrowUp, ArrowDown, ListOrdered, AlertTriangle, Settings, CalendarCheck, BookOpen, BarChart3 } from 'lucide-react';
 import { TASK_TYPES, type TrainingSessionDB, type TaskLibraryItem, type SessionTask } from '../../components/types';
 import {
   getTrainingSessions, createTrainingSession, deleteTrainingSession, updateTrainingSession,
@@ -13,6 +13,7 @@ import { TaskModal } from '../../components/training/TaskModal';
 import { TaskBoardEditor } from '../../components/training/TaskBoardEditor';
 import { exportSessionToPdf } from '../../utils/sessionPdf';
 import { TaskStatsView } from '../../components/training/TaskStatsView';
+import SubNavTabs from '../../components/common/SubNavTabs';
 
 const stripHtml = (html?: string) => {
   if (!html) return '';
@@ -93,15 +94,48 @@ export default function TrainingPage() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <h1 className="text-2xl font-extrabold text-gray-900">{t('trainingPage.title')}</h1>
-        <div className="flex gap-2">
-          <button onClick={() => handleViewChange('sessions')} className={`px-4 py-2 rounded-lg text-sm font-bold border-2 ${view === 'sessions' ? 'bg-red-50 border-red-600 text-red-700' : 'bg-white border-gray-200 text-gray-500'}`}>{t('trainingPage.sessions')}</button>
-          <button onClick={() => handleViewChange('library')} className={`px-4 py-2 rounded-lg text-sm font-bold border-2 ${view === 'library' ? 'bg-red-50 border-red-600 text-red-700' : 'bg-white border-gray-200 text-gray-500'}`}>{t('trainingPage.taskLibrary')}</button>
-          <button onClick={() => handleViewChange('stats')} className={`px-4 py-2 rounded-lg text-sm font-bold border-2 ${view === 'stats' ? 'bg-red-50 border-red-600 text-red-700' : 'bg-white border-gray-200 text-gray-500'}`}>{t('trainingPage.taskStats', 'Estadísticas')}</button>
+    <div className="space-y-5 animate-fade-in">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight uppercase">
+              {t('trainingPage.title', 'Entrenamientos')}
+            </h1>
+            <span className="px-3 py-1 bg-red-50 dark:bg-red-950/40 text-[var(--color-primary,#db0030)] text-xs font-black uppercase tracking-wider rounded-full border border-red-200/60 dark:border-red-800/40">
+              {sessions.length} sesiones
+            </span>
+          </div>
+          <p className="text-xs text-gray-500 font-medium mt-1">
+            Diseño de sesiones, biblioteca de tareas con pizarra táctica y métricas de carga
+          </p>
         </div>
       </div>
+
+      {/* Modern Sub-Navigation Tabs Bar */}
+      <SubNavTabs
+        tabs={[
+          {
+            id: 'sessions',
+            label: t('trainingPage.sessions', 'Sesiones'),
+            icon: CalendarCheck,
+            count: sessions.length,
+          },
+          {
+            id: 'library',
+            label: t('trainingPage.taskLibrary', 'Biblioteca de Tareas'),
+            icon: BookOpen,
+            count: tasks.length,
+          },
+          {
+            id: 'stats',
+            label: t('trainingPage.taskStats', 'Estadísticas de Tareas'),
+            icon: BarChart3,
+          },
+        ]}
+        activeTab={view}
+        onChange={(v) => handleViewChange(v as View)}
+      />
 
       {view === 'sessions' ? (
         <SessionsList sessions={sessions} onCreate={loadSessions} onOpen={setActiveSession} onDelete={async (id) => { await deleteTrainingSession(id); loadSessions(); }} />

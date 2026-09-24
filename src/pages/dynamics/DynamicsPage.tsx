@@ -39,14 +39,27 @@ export default function DynamicsPage() {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between flex-wrap gap-3">
+    <div className="space-y-5 animate-fade-in">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold text-gray-900">{t('dynamicsPage.title')}</h1>
-          <p className="text-sm text-gray-500">{t('dynamicsPage.subtitle')}</p>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight uppercase">
+              {t('dynamicsPage.title', 'Dinámicas')}
+            </h1>
+            <span className="px-3 py-1 bg-red-50 dark:bg-red-950/40 text-[var(--color-primary,#db0030)] text-xs font-black uppercase tracking-wider rounded-full border border-red-200/60 dark:border-red-800/40">
+              {meetings.length} sesiones
+            </span>
+          </div>
+          <p className="text-xs text-gray-500 font-medium mt-1">
+            {t('dynamicsPage.subtitle', 'Registro y seguimiento de dinámicas de grupo y reuniones')}
+          </p>
         </div>
-        <button onClick={() => setShowForm((v) => !v)} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold flex items-center gap-2">
-          <Plus size={16} /> {t('dynamicsPage.newMeeting')}
+        <button 
+          onClick={() => setShowForm((v) => !v)} 
+          className="px-5 py-2.5 bg-[var(--color-primary,#db0030)] hover:bg-[#b80028] text-white rounded-xl text-sm font-black tracking-wide flex items-center gap-2 shadow-md shadow-[var(--color-primary,#db0030)]/25 transition-all active:scale-95"
+        >
+          <Plus size={16} strokeWidth={3} /> {t('dynamicsPage.newMeeting', 'Nueva Dinámica')}
         </button>
       </div>
 

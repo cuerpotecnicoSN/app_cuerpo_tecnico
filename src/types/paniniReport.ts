@@ -17,6 +17,9 @@ export interface PaniniPlayerLineup {
   tarjetas_amarillas?: string[];
   tarjetas_rojas?: string[];
   player_id?: string;
+  /** Coordenadas relativas en el campograma táctico (0-100%) */
+  x?: number;
+  y?: number;
 }
 
 export interface PaniniPeriodStats {
@@ -86,6 +89,24 @@ export interface PaniniSpatialCategory {
   derecha_pct: number;
 }
 
+export interface PaniniShotEvent {
+  id: string;
+  dorsal: number;
+  jugador: string;
+  player_id?: string;
+  minuto: string;
+  resultado: 'gol' | 'a_puerta' | 'bloqueado' | 'fuera';
+  tipo: 'pie_raso' | 'cabeza' | 'acrobacia';
+  origen: 'jugada' | 'abp_indirecto' | 'abp_directo' | 'fuera_area';
+  zona: 'area_pequena' | 'area_penalti' | 'fuera_area';
+  /** Coordenadas relativas en medio campo de ataque (x: 0-100%, y: 0-100% hacia portería) */
+  x: number;
+  y: number;
+  xg?: number;
+}
+
+export type PaniniTeamData = PaniniMatchReport['equipo_local'];
+
 export interface PaniniFinishingStats {
   tiros_totales: number;
   tiros_a_puerta: number;
@@ -110,6 +131,26 @@ export interface PaniniFinishingStats {
   abp_corners_izquierda: number;
   abp_saques_banda_derecha: number;
   abp_saques_banda_izquierda: number;
+  remates_detalle?: PaniniShotEvent[];
+}
+
+export interface PaniniPassingNode {
+  dorsal: number;
+  nombre: string;
+  player_id?: string;
+  posicion?: string;
+  /** Coordenadas promedio en el campograma (0-100%) */
+  x: number;
+  y: number;
+  pases_dados?: number;
+  pases_recibidos?: number;
+  precision_pct?: number;
+}
+
+export interface PaniniPassingLink {
+  origen_dorsal: number;
+  destino_dorsal: number;
+  pases: number;
 }
 
 export interface PaniniPlayerStats {
@@ -153,16 +194,20 @@ export interface PaniniPlayerStats {
   saques_largos_utiles?: string;
   distribucion_1t?: { defensa_pct: number; medio_pct: number; ataque_pct: number; izq_pct?: number; cen_pct?: number; dcha_pct?: number };
   distribucion_2t?: { defensa_pct: number; medio_pct: number; ataque_pct: number; izq_pct?: number; cen_pct?: number; dcha_pct?: number };
+  /** Coordenadas estimadas de posición media en el campograma */
+  posicion_media_x?: number;
+  posicion_media_y?: number;
 }
 
 export interface PaniniPassingMatrix {
-  jugadores: { dorsal: number; nombre: string; player_id?: string }[];
+  jugadores: PaniniPassingNode[];
   matriz: { [dorsal_origen: number]: { [dorsal_destino: number]: number } };
   totales_dados: { [dorsal: number]: number };
   totales_recibidos: { [dorsal: number]: number };
   precision_individual_pct: { [dorsal: number]: number };
   total_equipo_pases: number;
   precision_equipo_pct: number;
+  enlaces?: PaniniPassingLink[];
 }
 
 export interface PaniniMatchReport {
@@ -225,3 +270,4 @@ export interface PaniniMatchReport {
   goleadores: { minuto: string; jugador: string; equipo: 'home' | 'away' }[];
   timeline_eventos: PaniniTimelineEvent[];
 }
+

@@ -7,8 +7,9 @@ import { useSearchParams } from 'react-router-dom';
 
 import { useSupabaseData } from '../../hooks/useSupabaseData';
 import PlayerImportModal from '../../components/pro/PlayerImportModal';
-import { Plus, Users as UsersIcon, Grid, List, Filter, Globe, Search, Download, Edit2 } from 'lucide-react';
+import { Plus, Users as UsersIcon, Grid, List, Filter, Globe, Search, Download, Edit2, UsersRound, MessageSquareText } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import SubNavTabs from '../../components/common/SubNavTabs';
 import './players-grid.css';
 
 const getPositionOrder = (pos: string) => {
@@ -29,7 +30,7 @@ export default function PlayersPage() {
   const [ageRange, setAgeRange] = useState<[number, number]>([15, 45]);
   const [showFilters, setShowFilters] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const currentView = searchParams.get('view') || 'roster';
   
   const { data: dbPlayers, loading } = useSupabaseData<any>('players');
@@ -268,60 +269,109 @@ export default function PlayersPage() {
 
 
   return (
-    <div className="w-full mx-auto h-full space-y-6 animate-fade-in">
-      <div className="staff-header" style={{ marginBottom: 0 }}>
+    <div className="w-full mx-auto h-full space-y-5 animate-fade-in">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <p className="staff-breadcrumb">{t('players.management.breadcrumb')}</p>
-          <h1 className="staff-title">
-            {currentView === 'meetings' ? t('nav.meetings') : t('players.title')} {loading && <span className="text-sm text-muted" style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 'normal' }}>{t('players.management.loadingData')}</span>}
-          </h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight uppercase">
+              {currentView === 'meetings' ? t('nav.meetings', 'Reuniones Individuales') : t('players.title', 'Jugadores')}
+            </h1>
+            {loading ? (
+              <span className="text-xs text-gray-400 font-bold animate-pulse">{t('players.management.loadingData', 'Cargando datos...')}</span>
+            ) : (
+              <span className="px-3 py-1 bg-red-50 dark:bg-red-950/40 text-[var(--color-primary,#db0030)] text-xs font-black uppercase tracking-wider rounded-full border border-red-200/60 dark:border-red-800/40">
+                {players.length} jugadores
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-gray-500 font-medium mt-1">
+            Gestión integral de plantilla, fichas técnicas, objetivos de desarrollo y seguimiento individual
+          </p>
         </div>
-        
+
         {currentView === 'roster' && (
-          <div className="staff-actions">
-          {players.length > 0 && (
-            <div className="flex gap-2 mr-4">
-              <button
-                onClick={() => setViewMode('grid')}
-                className={`p-2 rounded-xl flex items-center justify-center transition-all border-2 ${viewMode === 'grid' ? 'bg-white border-red-500 text-red-600 shadow-sm' : 'bg-white border-gray-200 text-gray-400 hover:text-gray-600 hover:border-gray-300'}`}
-                title={t('players.management.gridView')}
-              >
-                <Grid size={22} />
-              </button>
-              <button
-                onClick={() => setViewMode('list')}
-                className={`p-2 rounded-xl flex items-center justify-center transition-all border-2 ${viewMode === 'list' ? 'bg-white border-red-500 text-red-600 shadow-sm' : 'bg-white border-gray-200 text-gray-400 hover:text-gray-600 hover:border-gray-300'}`}
-                title={t('players.management.listView')}
-              >
-                <List size={22} />
-              </button>
-            </div>
-          )}
-          <button 
-             onClick={() => setShowFilters(!showFilters)} 
-             className={`btn flex items-center gap-2 ${showFilters ? 'bg-gray-800 text-white border-gray-800 hover:bg-gray-700' : 'btn-outline bg-white hover:bg-gray-50 border-gray-300 text-gray-700'}`}
-          >
-             <Filter size={16} />
-             {t('players.filters')}
-          </button>
-          <button onClick={exportToPDF} className="btn btn-outline flex items-center gap-2 bg-white hover:bg-gray-50 border-gray-300 text-gray-700">
-             <Download size={16} />
-             {t('placeholder.exportPdf', 'Exportar PDF')}
-          </button>
-          <button 
-             onClick={() => setIsEditMode(!isEditMode)} 
-             className={`btn flex items-center gap-2 transition-colors ${isEditMode ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100' : 'btn-outline bg-white hover:bg-gray-50 border-gray-300 text-gray-700'}`}
-          >
-             <Edit2 size={16} />
-             {t('players.management.editPlayerTooltip')}
-          </button>
-          <button onClick={() => setShowImportModal(true)} className="btn btn-primary">
-            <Plus size={16} />
-            {t('players.management.addPlayer')}
-          </button>
-        </div>
+          <div className="flex items-center gap-2.5 flex-wrap">
+            {players.length > 0 && (
+              <div className="flex items-center bg-gray-100 dark:bg-neutral-900 p-1 rounded-xl border border-gray-200/80 dark:border-white/10">
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className={`p-1.5 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-white dark:bg-neutral-800 text-[var(--color-primary,#db0030)] shadow-xs font-bold' : 'text-gray-400 hover:text-gray-700'}`}
+                  title={t('players.management.gridView')}
+                >
+                  <Grid size={18} />
+                </button>
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`p-1.5 rounded-lg transition-all ${viewMode === 'list' ? 'bg-white dark:bg-neutral-800 text-[var(--color-primary,#db0030)] shadow-xs font-bold' : 'text-gray-400 hover:text-gray-700'}`}
+                  title={t('players.management.listView')}
+                >
+                  <List size={18} />
+                </button>
+              </div>
+            )}
+
+            <button 
+              onClick={() => setShowFilters(!showFilters)} 
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all border ${
+                showFilters 
+                  ? 'bg-gray-900 text-white border-gray-900 shadow-sm' 
+                  : 'bg-white dark:bg-neutral-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 border-gray-200 dark:border-white/10'
+              }`}
+            >
+              <Filter size={14} />
+              {t('players.filters', 'Filtros')}
+            </button>
+
+            <button 
+              onClick={exportToPDF} 
+              className="px-3.5 py-2 bg-white dark:bg-neutral-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-neutral-700 border border-gray-200 dark:border-white/10 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all"
+            >
+              <Download size={14} />
+              {t('placeholder.exportPdf', 'Exportar PDF')}
+            </button>
+
+            <button 
+              onClick={() => setIsEditMode(!isEditMode)} 
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all border ${
+                isEditMode 
+                  ? 'bg-red-50 text-[var(--color-primary,#db0030)] border-red-200 shadow-xs' 
+                  : 'bg-white dark:bg-neutral-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 border-gray-200 dark:border-white/10'
+              }`}
+            >
+              <Edit2 size={14} />
+              {t('players.management.editPlayerTooltip', 'Modo Edición')}
+            </button>
+
+            <button 
+              onClick={handleAddPlayer} 
+              className="px-4 py-2 bg-[var(--color-primary,#db0030)] hover:bg-[#b80028] text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-md shadow-[var(--color-primary,#db0030)]/25 transition-all active:scale-95"
+            >
+              <Plus size={15} strokeWidth={3} />
+              {t('players.management.addPlayer', 'Añadir Jugador')}
+            </button>
+          </div>
         )}
       </div>
+
+      {/* Modern Sub-Navigation Tabs Bar */}
+      <SubNavTabs
+        tabs={[
+          {
+            id: 'roster',
+            label: t('nav.roster', 'Plantilla'),
+            icon: UsersRound,
+            count: players.length,
+          },
+          {
+            id: 'meetings',
+            label: t('nav.meetings', 'Reuniones Individuales'),
+            icon: MessageSquareText,
+          },
+        ]}
+        activeTab={currentView}
+        onChange={(v) => setSearchParams(v === 'roster' ? {} : { view: v })}
+      />
 
       {players.length > 0 && currentView === 'roster' && (
         <div className="grid grid-cols-3 gap-4 overflow-x-auto pb-2">
