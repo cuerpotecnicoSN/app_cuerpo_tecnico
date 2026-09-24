@@ -1,0 +1,746 @@
+#!/usr/bin/env python3
+"""
+Extractor y Traductor de Informes Panini Digital Match Analysis
+================================================================
+Extrae toda la información técnica, táctica, tablas y campogramas de los
+PDFs de Match Analysis de Panini Digital, traduce todos los términos del
+italiano al español profesional y sincroniza los datos con Supabase.
+"""
+
+import os
+import sys
+import json
+import re
+from datetime import datetime
+from pathlib import Path
+
+# Carga de variables de entorno
+def load_env():
+    env_vars = {}
+    for env_file in ['.env.local', '.env']:
+        if os.path.exists(env_file):
+            with open(env_file, 'r', encoding='utf-8') as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith('#') and '=' in line:
+                        k, v = line.split('=', 1)
+                        env_vars[k.strip()] = v.strip().strip('"').strip("'")
+            break
+    return env_vars
+
+env = load_env()
+SUPABASE_URL = os.environ.get("SUPABASE_URL") or env.get("VITE_SUPABASE_URL")
+SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or env.get("VITE_SUPABASE_ANON_KEY")
+
+try:
+    from supabase import create_client, Client
+    supabase = create_client(SUPABASE_URL, SUPABASE_KEY) if (SUPABASE_URL and SUPABASE_KEY) else None
+except Exception as e:
+    supabase = None
+    print(f"Aviso: Supabase client no inicializado ({e})")
+
+# Diccionario de Traducción Italiano -> Español (Fútbol Profesional)
+DICTIONARY = {
+    # Generales
+    "Possesso palla": "Posesión de balón",
+    "Palle giocate": "Balones jugados / Intervenciones",
+    "Passaggi riusciti": "Pases completados",
+    "Giocate utili": "Acciones útiles",
+    "Baricentro": "Altura media del bloque (m)",
+    "Supremazia territoriale": "Supremacía territorial",
+    "Pressing": "Altura de recuperación / Pressing (m)",
+    
+    # Fase defensiva
+    "Falli commessi nei pressi della propria area": "Faltas cerca del área propia",
+    "Fuorigioco avversari": "Fueras de juego provocados",
+    "% per fine azione avversaria": "% por fin de acción rival",
+    "% palle recuperate effettive": "% recuperaciones efectivas",
+    "% palle recuperate temporanee": "% recuperaciones temporales",
+    "Palle giocate in zona area dagli avversari": "Balones jugados en área propia por el rival",
+    "% protezione area": "% protección del área",
+    "Uscite": "Salidas del portero",
+    "Parate": "Paradas",
+
+    # Fase ofensiva
+    "% palle a scavalcare il centrocampo": "% balones en largo / salto de línea",
+    "% azioni manovrate da dietro": "% salida jugada desde atrás",
+    "Passaggi bassi utili nella metà campo avversaria": "Pases rasos útiles en campo rival",
+    "Passaggi lunghi utili": "Pases largos útiles",
+    "Cambi di gioco": "Cambios de orientación",
+    "Cross su azione dal fondo": "Centros en juego desde línea de fondo",
+    "% cross su azione da destra": "% centros desde la derecha",
+    "% cross su azione da sinistra": "% centros desde la izquierda",
+    "Dribbling utili": "Regates completados",
+    "Accelerazioni": "Aceleraciones / Conducciones",
+    "Palle giocate in zona area": "Balones jugados en área rival",
+    "% attacco alla porta": "% ataque a portería",
+    "% efficacia calci piazzati in attacco": "% eficacia ABP ofensivo",
+    "Tiri dentro": "Tiros a puerta",
+    "Occasioni": "Ocasiones de gol",
+
+    # Roles
+    "Portiere": "Portero",
+    "Difensore": "Defensa",
+    "Centrocampista": "Centrocampista",
+    "Attaccante": "Delantero",
+    "Allenatore": "Entrenador"
+}
+
+def generate_sample_report_villa_valle_milan():
+    """Genera el objeto de datos completo y traducido del partido Villa Valle vs Milan Futuro (20-09-2026)."""
+    return {
+        "fecha": "2026-09-20",
+        "competicion": "Serie D 2026-27",
+        "jornada": "Incontro della 04^ giornata",
+        "estadio": "Vyll Stadium (Villa d'Almè)",
+        "arbitro": "Andrea Senes",
+        "duracion_total": "96' (45+51)",
+        "tiempo_efectivo": "48':31''",
+        "goleadores": [
+            {"minuto": "65'", "jugador": "Davide Benzoni", "equipo": "home"},
+            {"minuto": "78'", "jugador": "Lorenzo Ossola", "equipo": "away"},
+            {"minuto": "90+2'", "jugador": "Fabio Pandolfi", "equipo": "away"}
+        ],
+        "timeline_eventos": [
+            {"minute": "30'", "type": "yellow_card", "team": "home", "player": "Michele Rinaldi"},
+            {"minute": "54'", "type": "substitution_in", "team": "home", "player": "Davide Benzoni"},
+            {"minute": "54'", "type": "substitution_in", "team": "home", "player": "Giorgio Siani"},
+            {"minute": "62'", "type": "substitution_in", "team": "home", "player": "Lorenzo Zambelli"},
+            {"minute": "62'", "type": "substitution_in", "team": "home", "player": "Gianpietro Nikolli"},
+            {"minute": "65'", "type": "goal", "team": "home", "player": "Davide Benzoni"},
+            {"minute": "70'", "type": "yellow_card", "team": "away", "player": "Mattia Cappelletti"},
+            {"minute": "71'", "type": "substitution_in", "team": "away", "player": "Federico Colombo"},
+            {"minute": "71'", "type": "substitution_in", "team": "away", "player": "Matteo Pagliei"},
+            {"minute": "78'", "type": "substitution_in", "team": "away", "player": "Nirash Perera"},
+            {"minute": "78'", "type": "substitution_in", "team": "away", "player": "Luca Menon"},
+            {"minute": "78'", "type": "goal", "team": "away", "player": "Lorenzo Ossola"},
+            {"minute": "84'", "type": "yellow_card", "team": "away", "player": "Luca Menon"},
+            {"minute": "90'", "type": "substitution_in", "team": "home", "player": "Giuseppe Mouisse"},
+            {"minute": "90+2'", "type": "goal", "team": "away", "player": "Fabio Pandolfi"},
+            {"minute": "90+5'", "type": "yellow_card", "team": "home", "player": "Giorgio Siani"}
+        ],
+        "equipo_local": {
+            "nombre": "Villa Valle",
+            "goles": 1,
+            "entrenador": "Marco Sgrò",
+            "xg": 3.19,
+            "ims": 57,
+            "alineacion": [
+                {"dorsal": 35, "nombre": "Daniel Offredi", "posicion": "P", "posicion_desc": "Portero", "minutos_jugados": 96, "es_titular": True},
+                {"dorsal": 4, "nombre": "Riccardo Nava", "posicion": "D", "posicion_desc": "Defensa", "minutos_jugados": 96, "es_titular": True},
+                {"dorsal": 24, "nombre": "Giorgio Piacentini", "posicion": "D", "posicion_desc": "Defensa", "minutos_jugados": 96, "es_titular": True},
+                {"dorsal": 25, "nombre": "Davide Martinelli", "posicion": "D", "posicion_desc": "Defensa", "minutos_jugados": 96, "es_titular": True},
+                {"dorsal": 30, "nombre": "Nicola Caccia", "posicion": "D", "posicion_desc": "Defensa", "minutos_jugados": 62, "es_titular": True, "minuto_salida": 62},
+                {"dorsal": 8, "nombre": "Riccardo Serena", "posicion": "C", "posicion_desc": "Centrocampista", "minutos_jugados": 96, "es_titular": True},
+                {"dorsal": 20, "nombre": "Roberto Strechie", "posicion": "C", "posicion_desc": "Centrocampista", "minutos_jugados": 62, "es_titular": True, "minuto_salida": 62},
+                {"dorsal": 21, "nombre": "Nicola Danieli", "posicion": "C", "posicion_desc": "Centrocampista", "minutos_jugados": 54, "es_titular": True, "minuto_salida": 54},
+                {"dorsal": 28, "nombre": "Michele Rinaldi", "posicion": "C", "posicion_desc": "Centrocampista", "minutos_jugados": 96, "es_titular": True, "tarjetas_amarillas": ["30'"]},
+                {"dorsal": 7, "nombre": "Riccardo Ravasi", "posicion": "A", "posicion_desc": "Delantero", "minutos_jugados": 90, "es_titular": True, "minuto_salida": 90},
+                {"dorsal": 14, "nombre": "Marco D'Amuri", "posicion": "A", "posicion_desc": "Delantero", "minutos_jugados": 54, "es_titular": True, "minuto_salida": 54},
+                # Suplentes que entraron
+                {"dorsal": 27, "nombre": "Davide Benzoni", "posicion": "C", "posicion_desc": "Centrocampista", "minutos_jugados": 42, "es_titular": False, "minuto_entrada": 54},
+                {"dorsal": 11, "nombre": "Giorgio Siani", "posicion": "A", "posicion_desc": "Delantero", "minutos_jugados": 42, "es_titular": False, "minuto_entrada": 54, "tarjetas_amarillas": ["90+5'"]},
+                {"dorsal": 3, "nombre": "Lorenzo Zambelli", "posicion": "D", "posicion_desc": "Defensa", "minutos_jugados": 34, "es_titular": False, "minuto_entrada": 62},
+                {"dorsal": 19, "nombre": "Gianpietro Nikolli", "posicion": "C", "posicion_desc": "Centrocampista", "minutos_jugados": 34, "es_titular": False, "minuto_entrada": 62},
+                {"dorsal": 32, "nombre": "Giuseppe Mouisse", "posicion": "A", "posicion_desc": "Delantero", "minutos_jugados": 6, "es_titular": False, "minuto_entrada": 90}
+            ],
+            "suplentes_no_utilizados": [
+                {"dorsal": 12, "nombre": "Gabriele Villa", "posicion": "P"},
+                {"dorsal": 6, "nombre": "Lorenzo Gandolfi", "posicion": "D"},
+                {"dorsal": 16, "nombre": "Samuele Capelli", "posicion": "C"},
+                {"dorsal": 17, "nombre": "Lorenzo Poli", "posicion": "C"}
+            ],
+            "estadisticas": {
+                "primer_tiempo": {
+                    "posesion_tiempo": "11':11\"", "posesion_pct": 48,
+                    "balones_jugados_total": 231, "balones_jugados_pct": 46,
+                    "pases_acertados_total": 128, "pases_acertados_pct_sobre_total_partido": 43, "precision_pases_pct": 57.4,
+                    "acciones_utiles_total": 30, "acciones_utiles_pct": 13.0,
+                    "baricentro_altura_m": 60.0,
+                    "supremacia_territorial_tiempo": "3':50\"", "supremacia_territorial_pct": 62,
+                    "faltas_cerca_area_propia": "0/6",
+                    "fueras_juego_provocados": 2,
+                    "altura_pressing_m": 52.1,
+                    "recuperacion_fin_accion_rival_pct": 30.9,
+                    "recuperaciones_efectivas_pct": 41.2,
+                    "recuperaciones_temporales_pct": 27.8,
+                    "balones_area_propia_rival": 6,
+                    "proteccion_area_pct": 62.5,
+                    "salidas_portero": 6, "paradas_portero": 0,
+                    "salto_linea_largo_pct": 33.3, "elaboracion_desde_atras_pct": 66.7,
+                    "pases_rasos_campo_rival": "6/65", "pases_largos_utiles": "7/15",
+                    "cambios_orientacion": 0, "centros_desde_fondo": "3/7",
+                    "centros_derecha_pct": 28.6, "centros_izquierda_pct": 71.4,
+                    "regates_utiles": "1/1", "aceleraciones": 1,
+                    "balones_en_area_rival": 14, "ataque_porteria_pct": 45.2,
+                    "eficacia_abp_ofensivo_pct": 40.0, "tiros_a_puerta": "2/8", "ocasiones_gol": 4
+                },
+                "segundo_tiempo": {
+                    "posesion_tiempo": "11':14\"", "posesion_pct": 45,
+                    "balones_jugados_total": 226, "balones_jugados_pct": 43,
+                    "pases_acertados_total": 118, "pases_acertados_pct_sobre_total_partido": 38, "precision_pases_pct": 56.2,
+                    "acciones_utiles_total": 48, "acciones_utiles_pct": 21.2,
+                    "baricentro_altura_m": 66.9,
+                    "supremacia_territorial_tiempo": "4':56\"", "supremacia_territorial_pct": 55,
+                    "faltas_cerca_area_propia": "0/6",
+                    "fueras_juego_provocados": 3,
+                    "altura_pressing_m": 55.1,
+                    "recuperacion_fin_accion_rival_pct": 27.6,
+                    "recuperaciones_efectivas_pct": 48.0,
+                    "recuperaciones_temporales_pct": 24.5,
+                    "balones_area_propia_rival": 21,
+                    "proteccion_area_pct": 36.4,
+                    "salidas_portero": 3, "paradas_portero": 1,
+                    "salto_linea_largo_pct": 43.2, "elaboracion_desde_atras_pct": 56.8,
+                    "pases_rasos_campo_rival": "10/57", "pases_largos_utiles": "11/20",
+                    "cambios_orientacion": 0, "centros_desde_fondo": "13/17",
+                    "centros_derecha_pct": 41.2, "centros_izquierda_pct": 58.8,
+                    "regates_utiles": "7/10", "aceleraciones": 0,
+                    "balones_en_area_rival": 42, "ataque_porteria_pct": 56.0,
+                    "eficacia_abp_ofensivo_pct": 53.3, "tiros_a_puerta": "8/15", "ocasiones_gol": 10
+                },
+                "total_partido": {
+                    "posesion_tiempo": "22':25\"", "posesion_pct": 46,
+                    "balones_jugados_total": 457, "balones_jugados_pct": 44,
+                    "pases_acertados_total": 246, "pases_acertados_pct_sobre_total_partido": 40, "precision_pases_pct": 56.8,
+                    "acciones_utiles_total": 78, "acciones_utiles_pct": 17.1,
+                    "baricentro_altura_m": 63.4,
+                    "supremacia_territorial_tiempo": "8':46\"", "supremacia_territorial_pct": 58,
+                    "faltas_cerca_area_propia": "0/12",
+                    "fueras_juego_provocados": 5,
+                    "altura_pressing_m": 53.7,
+                    "recuperacion_fin_accion_rival_pct": 29.2,
+                    "recuperaciones_efectivas_pct": 44.6,
+                    "recuperaciones_temporales_pct": 26.2,
+                    "balones_area_propia_rival": 27,
+                    "proteccion_area_pct": 44.9,
+                    "salidas_portero": 9, "paradas_portero": 1,
+                    "salto_linea_largo_pct": 37.8, "elaboracion_desde_atras_pct": 62.2,
+                    "pases_rasos_campo_rival": "16/122", "pases_largos_utiles": "18/35",
+                    "cambios_orientacion": 0, "centros_desde_fondo": "16/24",
+                    "centros_derecha_pct": 37.5, "centros_izquierda_pct": 62.5,
+                    "regates_utiles": "8/11", "aceleraciones": 1,
+                    "balones_en_area_rival": 56, "ataque_porteria_pct": 52.8,
+                    "eficacia_abp_ofensivo_pct": 46.7, "tiros_a_puerta": "10/23", "ocasiones_gol": 14
+                }
+            },
+            "bloque_tactico_1t": {
+                "sistema": "4-4-2", "longitud_m": 44.8, "anchura_m": 29.3,
+                "densidad_defensa_pct": 28.9, "densidad_medio_pct": 42.7, "densidad_ataque_pct": 28.4,
+                "carril_izquierdo_pct": 34.5, "carril_central_pct": 37.6, "carril_derecho_pct": 27.9
+            },
+            "bloque_tactico_2t": {
+                "sistema": "4-4-2", "longitud_m": 33.6, "anchura_m": 44.0,
+                "densidad_defensa_pct": 25.6, "densidad_medio_pct": 31.3, "densidad_ataque_pct": 43.1,
+                "carril_izquierdo_pct": 24.6, "carril_central_pct": 43.6, "carril_derecho_pct": 31.8
+            },
+            "cobertura_recuperaciones": {"defensa_pct": 37, "medio_pct": 43, "ataque_pct": 20, "izquierda_pct": 28, "centro_pct": 44, "derecha_pct": 28},
+            "cobertura_faltas": {"defensa_pct": 8, "medio_pct": 42, "ataque_pct": 50, "izquierda_pct": 42, "centro_pct": 16, "derecha_pct": 42},
+            "cobertura_acciones_utiles": {"defensa_pct": 37, "medio_pct": 26, "ataque_pct": 37, "izquierda_pct": 36, "centro_pct": 33, "derecha_pct": 31},
+            "cobertura_pases_largos": {"defensa_pct": 83, "medio_pct": 17, "ataque_pct": 0, "izquierda_pct": 14, "centro_pct": 63, "derecha_pct": 23},
+            "cobertura_regates": {"defensa_pct": 9, "medio_pct": 18, "ataque_pct": 73, "izquierda_pct": 64, "centro_pct": 9, "derecha_pct": 27},
+            "cobertura_centros": {"defensa_pct": 0, "medio_pct": 0, "ataque_pct": 100, "izquierda_pct": 62, "centro_pct": 0, "derecha_pct": 38},
+            "finalizacion": {
+                "tiros_totales": 23, "tiros_a_puerta": 10, "goles": 1, "ocasiones": 14,
+                "llegada_jugada": 9, "llegada_abp_indirecto": 9, "llegada_abp_directo": 5,
+                "zona_area_pequena": 0, "zona_area_penalti": 15, "zona_fuera_area": 8,
+                "remate_pie_raso": 18, "remate_acrobacia": 1, "remate_cabeza": 4,
+                "resultado_a_puerta": 10, "resultado_bloqueado": 5, "resultado_fuera": 8,
+                "abp_faltas_derecha": 2, "abp_faltas_centrales": 2, "abp_faltas_izquierda": 3,
+                "abp_corners_derecha": 4, "abp_corners_izquierda": 7,
+                "abp_saques_banda_derecha": 7, "abp_saques_banda_izquierda": 5
+            },
+            "matriz_pases": {
+                "jugadores": [
+                    {"dorsal": 35, "nombre": "Daniel Offredi"}, {"dorsal": 4, "nombre": "Riccardo Nava"},
+                    {"dorsal": 24, "nombre": "Giorgio Piacentini"}, {"dorsal": 25, "nombre": "Davide Martinelli"},
+                    {"dorsal": 30, "nombre": "Nicola Caccia"}, {"dorsal": 8, "nombre": "Riccardo Serena"},
+                    {"dorsal": 20, "nombre": "Roberto Strechie"}, {"dorsal": 21, "nombre": "Nicola Danieli"},
+                    {"dorsal": 28, "nombre": "Michele Rinaldi"}, {"dorsal": 7, "nombre": "Riccardo Ravasi"},
+                    {"dorsal": 14, "nombre": "Marco D'Amuri"}, {"dorsal": 27, "nombre": "Davide Benzoni"},
+                    {"dorsal": 11, "nombre": "Giorgio Siani"}, {"dorsal": 3, "nombre": "Lorenzo Zambelli"},
+                    {"dorsal": 19, "nombre": "Gianpietro Nikolli"}, {"dorsal": 32, "nombre": "Giuseppe Mouisse"}
+                ],
+                "matriz": {
+                    35: {4: 3, 24: 2, 25: 1, 30: 3, 8: 3, 20: 2, 7: 1, 11: 1, 3: 4, 19: 1},
+                    4: {35: 3, 24: 4, 25: 3, 30: 1, 8: 4, 20: 4, 21: 4, 14: 1, 19: 2},
+                    24: {35: 6, 4: 1, 25: 7, 30: 2, 8: 4, 20: 1, 28: 2},
+                    25: {35: 2, 4: 2, 24: 7, 8: 6, 20: 5, 28: 3, 7: 3, 14: 4, 27: 3, 19: 1},
+                    30: {35: 1, 4: 5, 21: 5, 7: 1, 14: 6, 27: 3},
+                    8: {35: 1, 4: 2, 24: 2, 25: 2, 30: 2, 20: 5, 21: 2, 28: 3, 7: 1, 14: 3, 27: 2, 11: 3, 3: 1, 19: 2},
+                    20: {35: 1, 4: 2, 24: 2, 25: 4, 30: 3, 8: 1, 28: 1, 7: 1, 14: 1, 27: 1},
+                    21: {4: 2, 24: 3, 30: 5, 20: 1, 28: 1, 7: 1, 14: 1},
+                    28: {25: 4, 20: 1, 21: 1, 28: 1, 27: 2, 11: 3},
+                    7: {4: 1, 24: 1, 20: 1, 21: 1, 28: 1, 27: 1, 11: 2},
+                    14: {20: 1, 21: 3, 28: 2},
+                    27: {4: 1, 30: 1, 28: 2, 7: 1, 11: 4, 19: 1},
+                    11: {24: 1, 8: 1, 7: 1, 3: 5, 19: 2},
+                    3: {35: 1, 7: 2, 11: 2, 19: 1},
+                    19: {11: 3, 3: 2},
+                    32: {}
+                },
+                "totales_dados": {35: 21, 4: 26, 24: 23, 25: 36, 30: 21, 8: 31, 20: 17, 21: 14, 28: 12, 7: 8, 14: 6, 27: 10, 11: 10, 3: 6, 19: 5, 32: 0},
+                "totales_recibidos": {35: 15, 4: 19, 24: 22, 25: 21, 30: 17, 8: 21, 20: 23, 21: 16, 28: 13, 7: 12, 14: 16, 27: 17, 11: 21, 3: 3, 19: 10, 32: 0},
+                "precision_individual_pct": {35: 60, 4: 63, 24: 68, 25: 72, 30: 60, 8: 58, 20: 55, 21: 58, 28: 46, 7: 38, 14: 35, 27: 42, 11: 53, 3: 46, 19: 50, 32: 0},
+                "total_equipo_pases": 246,
+                "precision_equipo_pct": 57
+            },
+            "jugadores_stats": [
+                {
+                    "dorsal": 35, "nombre": "Daniel Offredi", "anio_nacimiento": 1988, "posicion": "Portero", "minutos": "96' (45+51)",
+                    "balones_jugados": 35, "posesion_tiempo": "4':04\"", "pases_acertados": 21, "acciones_utiles": 13,
+                    "perdidas_efectivas": 12, "recuperaciones_efectivas": "10/11", "recuperaciones_aereas": 0, "recuperaciones_area": 0,
+                    "intercepciones": 0, "anticipaciones_efectivas": "0/0", "duelos_efectivos": "0/0",
+                    "faltas_cometidas": 0, "faltas_recibidas": 0, "pases_largos_utiles": "0/0", "regates_utiles": "0/0",
+                    "centros_utiles": "0/0", "asistencias_pases_clave": "0/0", "tiros_a_puerta": "0/0",
+                    "paradas": 1, "paradas_ocasion": 1, "goles_encajados": 2, "salidas_altas": 1, "salidas_bajas": 8,
+                    "salidas_centro_jugada": 1, "salidas_balon_parado": 0, "saques_largos_utiles": "12/24",
+                    "distribucion_1t": {"defensa_pct": 75, "medio_pct": 15, "ataque_pct": 10},
+                    "distribucion_2t": {"defensa_pct": 80, "medio_pct": 20, "ataque_pct": 0}
+                },
+                {
+                    "dorsal": 4, "nombre": "Riccardo Nava", "anio_nacimiento": 1996, "posicion": "Defensa", "minutos": "96' (45+51)",
+                    "balones_jugados": 41, "posesion_tiempo": "1':37\"", "pases_acertados": 26, "acciones_utiles": 6,
+                    "perdidas_efectivas": 9, "recuperaciones_efectivas": "13/19", "recuperaciones_aereas": 4, "recuperaciones_area": 1,
+                    "intercepciones": 11, "anticipaciones_efectivas": "1/2", "duelos_efectivos": "2/5",
+                    "faltas_cometidas": 3, "faltas_recibidas": 0, "pases_largos_utiles": "2/5", "regates_utiles": "0/0",
+                    "centros_utiles": "1/1", "asistencias_pases_clave": "0/1", "tiros_a_puerta": "0/0",
+                    "distribucion_1t": {"defensa_pct": 63, "medio_pct": 37, "ataque_pct": 0},
+                    "distribucion_2t": {"defensa_pct": 43, "medio_pct": 43, "ataque_pct": 14}
+                },
+                {
+                    "dorsal": 24, "nombre": "Giorgio Piacentini", "anio_nacimiento": 1997, "posicion": "Defensa", "minutos": "96' (45+51)",
+                    "balones_jugados": 36, "posesion_tiempo": "1':30\"", "pases_acertados": 23, "acciones_utiles": 3,
+                    "perdidas_efectivas": 7, "recuperaciones_efectivas": "9/13", "recuperaciones_aereas": 4, "recuperaciones_area": 4,
+                    "intercepciones": 10, "anticipaciones_efectivas": "0/0", "duelos_efectivos": "2/3",
+                    "faltas_cometidas": 0, "faltas_recibidas": 1, "pases_largos_utiles": "0/1", "regates_utiles": "0/0",
+                    "centros_utiles": "0/0", "asistencias_pases_clave": "0/0", "tiros_a_puerta": "0/2",
+                    "distribucion_1t": {"defensa_pct": 54, "medio_pct": 38, "ataque_pct": 8},
+                    "distribucion_2t": {"defensa_pct": 50, "medio_pct": 42, "ataque_pct": 8}
+                },
+                {
+                    "dorsal": 25, "nombre": "Davide Martinelli", "anio_nacimiento": 2007, "posicion": "Defensa", "minutos": "96' (45+51)",
+                    "balones_jugados": 50, "posesion_tiempo": "2':23\"", "pases_acertados": 36, "acciones_utiles": 6,
+                    "perdidas_efectivas": 9, "recuperaciones_efectivas": "8/12", "recuperaciones_aereas": 1, "recuperaciones_area": 1,
+                    "intercepciones": 9, "anticipaciones_efectivas": "2/2", "duelos_efectivos": "0/1",
+                    "faltas_cometidas": 0, "faltas_recibidas": 1, "pases_largos_utiles": "3/3", "regates_utiles": "1/1",
+                    "centros_utiles": "1/1", "asistencias_pases_clave": "0/3", "tiros_a_puerta": "0/0",
+                    "distribucion_1t": {"defensa_pct": 3, "medio_pct": 3, "ataque_pct": 94},
+                    "distribucion_2t": {"defensa_pct": 12, "medio_pct": 88, "ataque_pct": 0}
+                },
+                {
+                    "dorsal": 8, "nombre": "Riccardo Serena", "anio_nacimiento": 1996, "posicion": "Centrocampista", "minutos": "96' (45+51)",
+                    "balones_jugados": 55, "posesion_tiempo": "2':16\"", "pases_acertados": 31, "acciones_utiles": 10,
+                    "perdidas_efectivas": 9, "recuperaciones_efectivas": "12/25", "recuperaciones_aereas": 4, "recuperaciones_area": 2,
+                    "intercepciones": 20, "anticipaciones_efectivas": "0/0", "duelos_efectivos": "3/4",
+                    "faltas_cometidas": 2, "faltas_recibidas": 0, "pases_largos_utiles": "2/4", "regates_utiles": "0/0",
+                    "centros_utiles": "1/1", "asistencias_pases_clave": "1/4", "tiros_a_puerta": "1/2",
+                    "distribucion_1t": {"defensa_pct": 18, "medio_pct": 64, "ataque_pct": 18},
+                    "distribucion_2t": {"defensa_pct": 30, "medio_pct": 48, "ataque_pct": 22}
+                }
+            ],
+            "rankings_top": {
+                "Balones jugados": [{"dorsal": 8, "nombre": "Riccardo Serena", "valor": 55}, {"dorsal": 25, "nombre": "Davide Martinelli", "valor": 50}, {"dorsal": 4, "nombre": "Riccardo Nava", "valor": 41}],
+                "Pases acertados": [{"dorsal": 25, "nombre": "Davide Martinelli", "valor": 36}, {"dorsal": 8, "nombre": "Riccardo Serena", "valor": 31}, {"dorsal": 4, "nombre": "Riccardo Nava", "valor": 26}],
+                "Acciones útiles": [{"dorsal": 35, "nombre": "Daniel Offredi", "valor": 13}, {"dorsal": 30, "nombre": "Nicola Caccia", "valor": 11}, {"dorsal": 8, "nombre": "Riccardo Serena", "valor": 10}],
+                "Recuperaciones": [{"dorsal": 8, "nombre": "Riccardo Serena", "valor": 25}, {"dorsal": 4, "nombre": "Riccardo Nava", "valor": 19}, {"dorsal": 28, "nombre": "Michele Rinaldi", "valor": 15}],
+                "Tiros": [{"dorsal": 11, "nombre": "Giorgio Siani", "valor": 5}, {"dorsal": 7, "nombre": "Riccardo Ravasi", "valor": 3}, {"dorsal": 27, "nombre": "Davide Benzoni", "valor": 2}]
+            }
+        },
+        "equipo_visitante": {
+            "nombre": "Milan Futuro",
+            "goles": 2,
+            "entrenador": "Sergio Navarro",
+            "xg": 0.94,
+            "ims": 43,
+            "alineacion": [
+                {"dorsal": 1, "nombre": "Matteo Pittarella", "posicion": "P", "posicion_desc": "Portero", "minutos_jugados": 96, "es_titular": True},
+                {"dorsal": 2, "nombre": "Mattia Cappelletti", "posicion": "D", "posicion_desc": "Defensa", "minutos_jugados": 71, "es_titular": True, "minuto_salida": 71, "tarjetas_amarillas": ["70'"]},
+                {"dorsal": 3, "nombre": "Emanuele Borsani", "posicion": "D", "posicion_desc": "Defensa", "minutos_jugados": 78, "es_titular": True, "minuto_salida": 78},
+                {"dorsal": 4, "nombre": "Damir Zukic", "posicion": "D", "posicion_desc": "Defensa", "minutos_jugados": 71, "es_titular": True, "minuto_salida": 71},
+                {"dorsal": 5, "nombre": "Valeri Vladimirov", "posicion": "D", "posicion_desc": "Defensa", "minutos_jugados": 96, "es_titular": True},
+                {"dorsal": 6, "nombre": "El Hadji Malick Cissé", "posicion": "C", "posicion_desc": "Centrocampista", "minutos_jugados": 96, "es_titular": True},
+                {"dorsal": 8, "nombre": "Fabio Pandolfi", "posicion": "C", "posicion_desc": "Centrocampista", "minutos_jugados": 96, "es_titular": True},
+                {"dorsal": 11, "nombre": "Lorenzo Ossola", "posicion": "C", "posicion_desc": "Centrocampista", "minutos_jugados": 96, "es_titular": True},
+                {"dorsal": 7, "nombre": "Emanuele Sala", "posicion": "A", "posicion_desc": "Delantero", "minutos_jugados": 78, "es_titular": True, "minuto_salida": 78},
+                {"dorsal": 9, "nombre": "Levis Asanji", "posicion": "A", "posicion_desc": "Delantero", "minutos_jugados": 96, "es_titular": True},
+                {"dorsal": 10, "nombre": "Silvano Vos", "posicion": "A", "posicion_desc": "Delantero", "minutos_jugados": 96, "es_titular": True},
+                # Suplentes que entraron
+                {"dorsal": 13, "nombre": "Federico Colombo", "posicion": "D", "posicion_desc": "Defensa", "minutos_jugados": 25, "es_titular": False, "minuto_entrada": 71},
+                {"dorsal": 14, "nombre": "Matteo Pagliei", "posicion": "D", "posicion_desc": "Defensa", "minutos_jugados": 25, "es_titular": False, "minuto_entrada": 71},
+                {"dorsal": 15, "nombre": "Nirash Perera", "posicion": "D", "posicion_desc": "Defensa", "minutos_jugados": 18, "es_titular": False, "minuto_entrada": 78},
+                {"dorsal": 18, "nombre": "Luca Menon", "posicion": "A", "posicion_desc": "Delantero", "minutos_jugados": 18, "es_titular": False, "minuto_entrada": 78, "tarjetas_amarillas": ["84'"]}
+            ],
+            "suplentes_no_utilizados": [
+                {"dorsal": 12, "nombre": "Alessandro Pacileo", "posicion": "P"},
+                {"dorsal": 16, "nombre": "Yahya Idrissi", "posicion": "C"},
+                {"dorsal": 17, "nombre": "Alessandro Bonomi", "posicion": "C"},
+                {"dorsal": 19, "nombre": "Aurelien Guernier", "posicion": "C"}
+            ],
+            "estadisticas": {
+                "primer_tiempo": {
+                    "posesion_tiempo": "12':16\"", "posesion_pct": 52,
+                    "balones_jugados_total": 273, "balones_jugados_pct": 54,
+                    "pases_acertados_total": 172, "pases_acertados_pct_sobre_total_partido": 57, "precision_pases_pct": 64.2,
+                    "acciones_utiles_total": 46, "acciones_utiles_pct": 16.9,
+                    "baricentro_altura_m": 45.6,
+                    "supremacia_territorial_tiempo": "2':22\"", "supremacia_territorial_pct": 38,
+                    "faltas_cerca_area_propia": "2/6",
+                    "fueras_juego_provocados": 3,
+                    "altura_pressing_m": 42.7,
+                    "recuperacion_fin_accion_rival_pct": 23.4,
+                    "recuperaciones_efectivas_pct": 39.4,
+                    "recuperaciones_temporales_pct": 37.2,
+                    "balones_area_propia_rival": 14,
+                    "proteccion_area_pct": 54.8,
+                    "salidas_portero": 5, "paradas_portero": 2,
+                    "salto_linea_largo_pct": 10.5, "elaboracion_desde_atras_pct": 89.5,
+                    "pases_rasos_campo_rival": "8/56", "pases_largos_utiles": "5/13",
+                    "cambios_orientacion": 0, "centros_desde_fondo": "1/2",
+                    "centros_derecha_pct": 100.0, "centros_izquierda_pct": 0.0,
+                    "regates_utiles": "4/7", "aceleraciones": 2,
+                    "balones_en_area_rival": 6, "ataque_porteria_pct": 37.5,
+                    "eficacia_abp_ofensivo_pct": 0.0, "tiros_a_puerta": "0/2", "ocasiones_gol": 0
+                },
+                "segundo_tiempo": {
+                    "posesion_tiempo": "13':50\"", "posesion_pct": 55,
+                    "balones_jugados_total": 297, "balones_jugados_pct": 57,
+                    "pases_acertados_total": 190, "pases_acertados_pct_sobre_total_partido": 62, "precision_pases_pct": 65.7,
+                    "acciones_utiles_total": 70, "acciones_utiles_pct": 23.6,
+                    "baricentro_altura_m": 48.9,
+                    "supremacia_territorial_tiempo": "3':58\"", "supremacia_territorial_pct": 45,
+                    "faltas_cerca_area_propia": "3/5",
+                    "fueras_juego_provocados": 1,
+                    "altura_pressing_m": 40.3,
+                    "recuperacion_fin_accion_rival_pct": 19.0,
+                    "recuperaciones_efectivas_pct": 53.0,
+                    "recuperaciones_temporales_pct": 28.0,
+                    "balones_area_propia_rival": 42,
+                    "proteccion_area_pct": 44.0,
+                    "salidas_portero": 7, "paradas_portero": 6,
+                    "salto_linea_largo_pct": 8.4, "elaboracion_desde_atras_pct": 91.6,
+                    "pases_rasos_campo_rival": "17/71", "pases_largos_utiles": "5/7",
+                    "cambios_orientacion": 0, "centros_desde_fondo": "4/6",
+                    "centros_derecha_pct": 50.0, "centros_izquierda_pct": 50.0,
+                    "regates_utiles": "9/12", "aceleraciones": 2,
+                    "balones_en_area_rival": 21, "ataque_porteria_pct": 63.6,
+                    "eficacia_abp_ofensivo_pct": 50.0, "tiros_a_puerta": "3/5", "ocasiones_gol": 3
+                },
+                "total_partido": {
+                    "posesion_tiempo": "26':06\"", "posesion_pct": 54,
+                    "balones_jugados_total": 570, "balones_jugados_pct": 56,
+                    "pases_acertados_total": 362, "pases_acertados_pct_sobre_total_partido": 60, "precision_pases_pct": 65.0,
+                    "acciones_utiles_total": 116, "acciones_utiles_pct": 20.4,
+                    "baricentro_altura_m": 47.3,
+                    "supremacia_territorial_tiempo": "6':20\"", "supremacia_territorial_pct": 42,
+                    "faltas_cerca_area_propia": "5/11",
+                    "fueras_juego_provocados": 4,
+                    "altura_pressing_m": 41.4,
+                    "recuperacion_fin_accion_rival_pct": 21.1,
+                    "recuperaciones_efectivas_pct": 46.4,
+                    "recuperaciones_temporales_pct": 32.5,
+                    "balones_area_propia_rival": 56,
+                    "proteccion_area_pct": 47.2,
+                    "salidas_portero": 12, "paradas_portero": 8,
+                    "salto_linea_largo_pct": 9.4, "elaboracion_desde_atras_pct": 90.6,
+                    "pases_rasos_campo_rival": "25/127", "pases_largos_utiles": "10/20",
+                    "cambios_orientacion": 0, "centros_desde_fondo": "5/8",
+                    "centros_derecha_pct": 62.5, "centros_izquierda_pct": 37.5,
+                    "regates_utiles": "13/19", "aceleraciones": 4,
+                    "balones_en_area_rival": 27, "ataque_porteria_pct": 55.1,
+                    "eficacia_abp_ofensivo_pct": 28.6, "tiros_a_puerta": "3/7", "ocasiones_gol": 3
+                }
+            },
+            "bloque_tactico_1t": {
+                "sistema": "4-3-3", "longitud_m": 39.2, "anchura_m": 41.6,
+                "densidad_defensa_pct": 50.0, "densidad_medio_pct": 37.7, "densidad_ataque_pct": 12.3,
+                "carril_izquierdo_pct": 41.0, "carril_central_pct": 39.7, "carril_derecho_pct": 19.3
+            },
+            "bloque_tactico_2t": {
+                "sistema": "4-3-3", "longitud_m": 42.0, "anchura_m": 41.6,
+                "densidad_defensa_pct": 48.0, "densidad_medio_pct": 31.1, "densidad_ataque_pct": 20.9,
+                "carril_izquierdo_pct": 19.8, "carril_central_pct": 49.8, "carril_derecho_pct": 30.4
+            },
+            "cobertura_recuperaciones": {"defensa_pct": 61, "medio_pct": 27, "ataque_pct": 12, "izquierda_pct": 20, "centro_pct": 51, "derecha_pct": 29},
+            "cobertura_faltas": {"defensa_pct": 64, "medio_pct": 18, "ataque_pct": 18, "izquierda_pct": 27, "centro_pct": 18, "derecha_pct": 55},
+            "cobertura_acciones_utiles": {"defensa_pct": 49, "medio_pct": 33, "ataque_pct": 18, "izquierda_pct": 20, "centro_pct": 51, "derecha_pct": 29},
+            "cobertura_pases_largos": {"defensa_pct": 85, "medio_pct": 15, "ataque_pct": 0, "izquierda_pct": 15, "centro_pct": 55, "derecha_pct": 30},
+            "cobertura_regates": {"defensa_pct": 26, "medio_pct": 48, "ataque_pct": 26, "izquierda_pct": 11, "centro_pct": 47, "derecha_pct": 42},
+            "cobertura_centros": {"defensa_pct": 0, "medio_pct": 0, "ataque_pct": 100, "izquierda_pct": 37, "centro_pct": 0, "derecha_pct": 63},
+            "finalizacion": {
+                "tiros_totales": 7, "tiros_a_puerta": 3, "goles": 2, "ocasiones": 3,
+                "llegada_jugada": 4, "llegada_abp_indirecto": 3, "llegada_abp_directo": 0,
+                "zona_area_pequena": 0, "zona_area_penalti": 5, "zona_fuera_area": 2,
+                "remate_pie_raso": 6, "remate_acrobacia": 1, "remate_cabeza": 0,
+                "resultado_a_puerta": 3, "resultado_bloqueado": 3, "resultado_fuera": 1,
+                "abp_faltas_derecha": 0, "abp_faltas_centrales": 0, "abp_faltas_izquierda": 1,
+                "abp_corners_derecha": 1, "abp_corners_izquierda": 1,
+                "abp_saques_banda_derecha": 0, "abp_saques_banda_izquierda": 0
+            },
+            "matriz_pases": {
+                "jugadores": [
+                    {"dorsal": 1, "nombre": "Matteo Pittarella"}, {"dorsal": 2, "nombre": "Mattia Cappelletti"},
+                    {"dorsal": 3, "nombre": "Emanuele Borsani"}, {"dorsal": 4, "nombre": "Damir Zukic"},
+                    {"dorsal": 5, "nombre": "Valeri Vladimirov"}, {"dorsal": 6, "nombre": "El Hadji Malick Cissé"},
+                    {"dorsal": 8, "nombre": "Fabio Pandolfi"}, {"dorsal": 11, "nombre": "Lorenzo Ossola"},
+                    {"dorsal": 7, "nombre": "Emanuele Sala"}, {"dorsal": 9, "nombre": "Levis Asanji"},
+                    {"dorsal": 10, "nombre": "Silvano Vos"}, {"dorsal": 14, "nombre": "Matteo Pagliei"},
+                    {"dorsal": 13, "nombre": "Federico Colombo"}, {"dorsal": 18, "nombre": "Luca Menon"},
+                    {"dorsal": 15, "nombre": "Nirash Perera"}
+                ],
+                "matriz": {
+                    1: {2: 3, 3: 3, 4: 5, 5: 13, 6: 4, 8: 2, 11: 3, 7: 1, 9: 4, 14: 8, 18: 1},
+                    2: {1: 2, 4: 2, 5: 2, 6: 2, 8: 3, 11: 2, 7: 5},
+                    3: {1: 1, 4: 2, 5: 4, 6: 1, 8: 7, 11: 6, 7: 2, 10: 7},
+                    4: {1: 3, 2: 4, 3: 1, 5: 3, 6: 4, 8: 5, 11: 3, 7: 4, 9: 4},
+                    5: {1: 11, 4: 4, 8: 8, 11: 16, 7: 1, 9: 2, 10: 2},
+                    6: {1: 2, 3: 1, 4: 3, 5: 7, 8: 2, 11: 4, 7: 4, 9: 2, 10: 5, 14: 1, 15: 2},
+                    8: {2: 3, 3: 2, 4: 4, 5: 6, 6: 3, 11: 10, 7: 6, 9: 2, 10: 5, 13: 1, 18: 1},
+                    11: {2: 1, 3: 6, 8: 6, 7: 2, 9: 5, 10: 2, 18: 1},
+                    7: {2: 5, 3: 3, 4: 4, 6: 2, 11: 4, 10: 1},
+                    9: {2: 3, 3: 3, 5: 1, 6: 2, 8: 4, 11: 3, 7: 2, 10: 1, 13: 1, 18: 1},
+                    10: {1: 1, 2: 1, 3: 4, 5: 2, 6: 2, 8: 4, 11: 1, 9: 4, 14: 1, 13: 2, 18: 1},
+                    14: {1: 2, 5: 1, 6: 4, 8: 2, 11: 1, 7: 1, 9: 1, 13: 2, 18: 2},
+                    13: {8: 1, 9: 3, 10: 1, 18: 2, 15: 1},
+                    18: {8: 1, 11: 1, 13: 1},
+                    15: {10: 3}
+                },
+                "totales_dados": {1: 47, 2: 18, 3: 30, 4: 31, 5: 44, 6: 33, 8: 43, 11: 23, 7: 19, 9: 21, 10: 23, 14: 16, 13: 8, 18: 3, 15: 3},
+                "totales_recibidos": {1: 22, 2: 20, 3: 23, 4: 24, 5: 37, 6: 32, 8: 52, 11: 40, 7: 23, 9: 32, 10: 28, 14: 10, 13: 6, 18: 8, 15: 5},
+                "precision_individual_pct": {1: 85, 2: 46, 3: 65, 4: 66, 5: 72, 6: 62, 8: 62, 11: 50, 7: 61, 9: 54, 10: 74, 14: 89, 13: 67, 18: 30, 15: 50},
+                "total_equipo_pases": 362,
+                "precision_equipo_pct": 64
+            },
+            "jugadores_stats": [
+                {
+                    "dorsal": 1, "nombre": "Matteo Pittarella", "anio_nacimiento": 2008, "posicion": "Portero", "minutos": "96' (45+51)",
+                    "balones_jugados": 55, "posesion_tiempo": "3':14\"", "pases_acertados": 47, "acciones_utiles": 12,
+                    "perdidas_efectivas": 4, "recuperaciones_efectivas": "20/24", "recuperaciones_aereas": 0, "recuperaciones_area": 0,
+                    "intercepciones": 0, "anticipaciones_efectivas": "0/0", "duelos_efectivos": "0/0",
+                    "faltas_cometidas": 0, "faltas_recibidas": 0, "pases_largos_utiles": "0/0", "regates_utiles": "0/0",
+                    "centros_utiles": "0/0", "asistencias_pases_clave": "0/0", "tiros_a_puerta": "0/0",
+                    "paradas": 8, "paradas_ocasion": 6, "goles_encajados": 1, "salidas_altas": 3, "salidas_bajas": 9,
+                    "salidas_centro_jugada": 3, "salidas_balon_parado": 1, "saques_largos_utiles": "5/9",
+                    "distribucion_1t": {"defensa_pct": 96, "medio_pct": 4, "ataque_pct": 0},
+                    "distribucion_2t": {"defensa_pct": 90, "medio_pct": 10, "ataque_pct": 0}
+                },
+                {
+                    "dorsal": 2, "nombre": "Mattia Cappelletti", "anio_nacimiento": 2007, "posicion": "Defensa", "minutos": "71' (45+26)",
+                    "balones_jugados": 39, "posesion_tiempo": "1':33\"", "pases_acertados": 18, "acciones_utiles": 6,
+                    "perdidas_efectivas": 13, "recuperaciones_efectivas": "5/13", "recuperaciones_aereas": 2, "recuperaciones_area": 2,
+                    "intercepciones": 4, "anticipaciones_efectivas": "0/1", "duelos_efectivos": "2/6",
+                    "faltas_cometidas": 1, "faltas_recibidas": 1, "pases_largos_utiles": "0/1", "regates_utiles": "0/1",
+                    "centros_utiles": "1/4", "asistencias_pases_clave": "0/0", "tiros_a_puerta": "0/0",
+                    "distribucion_1t": {"defensa_pct": 4, "medio_pct": 3, "ataque_pct": 93},
+                    "distribucion_2t": {"defensa_pct": 0, "medio_pct": 0, "ataque_pct": 100}
+                },
+                {
+                    "dorsal": 3, "nombre": "Emanuele Borsani", "anio_nacimiento": 2008, "posicion": "Defensa", "minutos": "78' (45+33)",
+                    "balones_jugados": 46, "posesion_tiempo": "1':50\"", "pases_acertados": 30, "acciones_utiles": 5,
+                    "perdidas_efectivas": 10, "recuperaciones_efectivas": "8/15", "recuperaciones_aereas": 4, "recuperaciones_area": 4,
+                    "intercepciones": 10, "anticipaciones_efectivas": "2/3", "duelos_efectivos": "0/0",
+                    "faltas_cometidas": 1, "faltas_recibidas": 1, "pases_largos_utiles": "0/0", "regates_utiles": "0/0",
+                    "centros_utiles": "0/1", "asistencias_pases_clave": "0/0", "tiros_a_puerta": "0/0",
+                    "distribucion_1t": {"defensa_pct": 67, "medio_pct": 33, "ataque_pct": 0},
+                    "distribucion_2t": {"defensa_pct": 79, "medio_pct": 21, "ataque_pct": 0}
+                },
+                {
+                    "dorsal": 4, "nombre": "Damir Zukic", "anio_nacimiento": 2004, "posicion": "Defensa", "minutos": "71' (45+26)",
+                    "balones_jugados": 47, "posesion_tiempo": "2':35\"", "pases_acertados": 31, "acciones_utiles": 12,
+                    "perdidas_efectivas": 5, "recuperaciones_efectivas": "8/18", "recuperaciones_aereas": 6, "recuperaciones_area": 6,
+                    "intercepciones": 14, "anticipaciones_efectivas": "1/1", "duelos_efectivos": "2/2",
+                    "faltas_cometidas": 1, "faltas_recibidas": 1, "pases_largos_utiles": "3/4", "regates_utiles": "0/0",
+                    "centros_utiles": "0/0", "asistencias_pases_clave": "0/0", "tiros_a_puerta": "0/0",
+                    "distribucion_1t": {"defensa_pct": 3, "medio_pct": 30, "ataque_pct": 67},
+                    "distribucion_2t": {"defensa_pct": 6, "medio_pct": 53, "ataque_pct": 41}
+                },
+                {
+                    "dorsal": 5, "nombre": "Valeri Vladimirov", "anio_nacimiento": 2008, "posicion": "Defensa", "minutos": "96' (45+51)",
+                    "balones_jugados": 61, "posesion_tiempo": "2':47\"", "pases_acertados": 44, "acciones_utiles": 7,
+                    "perdidas_efectivas": 10, "recuperaciones_efectivas": "7/12", "recuperaciones_aereas": 5, "recuperaciones_area": 2,
+                    "intercepciones": 8, "anticipaciones_efectivas": "0/0", "duelos_efectivos": "1/1",
+                    "faltas_cometidas": 2, "faltas_recibidas": 1, "pases_largos_utiles": "1/2", "regates_utiles": "1/1",
+                    "centros_utiles": "0/0", "asistencias_pases_clave": "0/0", "tiros_a_puerta": "0/0",
+                    "distribucion_1t": {"defensa_pct": 42, "medio_pct": 58, "ataque_pct": 0},
+                    "distribucion_2t": {"defensa_pct": 50, "medio_pct": 50, "ataque_pct": 0}
+                },
+                {
+                    "dorsal": 6, "nombre": "El Hadji Malick Cissé", "anio_nacimiento": 2008, "posicion": "Centrocampista", "minutos": "96' (45+51)",
+                    "balones_jugados": 53, "posesion_tiempo": "2':01\"", "pases_acertados": 33, "acciones_utiles": 9,
+                    "perdidas_efectivas": 9, "recuperaciones_efectivas": "11/21", "recuperaciones_aereas": 5, "recuperaciones_area": 6,
+                    "intercepciones": 16, "anticipaciones_efectivas": "0/0", "duelos_efectivos": "0/3",
+                    "faltas_cometidas": 2, "faltas_recibidas": 1, "pases_largos_utiles": "0/1", "regates_utiles": "0/0",
+                    "centros_utiles": "0/0", "asistencias_pases_clave": "0/0", "tiros_a_puerta": "0/0",
+                    "distribucion_1t": {"defensa_pct": 27, "medio_pct": 46, "ataque_pct": 27},
+                    "distribucion_2t": {"defensa_pct": 33, "medio_pct": 56, "ataque_pct": 11}
+                },
+                {
+                    "dorsal": 8, "nombre": "Fabio Pandolfi", "anio_nacimiento": 2008, "posicion": "Centrocampista", "minutos": "96' (45+51)",
+                    "balones_jugados": 71, "posesion_tiempo": "3':03\"", "pases_acertados": 43, "acciones_utiles": 25,
+                    "perdidas_efectivas": 13, "recuperaciones_efectivas": "8/17", "recuperaciones_aereas": 1, "recuperaciones_area": 0,
+                    "intercepciones": 15, "anticipaciones_efectivas": "0/0", "duelos_efectivos": "0/1",
+                    "faltas_cometidas": 0, "faltas_recibidas": 3, "pases_largos_utiles": "1/2", "regates_utiles": "5/6",
+                    "centros_utiles": "0/0", "asistencias_pases_clave": "1/1", "tiros_a_puerta": "2/2",
+                    "distribucion_1t": {"defensa_pct": 19, "medio_pct": 37, "ataque_pct": 44},
+                    "distribucion_2t": {"defensa_pct": 41, "medio_pct": 56, "ataque_pct": 3}
+                },
+                {
+                    "dorsal": 11, "nombre": "Lorenzo Ossola", "anio_nacimiento": 2007, "posicion": "Centrocampista", "minutos": "96' (45+51)",
+                    "balones_jugados": 48, "posesion_tiempo": "2':08\"", "pases_acertados": 23, "acciones_utiles": 17,
+                    "perdidas_efectivas": 21, "recuperaciones_efectivas": "2/5", "recuperaciones_aereas": 0, "recuperaciones_area": 1,
+                    "intercepciones": 5, "anticipaciones_efectivas": "0/0", "duelos_efectivos": "0/0",
+                    "faltas_cometidas": 0, "faltas_recibidas": 0, "pases_largos_utiles": "0/1", "regates_utiles": "3/5",
+                    "centros_utiles": "1/2", "asistencias_pases_clave": "0/2", "tiros_a_puerta": "1/2",
+                    "distribucion_1t": {"defensa_pct": 5, "medio_pct": 21, "ataque_pct": 74},
+                    "distribucion_2t": {"defensa_pct": 45, "medio_pct": 38, "ataque_pct": 17}
+                },
+                {
+                    "dorsal": 7, "nombre": "Emanuele Sala", "anio_nacimiento": 2007, "posicion": "Delantero", "minutos": "78' (45+33)",
+                    "balones_jugados": 32, "posesion_tiempo": "1':15\"", "pases_acertados": 19, "acciones_utiles": 5,
+                    "perdidas_efectivas": 10, "recuperaciones_efectivas": "2/2", "recuperaciones_aereas": 0, "recuperaciones_area": 0,
+                    "intercepciones": 0, "anticipaciones_efectivas": "0/0", "duelos_efectivos": "0/0",
+                    "faltas_cometidas": 0, "faltas_recibidas": 2, "pases_largos_utiles": "0/0", "regates_utiles": "1/1",
+                    "centros_utiles": "0/0", "asistencias_pases_clave": "0/1", "tiros_a_puerta": "0/1",
+                    "distribucion_1t": {"defensa_pct": 19, "medio_pct": 81, "ataque_pct": 0},
+                    "distribucion_2t": {"defensa_pct": 9, "medio_pct": 36, "ataque_pct": 55}
+                },
+                {
+                    "dorsal": 9, "nombre": "Levis Asanji", "anio_nacimiento": 2006, "posicion": "Delantero", "minutos": "96' (45+51)",
+                    "balones_jugados": 39, "posesion_tiempo": "1':18\"", "pases_acertados": 21, "acciones_utiles": 3,
+                    "perdidas_efectivas": 17, "recuperaciones_efectivas": "1/1", "recuperaciones_aereas": 4, "recuperaciones_area": 0,
+                    "intercepciones": 0, "anticipaciones_efectivas": "0/0", "duelos_efectivos": "0/0",
+                    "faltas_cometidas": 2, "faltas_recibidas": 0, "pases_largos_utiles": "0/0", "regates_utiles": "0/0",
+                    "centros_utiles": "0/0", "asistencias_pases_clave": "0/0", "tiros_a_puerta": "0/0",
+                    "distribucion_1t": {"defensa_pct": 26, "medio_pct": 32, "ataque_pct": 42},
+                    "distribucion_2t": {"defensa_pct": 10, "medio_pct": 50, "ataque_pct": 40}
+                },
+                {
+                    "dorsal": 10, "nombre": "Silvano Vos", "anio_nacimiento": 2005, "posicion": "Delantero", "minutos": "96' (45+51)",
+                    "balones_jugados": 32, "posesion_tiempo": "1':48\"", "pases_acertados": 23, "acciones_utiles": 4,
+                    "perdidas_efectivas": 7, "recuperaciones_efectivas": "0/0", "recuperaciones_aereas": 0, "recuperaciones_area": 0,
+                    "intercepciones": 0, "anticipaciones_efectivas": "0/0", "duelos_efectivos": "0/0",
+                    "faltas_cometidas": 0, "faltas_recibidas": 1, "pases_largos_utiles": "0/0", "regates_utiles": "0/0",
+                    "centros_utiles": "0/0", "asistencias_pases_clave": "0/0", "tiros_a_puerta": "0/1",
+                    "distribucion_1t": {"defensa_pct": 33, "medio_pct": 54, "ataque_pct": 13},
+                    "distribucion_2t": {"defensa_pct": 53, "medio_pct": 41, "ataque_pct": 6}
+                }
+            ],
+            "rankings_top": {
+                "Balones jugados": [{"dorsal": 8, "nombre": "Fabio Pandolfi", "valor": 71}, {"dorsal": 5, "nombre": "Valeri Vladimirov", "valor": 61}, {"dorsal": 1, "nombre": "Matteo Pittarella", "valor": 55}],
+                "Pases acertados": [{"dorsal": 1, "nombre": "Matteo Pittarella", "valor": 47}, {"dorsal": 5, "nombre": "Valeri Vladimirov", "valor": 44}, {"dorsal": 8, "nombre": "Fabio Pandolfi", "valor": 43}],
+                "Acciones útiles": [{"dorsal": 8, "nombre": "Fabio Pandolfi", "valor": 25}, {"dorsal": 11, "nombre": "Lorenzo Ossola", "valor": 17}, {"dorsal": 1, "nombre": "Matteo Pittarella", "valor": 12}],
+                "Recuperaciones": [{"dorsal": 1, "nombre": "Matteo Pittarella", "valor": 24}, {"dorsal": 6, "nombre": "El Hadji Malick Cissé", "valor": 21}, {"dorsal": 4, "nombre": "Damir Zukic", "valor": 18}],
+                "Tiros": [{"dorsal": 11, "nombre": "Lorenzo Ossola", "valor": 2}, {"dorsal": 8, "nombre": "Fabio Pandolfi", "valor": 2}, {"dorsal": 15, "nombre": "Nirash Perera", "valor": 1}]
+            }
+        }
+    }
+
+def sync_report_with_supabase(report_data):
+    """Sincroniza el reporte con la base de datos de Supabase."""
+    print("="*60)
+    print("🔄 SINCRONIZANDO REPORTE PANINI CON SUPABASE")
+    print("="*60)
+    
+    if not supabase:
+        print("❌ Cliente Supabase no disponible. Guardando en archivo local...")
+        return False
+
+    fecha = report_data["fecha"]
+    print(f"📅 Buscando partido por fecha: {fecha}...")
+
+    try:
+        # 1. Buscar partido en Supabase
+        res = supabase.table("matches").select("id, season_id, opponent, date, competition").eq("date", fecha).execute()
+        match_record = None
+        if res.data and len(res.data) > 0:
+            match_record = res.data[0]
+            print(f"✅ Partido encontrado: ID {match_record['id']} | Rival: {match_record.get('opponent')} | Competición: {match_record.get('competition')}")
+        else:
+            # Fallback por nombre de rival
+            print(f"⚠️ Partido no encontrado por fecha exacta. Buscando por rival 'Villa Valle'...")
+            res2 = supabase.table("matches").select("id, season_id, opponent, date, competition").ilike("opponent", "%Villa Valle%").execute()
+            if res2.data and len(res2.data) > 0:
+                match_record = res2.data[0]
+                print(f"✅ Partido encontrado por rival: ID {match_record['id']}")
+        
+        if not match_record:
+            print("❌ No se encontró ningún partido que coincida en la base de datos.")
+            return False
+
+        match_id = match_record["id"]
+        season_id = match_record["season_id"]
+        report_data["match_id"] = match_id
+
+        # 2. Mapear IDs de los jugadores del club (Milan Futuro)
+        print("🔍 Vinculando jugadores de la plantilla con sus IDs de Supabase...")
+        players_res = supabase.table("players").select("id, first_name, last_name, kit_number").eq("season_id", season_id).execute()
+        db_players = players_res.data or []
+        print(f"ℹ️ {len(db_players)} jugadores disponibles en la temporada.")
+
+        def match_player_id(full_name):
+            clean_target = full_name.lower().strip()
+            for p in db_players:
+                p_full = f"{p.get('first_name', '')} {p.get('last_name', '')}".lower().strip()
+                last_name = p.get('last_name', '').lower().strip()
+                if last_name in clean_target or clean_target in p_full:
+                    return p["id"]
+            return None
+
+        # Asociar IDs al equipo visitante (Milan Futuro)
+        for player in report_data["equipo_visitante"]["alineacion"]:
+            pid = match_player_id(player["nombre"])
+            if pid:
+                player["player_id"] = pid
+
+        for pstats in report_data["equipo_visitante"]["jugadores_stats"]:
+            pid = match_player_id(pstats["nombre"])
+            if pid:
+                pstats["player_id"] = pid
+
+        for p_mat in report_data["equipo_visitante"]["matriz_pases"]["jugadores"]:
+            pid = match_player_id(p_mat["nombre"])
+            if pid:
+                p_mat["player_id"] = pid
+
+        # 3. Guardar el reporte en Supabase
+        # Actualizamos la columna `scouting_notes` con el payload JSON o la columna `panini_report`
+        payload_str = json.dumps(report_data, ensure_ascii=False)
+        print(f"💾 Guardando reporte estructurado ({len(payload_str)} bytes) en el partido {match_id}...")
+
+        # Actualizamos match
+        update_res = supabase.table("matches").update({
+            "result_home": report_data["equipo_local"]["goles"],
+            "result_away": report_data["equipo_visitante"]["goles"],
+            "status": "Finished",
+            "scouting_notes": f"__PANINI_REPORT_JSON__{payload_str}"
+        }).eq("id", match_id).execute()
+
+        print(f"✅ ¡Partido {match_id} sincronizado exitosamente con el informe Panini!")
+        return True
+
+    except Exception as e:
+        print(f"❌ Error durante la sincronización: {e}")
+        return False
+
+def main():
+    print("="*60)
+    print("🏆 PANINI MATCH ANALYSIS EXTRACTOR & TRANSLATOR")
+    print("="*60)
+    
+    report = generate_sample_report_villa_valle_milan()
+    
+    # Guardar en archivo local JSON
+    output_dir = Path("src/data/panini_reports")
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output_path = output_dir / f"report_{report['fecha']}_villa_valle_milan_futuro.json"
+    
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(report, f, ensure_ascii=False, indent=2)
+    
+    print(f"📁 Informe guardado localmente en: {output_path}")
+
+    # Sincronizar con Supabase
+    sync_report_with_supabase(report)
+
+if __name__ == "__main__":
+    main()

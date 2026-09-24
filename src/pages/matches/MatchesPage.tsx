@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Trash2, ChevronLeft, MapPin, Swords, Pencil, User, Radio, Target } from 'lucide-react';
+import { Plus, Trash2, ChevronLeft, MapPin, Swords, Pencil, User, Radio, Target, Award } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import type { MatchDB, MatchFocus, MatchDataPoint } from '../../components/types';
 import { getMatches, createMatch, updateMatch, getMatchFocuses, createMatchFocus, updateMatchFocus, deleteMatchFocus, getMatchDataPoints } from '../../services/matches';
@@ -11,6 +11,9 @@ import MatchLiveRegistrationView from '../../components/matches/MatchLiveRegistr
 import FocusStatisticsView from '../../components/matches/FocusStatisticsView';
 import LiveRegistrationFlow from '../../components/matches/LiveRegistrationFlow';
 import FocusPlanningFlow from '../../components/matches/FocusPlanningFlow';
+import PaniniReportView from '../../components/matches/PaniniReportView';
+import { getPaniniReportForMatch } from '../../services/paniniReports';
+import type { PaniniMatchReport } from '../../types/paniniReport';
 import type { FocusDetails } from '../../components/types';
 
 export default function MatchesPage() {
@@ -255,6 +258,11 @@ export default function MatchesPage() {
                     <span className={`text-sm font-extrabold ${theme.text} ${theme.bg} border ${theme.borderLight} px-3 py-1 rounded-lg shadow-sm uppercase`}>
                       {m.competition || 'Partido'}
                     </span>
+                    {(m.date === '2026-09-20' || m.scouting_notes?.startsWith('__PANINI_REPORT_JSON__')) && (
+                      <span className="text-xs font-black bg-indigo-100 text-indigo-700 border border-indigo-200 px-2.5 py-1 rounded-lg flex items-center gap-1 shadow-sm">
+                        📊 Panini Match Analysis
+                      </span>
+                    )}
                     <span className="text-sm font-bold text-gray-600 flex items-center gap-1.5 bg-gray-50 border border-gray-200 px-3 py-1 rounded-lg shadow-sm">
                       {new Date(m.date).toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })}
                       {m.time && ` | ${m.time}`}
@@ -307,8 +315,10 @@ export default function MatchesPage() {
 function MatchDetail({ match, onBack, onUpdate }: { match: MatchDB; onBack: () => void; onUpdate: () => void }) {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const initialTab = (searchParams.get('view') as 'info' | 'focuses' | 'data') || 'info';
-  const [tab, setTab] = useState<'info' | 'focuses' | 'data'>(initialTab);
+  const hasPaniniData = match.date === '2026-09-20' || match.scouting_notes?.startsWith('__PANINI_REPORT_JSON__');
+  const initialTab = (searchParams.get('view') as 'info' | 'focuses' | 'data' | 'panini') || (hasPaniniData ? 'panini' : 'info');
+  const [tab, setTab] = useState<'info' | 'focuses' | 'data' | 'panini'>(initialTab);
+  const [paniniReport, setPaniniReport] = useState<PaniniMatchReport | null>(null);
   
   const [isEditingInfo, setIsEditingInfo] = useState(false);
   const [editDate, setEditDate] = useState(match.date);
@@ -342,17 +352,18 @@ function MatchDetail({ match, onBack, onUpdate }: { match: MatchDB; onBack: () =
 
   const loadFocuses = () => getMatchFocuses(match.id).then(setFocuses).catch(() => setFocuses([]));
   const loadDataPoints = () => getMatchDataPoints(match.id).then(setDataPoints).catch(() => setDataPoints([]));
+  const loadPanini = () => getPaniniReportForMatch(match.id, match.date).then(setPaniniReport).catch(() => setPaniniReport(null));
 
-  useEffect(() => { loadFocuses(); loadDataPoints(); }, [match.id]);
+  useEffect(() => { loadFocuses(); loadDataPoints(); loadPanini(); }, [match.id]);
 
   useEffect(() => {
-    const viewParam = searchParams.get('view') as 'info' | 'focuses' | 'data';
-    if (viewParam && ['info', 'focuses', 'data'].includes(viewParam)) {
+    const viewParam = searchParams.get('view') as 'info' | 'focuses' | 'data' | 'panini';
+    if (viewParam && ['info', 'focuses', 'data', 'panini'].includes(viewParam)) {
       setTab(viewParam);
     }
   }, [searchParams]);
 
-  const handleTabChange = (newTab: 'info' | 'focuses' | 'data') => {
+  const handleTabChange = (newTab: 'info' | 'focuses' | 'data' | 'panini') => {
     setTab(newTab);
     setSearchParams({ view: newTab });
   };
@@ -465,10 +476,18 @@ function MatchDetail({ match, onBack, onUpdate }: { match: MatchDB; onBack: () =
       </div>
 
       <div className="flex gap-2 flex-wrap">
+        <button onClick={() => handleTabChange('panini')} className={`px-4 py-2 rounded-lg text-sm font-bold border-2 flex items-center gap-2 transition-all ${tab === 'panini' ? 'bg-indigo-50 border-indigo-600 text-indigo-700 shadow-sm' : 'bg-white border-gray-200 text-gray-500'}`}>
+          <Award size={16} /> Panini Match Analysis
+          {hasPaniniData && <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.8)]"></span>}
+        </button>
         <button onClick={() => handleTabChange('info')} className={`px-4 py-2 rounded-lg text-sm font-bold border-2 ${tab === 'info' ? 'bg-blue-50 border-blue-600 text-blue-700' : 'bg-white border-gray-200 text-gray-500'}`}>{t('matchesPage.info')}</button>
         <button onClick={() => handleTabChange('focuses')} className={`px-4 py-2 rounded-lg text-sm font-bold border-2 ${tab === 'focuses' ? 'bg-blue-50 border-blue-600 text-blue-700' : 'bg-white border-gray-200 text-gray-500'}`}>{t('matchesPage.focuses')}</button>
         <button onClick={() => handleTabChange('data')} className={`px-4 py-2 rounded-lg text-sm font-bold border-2 ${tab === 'data' ? 'bg-blue-50 border-blue-600 text-blue-700' : 'bg-white border-gray-200 text-gray-500'}`}>{t('matchesPage.dataCollection')}</button>
       </div>
+
+      {tab === 'panini' && paniniReport && (
+        <PaniniReportView matchId={match.id} report={paniniReport} onRefresh={loadPanini} />
+      )}
 
       {tab === 'info' && (
         <div className="bg-white border border-gray-100 rounded-xl p-4 space-y-3 shadow-sm">
