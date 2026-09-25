@@ -374,7 +374,7 @@ export default function PlayersPage() {
       />
 
       {players.length > 0 && currentView === 'roster' && (
-        <div className="grid grid-cols-3 gap-4 overflow-x-auto pb-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 pb-2">
           <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
             <div className="p-3 bg-blue-50 text-blue-600 rounded-lg">
               <UsersIcon size={24} />

@@ -197,14 +197,14 @@ const MainLayout: React.FC = () => {
   const displayName = profile?.full_name || 'Admin';
 
   return (
-    <div className="flex flex-col h-screen w-full bg-gray-50 dark:bg-gray-950 overflow-hidden">
+    <div className="flex flex-col h-screen h-dvh w-full bg-gray-50 dark:bg-gray-950 overflow-hidden">
 
       {/* Top Navbar */}
-      <header className="relative shrink-0 z-50 bg-black">
+      <header className="relative shrink-0 z-40 bg-black pt-[env(safe-area-inset-top)]">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_120%_at_0%_0%,rgba(219,0,48,0.18),transparent_60%)] pointer-events-none" />
         <div className="absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-[var(--color-primary,#db0030)]/70 via-white/10 to-transparent" />
 
-        <div className="relative flex items-center gap-4 px-4 lg:px-6 h-[68px]">
+        <div className="relative flex items-center gap-4 px-4 lg:px-6 h-[60px] lg:h-[68px]">
           {/* Logo */}
           <Link to="/" className="group flex items-center gap-3 shrink-0">
             <div className="relative">
@@ -314,7 +314,7 @@ const MainLayout: React.FC = () => {
         onClick={() => setMobileSheet(null)}
       />
       <div
-        className={`lg:hidden fixed left-3 right-3 bottom-[88px] z-50 transition-all duration-300 ${
+        className={`lg:hidden fixed left-3 right-3 bottom-[calc(80px+env(safe-area-inset-bottom))] z-50 max-h-[70dvh] overflow-y-auto rounded-3xl transition-all duration-300 ${
           sheetSection ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6 pointer-events-none'
         }`}
       >
@@ -334,15 +334,15 @@ const MainLayout: React.FC = () => {
       </div>
 
       {/* Mobile Bottom Dock */}
-      <nav className="lg:hidden fixed bottom-3 left-3 right-3 z-50">
-        <ul className="flex items-stretch justify-between gap-1 p-1.5 rounded-[26px] bg-black/90 backdrop-blur-xl ring-1 ring-white/10 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.6)]">
+      <nav className="lg:hidden fixed bottom-[calc(0.5rem+env(safe-area-inset-bottom))] left-2 right-2 z-40">
+        <ul className="flex items-stretch justify-between gap-0.5 p-1 rounded-[24px] bg-black/90 backdrop-blur-xl ring-1 ring-white/10 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.6)]">
           {navigation.map((section) => {
             const active = isActive(section.path);
             const hasChildren = !!section.children?.length;
             const sheetOpen = mobileSheet === section.path;
             const Icon = section.icon;
             return (
-              <li key={section.path} className="flex-1 min-w-0">
+              <li key={section.path} className={`min-w-0 transition-all duration-300 ${active ? 'flex-[2.8]' : 'flex-1'}`}>
                 <Link
                   to={section.path}
                   onClick={(e) => {
@@ -351,7 +351,8 @@ const MainLayout: React.FC = () => {
                       setMobileSheet(sheetOpen ? null : section.path);
                     }
                   }}
-                  className={`flex flex-col items-center justify-center gap-1 h-14 rounded-[20px] transition-all duration-200 ${
+                  aria-label={t(section.labelKey)}
+                  className={`flex items-center justify-center gap-1.5 h-12 rounded-[20px] transition-all duration-200 ${
                     active
                       ? '!text-white bg-gradient-to-b from-[var(--color-primary,#db0030)] to-[#a80025] shadow-[0_8px_20px_-8px_rgba(219,0,48,0.9)]'
                       : sheetOpen
@@ -359,8 +360,8 @@ const MainLayout: React.FC = () => {
                         : '!text-gray-500 active:bg-white/10'
                   }`}
                 >
-                  <Icon size={20} strokeWidth={active ? 2.5 : 2} />
-                  <span className="text-[9.5px] font-bold tracking-wide truncate max-w-full px-1">{t(section.labelKey)}</span>
+                  <Icon size={20} strokeWidth={active ? 2.5 : 2} className="shrink-0" />
+                  {active && <span className="text-[11px] font-bold tracking-wide truncate min-w-0">{t(section.labelKey)}</span>}
                 </Link>
               </li>
             );
@@ -369,7 +370,7 @@ const MainLayout: React.FC = () => {
       </nav>
 
       {/* Main Content Area */}
-      <main className="flex-1 w-full min-w-0 min-h-0 overflow-y-auto overflow-x-hidden bg-gray-50 dark:bg-[#0a0a0a] px-4 sm:px-5 lg:px-10 pb-28 lg:pb-0">
+      <main className="flex-1 w-full min-w-0 min-h-0 overflow-y-auto overflow-x-hidden bg-gray-50 dark:bg-[#0a0a0a] px-4 sm:px-5 lg:px-10 pb-[calc(6rem+env(safe-area-inset-bottom))] lg:pb-0">
         <div className="w-full py-4 lg:py-6">
           <ErrorBoundary resetKey={location.pathname + location.search}>
             <Outlet />

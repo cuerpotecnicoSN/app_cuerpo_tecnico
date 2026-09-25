@@ -555,16 +555,16 @@ export default function PlayerImportModal({ onClose, onSuccess, playerToEdit }: 
           </button>
         </div>
 
-        <div className="p-6 overflow-y-auto" style={{ flex: '1 1 auto' }}>
-          <div className="p-5 rounded-lg border mb-6" style={{ backgroundColor: 'var(--color-bg-surface)', borderColor: 'var(--color-border)' }}>
+        <div className="p-4 sm:p-6 overflow-y-auto" style={{ flex: '1 1 auto' }}>
+          <div className="p-4 sm:p-5 rounded-lg border mb-6" style={{ backgroundColor: 'var(--color-bg-surface)', borderColor: 'var(--color-border)' }}>
             <label className="block text-sm font-bold mb-2">Autocompletar con BeSoccer o Transfermarkt (Opcional)</label>
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-3">
               <input 
                 type="url" 
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 placeholder="https://www.transfermarkt.es/... o besoccer.es/..." 
-                className="flex-1"
+                className="flex-1 min-w-0"
                 onKeyDown={(e) => e.key === 'Enter' && scrapeExternalData()}
               />
               <button 
@@ -639,7 +639,7 @@ export default function PlayerImportModal({ onClose, onSuccess, playerToEdit }: 
                 <label className="text-xs font-bold text-secondary">Pie Dominante</label>
                 <input type="text" value={formData.dominant_foot} onChange={e => setFormData({...formData, dominant_foot: e.target.value})} className="w-full" />
               </div>
-              <div className="flex flex-col gap-1 col-span-2">
+              <div className="flex flex-col gap-1 md:col-span-2">
                 <label className="text-xs font-bold text-secondary">Trayectoria (Equipos)</label>
                 <textarea 
                    value={formData.history || ''} 

@@ -183,12 +183,12 @@ const Dashboard: React.FC = () => {
         </div>
 
         {/* Role Selector (Glassmorphism) */}
-        <div className="glass-panel rounded-2xl p-2 flex flex-wrap gap-2 w-full xl:w-auto">
+        <div className="glass-panel rounded-2xl p-1.5 sm:p-2 flex gap-1.5 sm:gap-2 w-full xl:w-auto">
           {(['Entrenador', 'Preparador Físico', 'Analista'] as UserRole[]).map(role => (
             <button
               key={role}
               onClick={() => setCurrentRole(role)}
-              className={`flex-1 xl:flex-none px-6 py-3 rounded-xl text-sm sm:text-base font-bold transition-all duration-300 ${
+              className={`flex-1 xl:flex-none px-2 sm:px-6 py-2.5 sm:py-3 rounded-xl text-xs sm:text-base font-bold leading-tight transition-all duration-300 ${
                 currentRole === role
                   ? 'bg-[var(--color-primary)] text-white shadow-lg shadow-[var(--color-primary)]/30 scale-[1.02]'
                   : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-hover)]'
@@ -201,7 +201,7 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-10 animate-fade-in-up delay-100">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6 mb-8 sm:mb-10 animate-fade-in-up delay-100">
         {stats.map((stat, index) => (
           <div
             key={index}

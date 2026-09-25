@@ -576,12 +576,12 @@ export default function CalendarPage() {
           </div>
         </div>
 
-        <div className="flex-1 flex justify-center mt-4 xl:mt-0">
-          <div className="flex items-center gap-4 bg-white border border-gray-200 rounded-xl p-1 shadow-sm">
+        <div className="w-full xl:w-auto xl:flex-1 flex justify-center xl:mt-0">
+          <div className="flex items-center justify-between gap-2 sm:gap-4 w-full sm:w-auto bg-white border border-gray-200 rounded-xl p-1 shadow-sm">
             <button onClick={() => setCursor(new Date(year, month - 1, 1))} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
               <ChevronLeft size={20} className="text-gray-600" />
             </button>
-            <span className="font-bold text-gray-800 capitalize w-36 text-center">
+            <span className="font-bold text-gray-800 capitalize flex-1 sm:flex-none sm:w-44 text-center whitespace-nowrap">
               {cursor.toLocaleDateString(i18n.language, { month: 'long', year: 'numeric' })}
             </span>
             <button onClick={() => setCursor(new Date(year, month + 1, 1))} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
@@ -590,7 +590,7 @@ export default function CalendarPage() {
           </div>
         </div>
 
-        <div className="flex-1 flex items-center justify-end flex-wrap gap-3 mt-4 xl:mt-0">
+        <div className="w-full xl:w-auto xl:flex-1 flex items-center justify-end gap-2 sm:gap-3 xl:mt-0 [&>button]:flex-1 sm:[&>button]:flex-none [&>button]:justify-center [&>button]:whitespace-nowrap [&>button]:px-3 sm:[&>button]:px-5">
           <span className="hidden 2xl:flex items-center gap-1.5 text-[11px] font-semibold text-gray-400">
             <Sparkles size={13} className="text-gray-300" /> {t('calendarPage.clickToEdit', 'Pulsa un evento para editarlo o eliminarlo')}
           </span>
