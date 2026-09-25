@@ -178,23 +178,23 @@ export default function PaniniIndividualStatsView({ homeTeam, awayTeam }: Props)
             </p>
           </div>
 
-          <div className="flex bg-gray-100 dark:bg-neutral-800 p-1 rounded-2xl">
+          <div className="flex bg-gray-100 dark:bg-neutral-800 p-1.5 rounded-2xl border border-gray-200/60 dark:border-white/10 shadow-inner">
             <button
               onClick={() => { setSelectedTeamKey('home'); setSelectedDorsal(35); }}
-              className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
                 selectedTeamKey === 'home'
-                  ? 'bg-red-600 text-white shadow-md'
-                  : 'text-gray-600 dark:text-gray-300 hover:text-gray-900'
+                  ? 'bg-red-600 text-white shadow-md shadow-red-600/30 ring-2 ring-red-500/30 scale-[1.02]'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200/50 dark:hover:bg-neutral-700/50'
               }`}
             >
               {homeTeam.nombre} ({starters.length + substitutes.length})
             </button>
             <button
               onClick={() => { setSelectedTeamKey('away'); setSelectedDorsal(1); }}
-              className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
                 selectedTeamKey === 'away'
-                  ? 'bg-[#001f7a] text-white shadow-md'
-                  : 'text-gray-600 dark:text-gray-300 hover:text-gray-900'
+                  ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 ring-2 ring-blue-500/30 scale-[1.02]'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200/50 dark:hover:bg-neutral-700/50'
               }`}
             >
               {awayTeam.nombre} ({awayTeam.alineacion.length})

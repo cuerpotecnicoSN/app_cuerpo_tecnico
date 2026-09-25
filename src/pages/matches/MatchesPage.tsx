@@ -352,8 +352,8 @@ function MatchDetail({ match, onBack, onUpdate }: { match: MatchDB; onBack: () =
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const hasPaniniData = match.date === '2026-09-20' || match.scouting_notes?.startsWith('__PANINI_REPORT_JSON__');
-  const initialTab = (searchParams.get('view') as 'info' | 'focuses' | 'data' | 'panini') || (hasPaniniData ? 'panini' : 'info');
-  const [tab, setTab] = useState<'info' | 'focuses' | 'data' | 'panini'>(initialTab);
+  const initialTab = (searchParams.get('view') as 'focuses' | 'data' | 'panini') || (hasPaniniData ? 'panini' : 'focuses');
+  const [tab, setTab] = useState<'focuses' | 'data' | 'panini'>(initialTab);
   const [paniniReport, setPaniniReport] = useState<PaniniMatchReport | null>(null);
   
   const [isEditingInfo, setIsEditingInfo] = useState(false);
@@ -394,13 +394,13 @@ function MatchDetail({ match, onBack, onUpdate }: { match: MatchDB; onBack: () =
   useEffect(() => { loadFocuses(); loadDataPoints(); loadPanini(); }, [match.id]);
 
   useEffect(() => {
-    const viewParam = searchParams.get('view') as 'info' | 'focuses' | 'data' | 'panini';
-    if (viewParam && ['info', 'focuses', 'data', 'panini'].includes(viewParam)) {
+    const viewParam = searchParams.get('view') as 'focuses' | 'data' | 'panini';
+    if (viewParam && ['focuses', 'data', 'panini'].includes(viewParam)) {
       setTab(viewParam);
     }
   }, [searchParams]);
 
-  const handleTabChange = (newTab: 'info' | 'focuses' | 'data' | 'panini') => {
+  const handleTabChange = (newTab: 'focuses' | 'data' | 'panini') => {
     setTab(newTab);
     setSearchParams({ view: newTab });
   };
@@ -437,81 +437,6 @@ function MatchDetail({ match, onBack, onUpdate }: { match: MatchDB; onBack: () =
         <ChevronLeft size={16} /> {t('common.back')}
       </button>
 
-      <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-6 md:p-8 shadow-xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-        
-        <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-8">
-          
-          <div className="flex flex-col text-white space-y-4">
-             <div className="flex items-center gap-2 text-xs md:text-sm text-gray-400 font-black tracking-widest uppercase">
-                <span className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)]"></span>
-                {match.competition || 'Partido Oficial'}
-             </div>
-             
-             <div className="flex items-center gap-4 md:gap-8">
-                {/* Local Team */}
-                <div className="flex flex-col items-center gap-3">
-                   {match.is_home ? (
-                      <div className="w-16 h-16 md:w-20 md:h-20 bg-white rounded-full flex items-center justify-center text-2xl md:text-3xl font-black text-gray-900 shadow-inner">SN</div>
-                   ) : (
-                      <div className="w-16 h-16 md:w-20 md:h-20 bg-gray-800/80 rounded-full flex items-center justify-center text-lg md:text-xl font-bold text-white border border-gray-600 shadow-inner overflow-hidden">
-                         <span className="truncate w-full text-center px-1">{(match.opponent || 'RIV').substring(0,3).toUpperCase()}</span>
-                      </div>
-                   )}
-                   <span className="font-bold text-sm md:text-base text-center max-w-[120px] md:max-w-[160px] line-clamp-2 leading-tight">{match.is_home ? 'San Nicasio' : (match.opponent || 'Rival')}</span>
-                </div>
-                
-                <div className="flex flex-col items-center justify-center">
-                   <span className="text-xl md:text-2xl font-black text-white/50 bg-white/5 px-4 py-1.5 rounded-xl backdrop-blur-sm">VS</span>
-                </div>
-
-                {/* Away Team */}
-                <div className="flex flex-col items-center gap-3">
-                   {!match.is_home ? (
-                      <div className="w-16 h-16 md:w-20 md:h-20 bg-white rounded-full flex items-center justify-center text-2xl md:text-3xl font-black text-gray-900 shadow-inner">SN</div>
-                   ) : (
-                      <div className="w-16 h-16 md:w-20 md:h-20 bg-gray-800/80 rounded-full flex items-center justify-center text-lg md:text-xl font-bold text-white border border-gray-600 shadow-inner overflow-hidden">
-                         <span className="truncate w-full text-center px-1">{(match.opponent || 'RIV').substring(0,3).toUpperCase()}</span>
-                      </div>
-                   )}
-                   <span className="font-bold text-sm md:text-base text-center max-w-[120px] md:max-w-[160px] line-clamp-2 leading-tight">{!match.is_home ? 'San Nicasio' : (match.opponent || 'Rival')}</span>
-                </div>
-             </div>
-          </div>
-          
-          <div className="flex flex-col items-start md:items-end gap-3 text-white/90">
-             {isEditingInfo ? (
-               <div className="flex flex-col gap-2 w-full md:items-end">
-                 <input type="date" className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500 w-full md:w-auto" value={editDate} onChange={(e) => setEditDate(e.target.value)} />
-                 <input type="time" className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500 w-full md:w-auto" value={editTime} onChange={(e) => setEditTime(e.target.value)} />
-                 <div className="flex gap-2 mt-2 w-full md:w-auto">
-                   <button onClick={async () => {
-                     await updateMatch(match.id, { date: editDate, time: editTime || undefined });
-                     setIsEditingInfo(false);
-                     onUpdate();
-                     match.date = editDate; match.time = editTime || undefined;
-                   }} className="flex-1 md:flex-none bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-xl text-sm font-bold transition-colors">Guardar</button>
-                   <button onClick={() => setIsEditingInfo(false)} className="flex-1 md:flex-none bg-white/10 hover:bg-white/20 text-white px-5 py-2 rounded-xl text-sm font-bold transition-colors">Cancelar</button>
-                 </div>
-               </div>
-             ) : (
-               <>
-                 <div className="flex flex-col items-start md:items-end gap-1 bg-black/20 p-4 rounded-2xl w-full md:w-auto">
-                    <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Fecha del Encuentro</span>
-                    <span className="text-sm md:text-base font-bold text-white capitalize">
-                      {match.date ? new Date(match.date).toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'Fecha sin definir'}
-                    </span>
-                    {match.time && <span className="text-sm font-mono text-blue-300 font-bold bg-blue-900/30 px-2 py-0.5 rounded-md mt-1">{match.time} H</span>}
-                 </div>
-                 <button onClick={() => setIsEditingInfo(true)} className="text-gray-400 hover:text-white text-xs font-bold underline transition-colors ml-2 md:ml-0">
-                   Editar Info
-                 </button>
-               </>
-             )}
-          </div>
-        </div>
-      </div>
-
       <SubNavTabs
         tabs={[
           {
@@ -521,11 +446,6 @@ function MatchDetail({ match, onBack, onUpdate }: { match: MatchDB; onBack: () =
             badge: hasPaniniData ? 'IA Pro' : undefined,
           },
           {
-            id: 'info',
-            label: t('matchesPage.info', 'Info Partido'),
-            icon: FileText,
-          },
-          {
             id: 'focuses',
             label: t('matchesPage.focuses', 'Focos del Partido'),
             icon: Target,
@@ -533,7 +453,7 @@ function MatchDetail({ match, onBack, onUpdate }: { match: MatchDB; onBack: () =
           },
           {
             id: 'data',
-            label: t('matchesPage.dataCollection', 'Registro de Datos'),
+            label: t('matchesPage.dataCollection', 'Live registro datos'),
             icon: Radio,
             count: dataPoints.length,
           },
@@ -544,7 +464,7 @@ function MatchDetail({ match, onBack, onUpdate }: { match: MatchDB; onBack: () =
 
       {tab === 'panini' && (
         paniniReport ? (
-          <PaniniReportView matchId={match.id} report={paniniReport} onRefresh={loadPanini} />
+          <PaniniReportView matchId={match.id} match={match} report={paniniReport} onRefresh={loadPanini} />
         ) : (
           <div className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-white/10 rounded-3xl p-8 md:p-12 text-center max-w-xl mx-auto space-y-5 shadow-sm">
             <div className="w-16 h-16 rounded-3xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mx-auto shadow-inner">
@@ -575,13 +495,6 @@ function MatchDetail({ match, onBack, onUpdate }: { match: MatchDB; onBack: () =
           setShowImportModal(false);
         }}
       />
-
-      {tab === 'info' && (
-        <div className="bg-white border border-gray-100 rounded-xl p-4 space-y-3 shadow-sm">
-          <label className="text-xs font-bold text-gray-400 uppercase">{t('matchesPage.scoutingNotes')}</label>
-          <textarea className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm min-h-[120px]" value={scoutingNotes} onChange={(e) => setScoutingNotes(e.target.value)} onBlur={() => updateMatch(match.id, { scouting_notes: scoutingNotes })} />
-        </div>
-      )}
 
       {tab === 'focuses' && (
         <div className="space-y-4">

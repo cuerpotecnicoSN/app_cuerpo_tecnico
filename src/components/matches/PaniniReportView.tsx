@@ -10,6 +10,7 @@ import {
   Shield
 } from 'lucide-react';
 import type { PaniniMatchReport } from '../../types/paniniReport';
+import type { MatchDB } from '../types';
 import SubNavTabs from '../common/SubNavTabs';
 import PaniniMatchHeader from './panini/PaniniMatchHeader';
 import PaniniLineupsView from './panini/PaniniLineupsView';
@@ -25,11 +26,12 @@ import { BookOpen } from 'lucide-react';
 
 interface Props {
   matchId: string;
+  match?: MatchDB;
   report: PaniniMatchReport;
   onRefresh?: () => void;
 }
 
-export default function PaniniReportView({ matchId, report, onRefresh }: Props) {
+export default function PaniniReportView({ matchId, match, report, onRefresh }: Props) {
   const [activeTab, setActiveTab] = useState<
     'alineaciones' | 'estadisticas' | 'densidad' | 'regates_centros' | 'finalizacion' | 'pases' | 'jugadores'
   >('alineaciones');
@@ -40,11 +42,14 @@ export default function PaniniReportView({ matchId, report, onRefresh }: Props) 
   const home = report.equipo_local;
   const away = report.equipo_visitante;
 
+  const homeLogo = match?.home_logo || (home as any).logo || (home.nombre.toLowerCase().includes('milan') ? '/escudo.png' : undefined);
+  const awayLogo = match?.away_logo || (away as any).logo || (away.nombre.toLowerCase().includes('milan') ? '/escudo.png' : undefined);
+
   return (
     <div className="space-y-6 animate-fade-in text-gray-800 dark:text-gray-100">
       
       {/* 1. Header Card: Marcador, Logos, Goleadores, IVS, xPG y Tiempos */}
-      <PaniniMatchHeader report={report} />
+      <PaniniMatchHeader report={report} match={match} homeLogo={homeLogo} awayLogo={awayLogo} />
 
       {/* 2. Sub-Tabs de Navegación del Informe Oficial */}
       <SubNavTabs
@@ -83,7 +88,7 @@ export default function PaniniReportView({ matchId, report, onRefresh }: Props) 
       {/* TAB 1: ALINEACIONES Y POSICIONAMIENTO MEDIO              */}
       {/* ======================================================== */}
       {activeTab === 'alineaciones' && (
-        <PaniniLineupsView homeTeam={home} awayTeam={away} />
+        <PaniniLineupsView homeTeam={home} awayTeam={away} homeLogo={homeLogo} awayLogo={awayLogo} />
       )}
 
       {/* ======================================================== */}

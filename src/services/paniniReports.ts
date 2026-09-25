@@ -1,36 +1,38 @@
 import { supabase } from '../lib/supabase';
-import type { PaniniMatchReport, PaniniShotEvent } from '../types/paniniReport';
+import type { PaniniMatchReport, PaniniShotEvent, PaniniTeamData } from '../types/paniniReport';
+import type { MatchDB } from '../components/types';
+import { getMatches } from './matches';
 import sampleReportData from '../data/panini_reports/report_2026-09-20_villa_valle_milan_futuro.json';
 
 const PANINI_PREFIX = '__PANINI_REPORT_JSON__';
 
 /** Posiciones relativas reales del campograma Panini (Posicionamiento Medio 0-100% horizontal) */
 const DEFAULT_COORDS_HOME: Record<number, { x: number; y: number; role?: 'P' | 'D' | 'C' | 'A' }> = {
-  35: { x: 14.0, y: 59.0, role: 'P' }, // Portero
-  24: { x: 40.0, y: 67.0, role: 'D' }, // Central Izq
-  4: { x: 42.0, y: 43.0, role: 'D' },  // Central Dcho
-  25: { x: 55.0, y: 83.0, role: 'D' }, // Lateral Dcho
-  8: { x: 50.5, y: 56.0, role: 'C' },  // Mediocentro
-  30: { x: 57.0, y: 30.0, role: 'C' }, // Carrilero Izq
-  21: { x: 59.0, y: 39.0, role: 'C' }, // Centrocampista
-  28: { x: 59.0, y: 69.0, role: 'C' }, // Centrocampista
-  20: { x: 63.5, y: 63.0, role: 'C' }, // Centrocampista
-  14: { x: 68.0, y: 53.0, role: 'A' }, // Delantero Centro
-  7: { x: 68.0, y: 60.0, role: 'A' },  // Delantero
+  35: { x: 5.0,  y: 50.0, role: 'P' }, // Offredi (Portero centrado en área pequeña izq)
+  4:  { x: 32.5, y: 29.0, role: 'D' }, // Nava (Central Dcho - Fuera de área izq X < 50%)
+  24: { x: 31.5, y: 69.0, role: 'D' }, // Piacentini (Central Izq - Fuera de área izq X < 50%)
+  8:  { x: 48.0, y: 52.0, role: 'C' }, // Serena (Mediocentro - Borde izq círculo central X < 50%)
+  30: { x: 58.0, y: 16.0, role: 'C' }, // Caccia (Carrilero Izq - Campo Derecho X > 50%)
+  25: { x: 58.0, y: 83.0, role: 'D' }, // Martinelli (Lateral Dcho - Campo Derecho X > 50%)
+  21: { x: 61.0, y: 28.5, role: 'C' }, // Danieli (Centrocampista - Campo Derecho X > 50%)
+  20: { x: 66.5, y: 56.5, role: 'C' }, // Strechie (Centrocampista - Campo Derecho X > 50%)
+  28: { x: 64.0, y: 68.5, role: 'C' }, // Rinaldi (Centrocampista - Campo Derecho X > 50%)
+  7:  { x: 72.0, y: 58.0, role: 'A' }, // Ravasi (Delantero - Campo Derecho X > 50%)
+  14: { x: 72.5, y: 43.5, role: 'A' }, // D'Amuri (Delantero - Campo Derecho X > 50%)
 };
 
 const DEFAULT_COORDS_AWAY: Record<number, { x: number; y: number; role?: 'P' | 'D' | 'C' | 'A' }> = {
-  1: { x: 86.0, y: 48.0, role: 'P' },  // Pittarella (Portiere)
-  2: { x: 66.0, y: 23.0, role: 'D' },  // Cappelletti (Difensore)
-  4: { x: 72.0, y: 39.0, role: 'D' },  // Zukic (Difensore)
-  5: { x: 78.0, y: 74.0, role: 'D' },  // Vladimirov (Difensore)
-  3: { x: 57.0, y: 79.0, role: 'D' },  // Borsani (Difensore)
-  6: { x: 60.0, y: 61.0, role: 'C' },  // Cissé (Centrocampista)
-  8: { x: 64.0, y: 47.0, role: 'C' },  // Pandolfi (Centrocampista)
-  11: { x: 50.5, y: 26.0, role: 'C' }, // Ossola (Centrocampista)
-  7: { x: 38.0, y: 29.0, role: 'A' },  // Sala (Attaccante)
-  9: { x: 39.0, y: 48.0, role: 'A' },  // Asanji (Attaccante)
-  10: { x: 43.0, y: 67.0, role: 'A' }, // Vos (Attaccante)
+  1:  { x: 95.0, y: 50.0, role: 'P' }, // Pittarella (Portero centrado en área pequeña der)
+  2:  { x: 52.5, y: 16.5, role: 'D' }, // Cappelletti (Banda sup ligeramente a la dcha de la línea central)
+  3:  { x: 52.5, y: 82.0, role: 'D' }, // Borsani (Defensa banda inf)
+  4:  { x: 77.0, y: 34.0, role: 'D' }, // Zukic (Defensa claramente libre fuera del área de penalti)
+  5:  { x: 78.0, y: 77.0, role: 'D' }, // Vladimirov (Defensa claramente libre fuera del área de penalti)
+  6:  { x: 69.5, y: 57.5, role: 'C' }, // Cissé (Centrocampista)
+  7:  { x: 67.5, y: 28.5, role: 'A' }, // Sala (Interior/Medio sup)
+  8:  { x: 57.5, y: 62.0, role: 'C' }, // Pandolfi (Pivote cuadrante inf-der círculo central)
+  9:  { x: 43.5, y: 41.0, role: 'A' }, // Asanji (Delantero borde sup-izq círculo - Campo Izq X < 50%)
+  10: { x: 47.5, y: 68.5, role: 'A' }, // Vos (Medio inf izq fuera círculo - Campo Izq X < 50%)
+  11: { x: 41.5, y: 52.5, role: 'C' }, // Ossola (Extremo vértice izq círculo - Campo Izq X < 50%)
 };
 
 /** Remates detallados del partido de muestra */
@@ -564,3 +566,48 @@ Devuelve EXCLUSIVAMENTE un JSON válido con esta estructura:
   return enrichReportWithCoordinates(sampleReportData as unknown as PaniniMatchReport);
 }
 
+
+export interface SeasonPaniniEntry {
+  match: MatchDB;
+  report: PaniniMatchReport;
+  isHome: boolean;
+  our: PaniniTeamData;
+  rival: PaniniTeamData;
+}
+
+/**
+ * Carga todos los informes Panini de la temporada activa, ordenados por fecha ascendente,
+ * identificando cuál de los dos equipos del informe es el nuestro.
+ */
+export async function getSeasonPaniniReports(): Promise<SeasonPaniniEntry[]> {
+  const matches = await getMatches();
+  const entries: SeasonPaniniEntry[] = [];
+
+  for (const match of matches) {
+    let report: PaniniMatchReport | null = null;
+    if (match.scouting_notes?.startsWith(PANINI_PREFIX)) {
+      try {
+        report = JSON.parse(match.scouting_notes.substring(PANINI_PREFIX.length)) as PaniniMatchReport;
+      } catch (err) {
+        console.warn('Informe Panini corrupto en partido', match.id, err);
+      }
+    } else if (match.date === sampleReportData.fecha) {
+      report = sampleReportData as unknown as PaniniMatchReport;
+    }
+    if (!report?.equipo_local || !report?.equipo_visitante) continue;
+
+    const localIsUs = report.equipo_local.nombre?.toLowerCase().includes('milan');
+    const awayIsUs = report.equipo_visitante.nombre?.toLowerCase().includes('milan');
+    const isHome = localIsUs ? true : awayIsUs ? false : match.is_home;
+
+    entries.push({
+      match,
+      report,
+      isHome,
+      our: isHome ? report.equipo_local : report.equipo_visitante,
+      rival: isHome ? report.equipo_visitante : report.equipo_local,
+    });
+  }
+
+  return entries.sort((a, b) => (a.match.date < b.match.date ? -1 : a.match.date > b.match.date ? 1 : 0));
+}

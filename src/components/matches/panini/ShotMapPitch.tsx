@@ -102,27 +102,27 @@ export default function ShotMapPitch({
         </div>
 
         {/* Team Selector */}
-        <div className="flex bg-gray-100 dark:bg-neutral-800 p-1 rounded-2xl">
+        <div className="flex bg-gray-100 dark:bg-neutral-800 p-1.5 rounded-2xl border border-gray-200/60 dark:border-white/10 shadow-inner">
           <button
             onClick={() => { setSelectedTeamKey('away'); setSelectedShot(null); }}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+            className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
               selectedTeamKey === 'away'
-                ? 'bg-blue-600 text-white shadow-md'
-                : 'text-gray-600 dark:text-gray-300 hover:text-gray-900'
+                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 ring-2 ring-blue-500/30 scale-[1.02]'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200/50 dark:hover:bg-neutral-700/50'
             }`}
           >
-            <span className="w-2.5 h-2.5 rounded-full bg-blue-300" />
+            <span className={`w-2.5 h-2.5 rounded-full ${selectedTeamKey === 'away' ? 'bg-white' : 'bg-blue-400'}`} />
             {awayTeamName} ({awayFinishing.tiros_totales} tiros)
           </button>
           <button
             onClick={() => { setSelectedTeamKey('home'); setSelectedShot(null); }}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+            className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
               selectedTeamKey === 'home'
-                ? 'bg-red-600 text-white shadow-md'
-                : 'text-gray-600 dark:text-gray-300 hover:text-gray-900'
+                ? 'bg-red-600 text-white shadow-md shadow-red-600/30 ring-2 ring-red-500/30 scale-[1.02]'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200/50 dark:hover:bg-neutral-700/50'
             }`}
           >
-            <span className="w-2.5 h-2.5 rounded-full bg-red-300" />
+            <span className={`w-2.5 h-2.5 rounded-full ${selectedTeamKey === 'home' ? 'bg-white' : 'bg-red-400'}`} />
             {homeTeamName} ({homeFinishing.tiros_totales} tiros)
           </button>
         </div>
@@ -130,35 +130,43 @@ export default function ShotMapPitch({
 
       {/* Filter Pills */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex bg-gray-100 dark:bg-neutral-800 p-1 rounded-xl gap-1 text-xs">
+        <div className="flex bg-gray-100 dark:bg-neutral-800 p-1.5 rounded-xl gap-1 text-xs border border-gray-200/60 dark:border-white/10 shadow-inner">
           <button
             onClick={() => setFilterResult('todos')}
-            className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
-              filterResult === 'todos' ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-600 dark:text-gray-300'
+            className={`px-3 py-1.5 rounded-lg font-black transition-all cursor-pointer ${
+              filterResult === 'todos' 
+                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 ring-2 ring-indigo-500/30 scale-[1.02]' 
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200/50 dark:hover:bg-neutral-700/50'
             }`}
           >
             Todos ({rawShots.length})
           </button>
           <button
             onClick={() => setFilterResult('gol')}
-            className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
-              filterResult === 'gol' ? 'bg-amber-500 text-black shadow-sm font-black' : 'text-gray-600 dark:text-gray-300'
+            className={`px-3 py-1.5 rounded-lg font-black transition-all cursor-pointer ${
+              filterResult === 'gol' 
+                ? 'bg-amber-500 text-black shadow-md shadow-amber-500/30 ring-2 ring-amber-400/30 scale-[1.02]' 
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200/50 dark:hover:bg-neutral-700/50'
             }`}
           >
             ⚽ Goles ({rawShots.filter((s: PaniniShotEvent) => s.resultado === 'gol').length})
           </button>
           <button
             onClick={() => setFilterResult('a_puerta')}
-            className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
-              filterResult === 'a_puerta' ? 'bg-emerald-600 text-white shadow-sm' : 'text-gray-600 dark:text-gray-300'
+            className={`px-3 py-1.5 rounded-lg font-black transition-all cursor-pointer ${
+              filterResult === 'a_puerta' 
+                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30 ring-2 ring-emerald-500/30 scale-[1.02]' 
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200/50 dark:hover:bg-neutral-700/50'
             }`}
           >
             🎯 A puerta ({rawShots.filter((s: PaniniShotEvent) => s.resultado === 'a_puerta').length})
           </button>
           <button
             onClick={() => setFilterResult('otros')}
-            className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
-              filterResult === 'otros' ? 'bg-rose-600 text-white shadow-sm' : 'text-gray-600 dark:text-gray-300'
+            className={`px-3 py-1.5 rounded-lg font-black transition-all cursor-pointer ${
+              filterResult === 'otros' 
+                ? 'bg-rose-600 text-white shadow-md shadow-rose-600/30 ring-2 ring-rose-500/30 scale-[1.02]' 
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200/50 dark:hover:bg-neutral-700/50'
             }`}
           >
             Fuera / Bloqueados ({rawShots.filter((s: PaniniShotEvent) => s.resultado === 'fuera' || s.resultado === 'bloqueado').length})

@@ -15,7 +15,8 @@ import {
   BarChart3,
   Trophy,
   Radio,
-  FileText
+  FileText,
+  Shield
 } from 'lucide-react';
 
 export interface NavChild {
@@ -42,9 +43,7 @@ export const navigation: NavSection[] = [
     icon: Users,
     children: [
       { labelKey: 'nav.roster', descKey: 'nav.rosterDesc', defaultDesc: 'Fichas, estados y plantilla', path: '/players', icon: UsersRound },
-      { labelKey: 'nav.individualPlan', descKey: 'nav.individualPlanDesc', defaultDesc: 'Objetivos de desarrollo', path: '/players?view=plan', icon: Target },
-      { labelKey: 'nav.meetings', descKey: 'nav.meetingsDesc', defaultDesc: 'Seguimiento 1 a 1 y acuerdos', path: '/players?view=meetings', icon: MessageSquareText },
-      { labelKey: 'nav.evaluations', descKey: 'nav.evaluationsDesc', defaultDesc: 'Informes y evaluaciones', path: '/players?view=evaluations', icon: ClipboardCheck }
+      { labelKey: 'nav.meetings', descKey: 'nav.meetingsDesc', defaultDesc: 'Seguimiento 1 a 1 y acuerdos', path: '/players?view=meetings', icon: MessageSquareText }
     ]
   },
   { 
@@ -62,11 +61,12 @@ export const navigation: NavSection[] = [
     path: '/matches', 
     icon: Volleyball,
     children: [
-      { labelKey: 'nav.matchInfo', descKey: 'nav.matchInfoDesc', defaultDesc: 'Resultados, actas e informes', path: '/matches?view=info', icon: Trophy },
+      { labelKey: 'nav.matchInfo', descKey: 'nav.matchInfoDesc', defaultDesc: 'Resultados, actas e informes', path: '/matches', icon: Trophy },
       { labelKey: 'nav.matchFocuses', descKey: 'nav.matchFocusesDesc', defaultDesc: 'Planificación de focos', path: '/matches?view=focuses', icon: Target },
       { labelKey: 'nav.matchData', descKey: 'nav.matchDataDesc', defaultDesc: 'Registro en vivo de datos', path: '/matches?view=data', icon: Radio }
     ]
   },
+  { labelKey: 'nav.team', path: '/team', icon: Shield },
   { 
     labelKey: 'nav.dynamics', 
     path: '/dynamics', 

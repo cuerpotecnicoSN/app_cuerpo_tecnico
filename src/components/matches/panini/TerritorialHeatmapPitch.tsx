@@ -160,27 +160,33 @@ export default function TerritorialHeatmapPitch({ homeTeam, awayTeam }: Props) {
         </div>
 
         {/* View Mode Toggle */}
-        <div className="flex bg-gray-100 dark:bg-neutral-800 p-1 rounded-2xl text-xs font-bold">
+        <div className="flex bg-gray-100 dark:bg-neutral-800 p-1.5 rounded-2xl text-xs font-black border border-gray-200/60 dark:border-white/10 shadow-inner">
           <button
             onClick={() => setViewMode('both')}
-            className={`px-3 py-1.5 rounded-xl transition-all ${
-              viewMode === 'both' ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-600 dark:text-gray-300'
+            className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
+              viewMode === 'both'
+                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 ring-2 ring-indigo-500/30 scale-[1.02]'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200/50 dark:hover:bg-neutral-700/50'
             }`}
           >
             Ambos Equipos
           </button>
           <button
             onClick={() => setViewMode('away')}
-            className={`px-3 py-1.5 rounded-xl transition-all ${
-              viewMode === 'away' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-600 dark:text-gray-300'
+            className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
+              viewMode === 'away'
+                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 ring-2 ring-blue-500/30 scale-[1.02]'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200/50 dark:hover:bg-neutral-700/50'
             }`}
           >
             {awayTeam.nombre}
           </button>
           <button
             onClick={() => setViewMode('home')}
-            className={`px-3 py-1.5 rounded-xl transition-all ${
-              viewMode === 'home' ? 'bg-red-600 text-white shadow-sm' : 'text-gray-600 dark:text-gray-300'
+            className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
+              viewMode === 'home'
+                ? 'bg-red-600 text-white shadow-md shadow-red-600/30 ring-2 ring-red-500/30 scale-[1.02]'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200/50 dark:hover:bg-neutral-700/50'
             }`}
           >
             {homeTeam.nombre}
@@ -189,7 +195,7 @@ export default function TerritorialHeatmapPitch({ homeTeam, awayTeam }: Props) {
       </div>
 
       {/* Action Selector Pills */}
-      <div className="flex bg-gray-100 dark:bg-neutral-800 p-1 rounded-2xl gap-1 overflow-x-auto text-xs font-bold">
+      <div className="flex bg-gray-100 dark:bg-neutral-800 p-1.5 rounded-2xl gap-1 overflow-x-auto text-xs font-black border border-gray-200/60 dark:border-white/10 shadow-inner">
         {(
           [
             'recuperaciones',
@@ -203,10 +209,10 @@ export default function TerritorialHeatmapPitch({ homeTeam, awayTeam }: Props) {
           <button
             key={act}
             onClick={() => setSelectedAction(act)}
-            className={`px-4 py-2 rounded-xl capitalize transition-all whitespace-nowrap ${
+            className={`px-4 py-2 rounded-xl capitalize transition-all whitespace-nowrap cursor-pointer ${
               selectedAction === act
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'text-gray-600 dark:text-gray-300 hover:text-gray-900'
+                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 ring-2 ring-indigo-500/30 scale-[1.02]'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200/50 dark:hover:bg-neutral-700/50'
             }`}
           >
             {act.replace('_', ' ')}

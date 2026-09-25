@@ -169,23 +169,23 @@ export default function PaniniTacticalDensityView({ homeTeam, awayTeam }: Props)
         <div className="flex items-center gap-2">
           <Clock size={16} className="text-indigo-600" />
           <span className="font-extrabold text-sm text-gray-800 dark:text-gray-200">Fracción de Juego:</span>
-          <div className="flex bg-gray-100 dark:bg-neutral-800 p-1 rounded-2xl">
+          <div className="flex bg-gray-100 dark:bg-neutral-800 p-1.5 rounded-2xl border border-gray-200/60 dark:border-white/10 shadow-inner">
             <button
               onClick={() => setSelectedHalf('1T')}
-              className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${
+              className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
                 selectedHalf === '1T'
-                  ? 'bg-indigo-600 text-white shadow-md'
-                  : 'text-gray-600 dark:text-gray-300 hover:text-gray-900'
+                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 ring-2 ring-indigo-500/30 scale-[1.02]'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200/50 dark:hover:bg-neutral-700/50'
               }`}
             >
               1ª Parte (Primo Tempo)
             </button>
             <button
               onClick={() => setSelectedHalf('2T')}
-              className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${
+              className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
                 selectedHalf === '2T'
-                  ? 'bg-indigo-600 text-white shadow-md'
-                  : 'text-gray-600 dark:text-gray-300 hover:text-gray-900'
+                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 ring-2 ring-indigo-500/30 scale-[1.02]'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200/50 dark:hover:bg-neutral-700/50'
               }`}
             >
               2ª Parte (Secondo Tempo)
@@ -194,27 +194,27 @@ export default function PaniniTacticalDensityView({ homeTeam, awayTeam }: Props)
         </div>
 
         {/* Selector de Equipo */}
-        <div className="flex bg-gray-100 dark:bg-neutral-800 p-1 rounded-2xl">
+        <div className="flex bg-gray-100 dark:bg-neutral-800 p-1.5 rounded-2xl border border-gray-200/60 dark:border-white/10 shadow-inner">
           <button
             onClick={() => setSelectedTeamKey('home')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+            className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
               selectedTeamKey === 'home'
-                ? 'bg-red-600 text-white shadow-md'
-                : 'text-gray-600 dark:text-gray-300 hover:text-gray-900'
+                ? 'bg-red-600 text-white shadow-md shadow-red-600/30 ring-2 ring-red-500/30 scale-[1.02]'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200/50 dark:hover:bg-neutral-700/50'
             }`}
           >
-            <span className="w-2.5 h-2.5 rounded-full bg-red-300" />
+            <span className={`w-2.5 h-2.5 rounded-full ${selectedTeamKey === 'home' ? 'bg-white' : 'bg-red-500'}`} />
             {homeTeam.nombre} ({block.sistema})
           </button>
           <button
             onClick={() => setSelectedTeamKey('away')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+            className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
               selectedTeamKey === 'away'
-                ? 'bg-blue-600 text-white shadow-md'
-                : 'text-gray-600 dark:text-gray-300 hover:text-gray-900'
+                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 ring-2 ring-blue-500/30 scale-[1.02]'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200/50 dark:hover:bg-neutral-700/50'
             }`}
           >
-            <span className="w-2.5 h-2.5 rounded-full bg-blue-300" />
+            <span className={`w-2.5 h-2.5 rounded-full ${selectedTeamKey === 'away' ? 'bg-white' : 'bg-blue-500'}`} />
             {awayTeam.nombre} ({block.sistema})
           </button>
         </div>

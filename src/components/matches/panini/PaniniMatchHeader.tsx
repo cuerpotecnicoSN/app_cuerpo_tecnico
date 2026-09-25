@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { 
   Award, 
   Calendar, 
@@ -7,14 +8,43 @@ import {
   Timer
 } from 'lucide-react';
 import type { PaniniMatchReport } from '../../../types/paniniReport';
+import type { MatchDB } from '../../../components/types';
 
 interface Props {
   report: PaniniMatchReport;
+  match?: MatchDB;
+  homeLogo?: string;
+  awayLogo?: string;
 }
 
-export default function PaniniMatchHeader({ report }: Props) {
+export default function PaniniMatchHeader({ report, match, homeLogo, awayLogo }: Props) {
+  const { t, i18n } = useTranslation();
   const home = report.equipo_local;
   const away = report.equipo_visitante;
+
+  const formatJornada = (jornadaStr?: string) => {
+    if (!jornadaStr) return '';
+    const matchNumber = jornadaStr.match(/\d+/);
+    if (matchNumber) {
+      const num = parseInt(matchNumber[0], 10);
+      const currentLang = i18n.language || 'es';
+      if (currentLang.startsWith('en')) {
+        return `Matchday ${num}`;
+      }
+      if (currentLang.startsWith('it')) {
+        return `Giornata ${num}`;
+      }
+      if (currentLang.startsWith('fr')) {
+        return `Journée ${num}`;
+      }
+      return `Jornada ${num}`;
+    }
+    return jornadaStr;
+  };
+
+  // Resolved logos: prefer scraped logos from match card, then report, then fallback
+  const resolvedHomeLogo = homeLogo || match?.home_logo || (home as any).logo || (home.nombre.toLowerCase().includes('milan') ? '/escudo.png' : undefined);
+  const resolvedAwayLogo = awayLogo || match?.away_logo || (away as any).logo || (away.nombre.toLowerCase().includes('milan') ? '/escudo.png' : undefined);
 
   return (
     <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white rounded-3xl p-6 md:p-8 shadow-2xl border border-white/10 relative overflow-hidden">
@@ -29,7 +59,7 @@ export default function PaniniMatchHeader({ report }: Props) {
             <Award size={14} /> PANINI DIGITAL MATCH ANALYSIS
           </span>
           <span className="text-xs font-bold text-indigo-200 bg-white/10 px-3 py-1 rounded-full border border-white/10">
-            {report.competicion} • {report.jornada}
+            {report.competicion} • {formatJornada(report.jornada)}
           </span>
         </div>
 
@@ -47,15 +77,21 @@ export default function PaniniMatchHeader({ report }: Props) {
         <div className="lg:col-span-7 bg-white/5 p-6 rounded-3xl border border-white/10 backdrop-blur-md space-y-5">
           <div className="flex items-center justify-between gap-4">
             
-            {/* Equipo Local (Villa Valle - Rojo) */}
+            {/* Equipo Local */}
             <div className="flex flex-col items-center flex-1 text-center">
-              {/* Crest Escudo Villa Valle */}
-              <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-white p-1.5 shadow-xl border-2 border-red-500 mb-2 flex items-center justify-center transition-transform hover:scale-105">
-                <div className="w-full h-full rounded-xl bg-gradient-to-b from-red-600 via-amber-400 to-emerald-600 p-0.5 flex flex-col items-center justify-center text-white font-black">
-                  <span className="text-[10px] md:text-xs text-yellow-200 uppercase tracking-tighter leading-none">Villa</span>
-                  <span className="text-[10px] md:text-xs text-white uppercase tracking-tighter leading-none">Valle</span>
-                  <span className="text-[8px] text-black bg-white/90 px-1 rounded font-bold mt-0.5">2012</span>
-                </div>
+              {/* Crest Escudo Local */}
+              <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-white/95 backdrop-blur-md p-2 shadow-xl border-2 border-red-500/60 mb-2 flex items-center justify-center transition-transform hover:scale-105 overflow-hidden">
+                {resolvedHomeLogo ? (
+                  <img 
+                    src={resolvedHomeLogo} 
+                    alt={home.nombre} 
+                    className="w-full h-full object-contain drop-shadow-sm" 
+                  />
+                ) : (
+                  <div className="w-full h-full rounded-xl bg-gradient-to-br from-red-600 to-amber-600 p-1 flex flex-col items-center justify-center text-white font-black text-xs uppercase shadow-inner">
+                    <span>{home.nombre.substring(0, 4)}</span>
+                  </div>
+                )}
               </div>
               <h3 className="font-black text-lg md:text-xl text-red-400 leading-tight uppercase tracking-wide">
                 {home.nombre}
@@ -75,14 +111,21 @@ export default function PaniniMatchHeader({ report }: Props) {
               </span>
             </div>
 
-            {/* Equipo Visitante (Milan Futuro - Azul) */}
+            {/* Equipo Visitante */}
             <div className="flex flex-col items-center flex-1 text-center">
-              {/* Crest Escudo Milan */}
-              <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-white p-1.5 shadow-xl border-2 border-blue-500 mb-2 flex items-center justify-center transition-transform hover:scale-105">
-                <div className="w-full h-full rounded-full bg-black flex flex-col items-center justify-center text-white font-black border border-red-600">
-                  <span className="text-[9px] md:text-[11px] text-white tracking-tight">ACM</span>
-                  <span className="text-[7px] md:text-[9px] text-red-500 font-mono">1899</span>
-                </div>
+              {/* Crest Escudo Visitante */}
+              <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-white/95 backdrop-blur-md p-2 shadow-xl border-2 border-blue-500/60 mb-2 flex items-center justify-center transition-transform hover:scale-105 overflow-hidden">
+                {resolvedAwayLogo ? (
+                  <img 
+                    src={resolvedAwayLogo} 
+                    alt={away.nombre} 
+                    className="w-full h-full object-contain drop-shadow-sm" 
+                  />
+                ) : (
+                  <div className="w-full h-full rounded-xl bg-gradient-to-br from-blue-700 to-slate-900 p-1 flex flex-col items-center justify-center text-white font-black text-xs uppercase shadow-inner">
+                    <span>{away.nombre.substring(0, 4)}</span>
+                  </div>
+                )}
               </div>
               <h3 className="font-black text-lg md:text-xl text-blue-400 leading-tight uppercase tracking-wide">
                 {away.nombre}

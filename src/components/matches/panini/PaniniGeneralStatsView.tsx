@@ -355,33 +355,33 @@ export default function PaniniGeneralStatsView({ homeTeam, awayTeam }: Props) {
         <div className="flex items-center gap-2">
           <Clock size={16} className="text-indigo-600" />
           <span className="font-extrabold text-sm text-gray-800 dark:text-gray-200">Periodo Analizado:</span>
-          <div className="flex bg-gray-100 dark:bg-neutral-800 p-1 rounded-2xl">
+          <div className="flex bg-gray-100 dark:bg-neutral-800 p-1.5 rounded-2xl border border-gray-200/60 dark:border-white/10 shadow-inner">
             <button
               onClick={() => setPeriod('total_partido')}
-              className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${
+              className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
                 period === 'total_partido'
-                  ? 'bg-indigo-600 text-white shadow-md'
-                  : 'text-gray-600 dark:text-gray-300 hover:text-gray-900'
+                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 ring-2 ring-indigo-500/30 scale-[1.02]'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200/50 dark:hover:bg-neutral-700/50'
               }`}
             >
               Total Partido
             </button>
             <button
               onClick={() => setPeriod('primer_tiempo')}
-              className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${
+              className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
                 period === 'primer_tiempo'
-                  ? 'bg-indigo-600 text-white shadow-md'
-                  : 'text-gray-600 dark:text-gray-300 hover:text-gray-900'
+                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 ring-2 ring-indigo-500/30 scale-[1.02]'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200/50 dark:hover:bg-neutral-700/50'
               }`}
             >
               1º Tiempo
             </button>
             <button
               onClick={() => setPeriod('segundo_tiempo')}
-              className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${
+              className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
                 period === 'segundo_tiempo'
-                  ? 'bg-indigo-600 text-white shadow-md'
-                  : 'text-gray-600 dark:text-gray-300 hover:text-gray-900'
+                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 ring-2 ring-indigo-500/30 scale-[1.02]'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200/50 dark:hover:bg-neutral-700/50'
               }`}
             >
               2º Tiempo

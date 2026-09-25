@@ -14,6 +14,7 @@ import CalendarPage from './pages/calendar/CalendarPage';
 import TrainingPage from './pages/training/TrainingPage';
 import MatchesPage from './pages/matches/MatchesPage';
 import DynamicsPage from './pages/dynamics/DynamicsPage';
+import TeamPage from './pages/team/TeamPage';
 
 import UserManagement from './pages/admin/UserManagement';
 
@@ -36,6 +37,8 @@ function App() {
               <Route path="training" element={<TrainingPage />} />
 
               <Route path="matches" element={<MatchesPage />} />
+
+              <Route path="team" element={<TeamPage />} />
 
               <Route path="dynamics" element={<DynamicsPage />} />
 
