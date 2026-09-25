@@ -9,7 +9,6 @@ import {
   UsersRound,
   Target,
   MessageSquareText,
-  ClipboardCheck,
   CalendarCheck,
   BookOpen,
   BarChart3,

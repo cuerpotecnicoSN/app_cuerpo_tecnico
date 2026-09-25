@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Share2, User, ExternalLink, ArrowRight, ArrowLeft, Filter, Smartphone, Monitor } from 'lucide-react';
+import { Share2, User, ExternalLink, ArrowRight, ArrowLeft, Smartphone, Monitor } from 'lucide-react';
 import type { PaniniTeamData, PaniniPassingNode } from '../../../types/paniniReport';
 
 interface Props {

@@ -5,11 +5,9 @@ import {
   ArrowDownLeft, 
   User, 
   ExternalLink,
-  Shield,
   Layers,
   Activity,
   Compass,
-  Maximize2,
   TrendingUp,
   Sliders
 } from 'lucide-react';
@@ -24,31 +22,31 @@ interface Props {
 
 // Coordenadas del posicionamiento medio de los dos equipos
 const AVERAGE_POSITIONS_HOME: Record<number, { x: number; y: number; label: string; line: 'def' | 'med' | 'att' | 'gk' }> = {
-  35: { x: 13.8, y: 53.0, label: 'Offredi', line: 'gk' },
-  30: { x: 54.5, y: 19.0, label: 'Caccia', line: 'def' },
-  4:  { x: 40.0, y: 35.0, label: 'Nava', line: 'def' },
-  24: { x: 38.0, y: 62.0, label: 'Piacentini', line: 'def' },
-  25: { x: 52.5, y: 81.0, label: 'Martinelli', line: 'def' },
-  21: { x: 56.5, y: 31.0, label: 'Danieli', line: 'med' },
-  8:  { x: 48.0, y: 50.0, label: 'Serena', line: 'med' },
-  20: { x: 60.5, y: 57.0, label: 'Strechie', line: 'med' },
-  28: { x: 56.5, y: 65.0, label: 'Rinaldi', line: 'med' },
-  14: { x: 64.5, y: 46.5, label: "D'Amuri", line: 'att' },
-  7:  { x: 64.5, y: 53.5, label: 'Ravasi', line: 'att' },
+  35: { x: 10.5, y: 50.0, label: 'Offredi', line: 'gk' },
+  4:  { x: 34.0, y: 35.5, label: 'Nava', line: 'def' },
+  24: { x: 34.0, y: 64.5, label: 'Piacentini', line: 'def' },
+  30: { x: 56.5, y: 20.0, label: 'Caccia', line: 'def' },
+  25: { x: 56.5, y: 78.5, label: 'Martinelli', line: 'def' },
+  8:  { x: 50.0, y: 44.5, label: 'Serena', line: 'med' },
+  28: { x: 50.5, y: 62.5, label: 'Rinaldi', line: 'med' },
+  21: { x: 68.0, y: 29.5, label: 'Danieli', line: 'med' },
+  20: { x: 68.0, y: 75.0, label: 'Strechie', line: 'med' },
+  14: { x: 68.0, y: 47.0, label: "D'Amuri", line: 'att' },
+  7:  { x: 68.0, y: 61.5, label: 'Ravasi', line: 'att' },
 };
 
 const AVERAGE_POSITIONS_AWAY: Record<number, { x: number; y: number; label: string; line: 'def' | 'med' | 'att' | 'gk' }> = {
-  1:  { x: 85.5, y: 47.0, label: 'Pittarella', line: 'gk' },
-  2:  { x: 50.5, y: 16.0, label: 'Cappelletti', line: 'def' },
-  4:  { x: 73.0, y: 35.0, label: 'Zukic', line: 'def' },
-  5:  { x: 73.0, y: 69.0, label: 'Vladimirov', line: 'def' },
-  3:  { x: 50.5, y: 70.0, label: 'Borsani', line: 'def' },
-  7:  { x: 60.5, y: 27.0, label: 'Sala', line: 'med' },
-  6:  { x: 59.5, y: 50.0, label: 'Cissé', line: 'med' },
-  8:  { x: 54.5, y: 53.5, label: 'Pandolfi', line: 'med' },
-  9:  { x: 44.5, y: 38.0, label: 'Asanji', line: 'att' },
-  11: { x: 42.5, y: 46.5, label: 'Ossola', line: 'att' },
-  10: { x: 46.0, y: 62.0, label: 'Vos', line: 'att' },
+  1:  { x: 89.0, y: 50.0, label: 'Pittarella', line: 'gk' },
+  2:  { x: 54.0, y: 20.0, label: 'Cappelletti', line: 'def' },
+  4:  { x: 68.0, y: 36.0, label: 'Zukic', line: 'def' },
+  5:  { x: 72.0, y: 67.0, label: 'Vladimirov', line: 'def' },
+  3:  { x: 54.0, y: 77.0, label: 'Borsani', line: 'def' },
+  8:  { x: 59.0, y: 46.0, label: 'Pandolfi', line: 'med' },
+  6:  { x: 57.0, y: 58.0, label: 'Cissé', line: 'med' },
+  11: { x: 46.0, y: 26.0, label: 'Ossola', line: 'med' },
+  7:  { x: 37.0, y: 29.0, label: 'Sala', line: 'att' },
+  9:  { x: 37.0, y: 48.0, label: 'Asanji', line: 'att' },
+  10: { x: 42.0, y: 63.0, label: 'Vos', line: 'att' },
 };
 
 export default function PaniniLineupsView({ homeTeam, awayTeam, homeLogo, awayLogo }: Props) {
@@ -97,9 +95,6 @@ export default function PaniniLineupsView({ homeTeam, awayTeam, homeLogo, awayLo
 
   const homePoss = homeTeam.estadisticas?.total_partido?.posesion_pct || 38;
   const awayPoss = awayTeam.estadisticas?.total_partido?.posesion_pct || 62;
-
-  const homePassAcc = homeTeam.estadisticas?.total_partido?.precision_pases_pct || 74;
-  const awayPassAcc = awayTeam.estadisticas?.total_partido?.precision_pases_pct || 83;
 
   // Helper para renderizar líneas tácticas discontinuas dinamicas conectadas a los jugadores
   const renderTacticalLines = (

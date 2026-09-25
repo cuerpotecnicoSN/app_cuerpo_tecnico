@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Trash2, ChevronLeft, MapPin, Swords, Pencil, User, Radio, Target, Award, Globe2, BarChart2, FileDown, Trophy, FileText, Filter } from 'lucide-react';
+import { Plus, Trash2, ChevronLeft, MapPin, Swords, Pencil, User, Radio, Target, Award, Globe2, BarChart2, FileDown, Trophy, Filter } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import type { MatchDB, MatchFocus, MatchDataPoint } from '../../components/types';
 import { getMatches, createMatch, updateMatch, getMatchFocuses, createMatchFocus, updateMatchFocus, deleteMatchFocus, getMatchDataPoints } from '../../services/matches';
@@ -356,11 +356,7 @@ function MatchDetail({ match, onBack, onUpdate }: { match: MatchDB; onBack: () =
   const [tab, setTab] = useState<'focuses' | 'data' | 'panini'>(initialTab);
   const [paniniReport, setPaniniReport] = useState<PaniniMatchReport | null>(null);
   
-  const [isEditingInfo, setIsEditingInfo] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
-  const [editDate, setEditDate] = useState(match.date);
-  const [editTime, setEditTime] = useState(match.time || '');
-  const [scoutingNotes, setScoutingNotes] = useState(match.scouting_notes || '');
   const [focuses, setFocuses] = useState<MatchFocus[]>([]);
   const [dataPoints, setDataPoints] = useState<MatchDataPoint[]>([]);
   const { data: dbPlayers } = useSupabaseData<any>('players');

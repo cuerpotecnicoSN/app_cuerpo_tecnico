@@ -17,63 +17,63 @@ interface PlayerBadgeConfig {
   badgePosition: 'above' | 'below';
 }
 
-// Configuración visual exacta extraída del campograma Panini de Milan Futuro (Image 1)
+// Configuración visual exacta extraída del campograma Panini de Milan Futuro
 const MILAN_FUTURO_PANINI_PLAYERS: PlayerBadgeConfig[] = [
-  { dorsal: 1, name: 'Pittarella', x: 85.8, y: 48.0, role: 'P', badgePosition: 'above' },
-  { dorsal: 2, name: 'Cappelletti', x: 65.5, y: 22.5, role: 'D', badgePosition: 'above' },
-  { dorsal: 4, name: 'Zukic', x: 71.8, y: 39.0, role: 'D', badgePosition: 'above' },
-  { dorsal: 5, name: 'Vladimirov', x: 77.8, y: 69.5, role: 'D', badgePosition: 'below' },
-  { dorsal: 3, name: 'Borsani', x: 57.5, y: 74.5, role: 'D', badgePosition: 'below' },
-  { dorsal: 6, name: 'Cissé', x: 59.8, y: 57.5, role: 'C', badgePosition: 'below' },
-  { dorsal: 8, name: 'Pandolfi', x: 63.8, y: 47.5, role: 'C', badgePosition: 'above' },
-  { dorsal: 11, name: 'Ossola', x: 50.5, y: 26.0, role: 'C', badgePosition: 'above' },
-  { dorsal: 7, name: 'Sala', x: 38.2, y: 29.5, role: 'A', badgePosition: 'above' },
-  { dorsal: 9, name: 'Asanji', x: 39.0, y: 47.8, role: 'A', badgePosition: 'above' },
-  { dorsal: 10, name: 'Vos', x: 42.5, y: 62.0, role: 'A', badgePosition: 'below' },
+  { dorsal: 1, name: 'Pittarella', x: 89.0, y: 50.0, role: 'P', badgePosition: 'below' },
+  { dorsal: 2, name: 'Cappelletti', x: 54.0, y: 20.0, role: 'D', badgePosition: 'above' },
+  { dorsal: 4, name: 'Zukic', x: 68.0, y: 36.0, role: 'D', badgePosition: 'above' },
+  { dorsal: 5, name: 'Vladimirov', x: 72.0, y: 67.0, role: 'D', badgePosition: 'below' },
+  { dorsal: 3, name: 'Borsani', x: 54.0, y: 77.0, role: 'D', badgePosition: 'below' },
+  { dorsal: 8, name: 'Pandolfi', x: 59.0, y: 46.0, role: 'C', badgePosition: 'above' },
+  { dorsal: 6, name: 'Cissé', x: 57.0, y: 58.0, role: 'C', badgePosition: 'below' },
+  { dorsal: 11, name: 'Ossola', x: 46.0, y: 26.0, role: 'C', badgePosition: 'above' },
+  { dorsal: 7, name: 'Sala', x: 37.0, y: 29.0, role: 'A', badgePosition: 'above' },
+  { dorsal: 9, name: 'Asanji', x: 37.0, y: 48.0, role: 'A', badgePosition: 'above' },
+  { dorsal: 10, name: 'Vos', x: 42.0, y: 63.0, role: 'A', badgePosition: 'below' },
 ];
 
-// Configuración visual exacta para Villa Valle
+// Configuración visual exacta para Villa Valle (Pág. 4 Panini)
 const VILLA_VALLE_PANINI_PLAYERS: PlayerBadgeConfig[] = [
-  { dorsal: 35, name: 'Offredi', x: 13.8, y: 59.0, role: 'P', badgePosition: 'above' },
-  { dorsal: 4, name: 'Lancini', x: 42.0, y: 43.0, role: 'D', badgePosition: 'above' },
-  { dorsal: 24, name: 'Crotti', x: 40.0, y: 67.0, role: 'D', badgePosition: 'below' },
-  { dorsal: 25, name: 'Marocco', x: 55.0, y: 83.0, role: 'D', badgePosition: 'below' },
-  { dorsal: 8, name: 'Serena', x: 50.5, y: 56.0, role: 'C', badgePosition: 'above' },
-  { dorsal: 30, name: 'Perrotti', x: 57.0, y: 30.0, role: 'C', badgePosition: 'above' },
-  { dorsal: 21, name: 'Danieli', x: 59.0, y: 39.0, role: 'C', badgePosition: 'above' },
-  { dorsal: 28, name: 'Rinaldi', x: 59.0, y: 69.0, role: 'C', badgePosition: 'below' },
-  { dorsal: 20, name: 'Strechie', x: 63.5, y: 63.0, role: 'C', badgePosition: 'below' },
-  { dorsal: 14, name: "D'Amuri", x: 68.0, y: 53.0, role: 'A', badgePosition: 'above' },
-  { dorsal: 7, name: 'Ravasi', x: 68.0, y: 60.0, role: 'A', badgePosition: 'below' },
+  { dorsal: 35, name: 'Offredi', x: 10.5, y: 50.0, role: 'P', badgePosition: 'below' },
+  { dorsal: 4, name: 'Nava', x: 34.0, y: 35.5, role: 'D', badgePosition: 'above' },
+  { dorsal: 24, name: 'Piacentini', x: 34.0, y: 64.5, role: 'D', badgePosition: 'below' },
+  { dorsal: 30, name: 'Caccia', x: 56.5, y: 20.0, role: 'D', badgePosition: 'above' },
+  { dorsal: 25, name: 'Martinelli', x: 56.5, y: 78.5, role: 'D', badgePosition: 'below' },
+  { dorsal: 8, name: 'Serena', x: 50.0, y: 44.5, role: 'C', badgePosition: 'above' },
+  { dorsal: 28, name: 'Rinaldi', x: 50.5, y: 62.5, role: 'C', badgePosition: 'below' },
+  { dorsal: 21, name: 'Danieli', x: 68.0, y: 29.5, role: 'C', badgePosition: 'above' },
+  { dorsal: 20, name: 'Strechie', x: 68.0, y: 75.0, role: 'C', badgePosition: 'below' },
+  { dorsal: 14, name: "D'Amuri", x: 68.0, y: 47.0, role: 'A', badgePosition: 'above' },
+  { dorsal: 7, name: 'Ravasi', x: 68.0, y: 61.5, role: 'A', badgePosition: 'above' },
 ];
 
 // Coordenadas exactas para el campograma de Confronto (Image 2)
 const CONFRONTO_COORDS_VILLA_VALLE: Record<number, { x: number; y: number }> = {
-  35: { x: 13.8, y: 59.0 },
-  4: { x: 42.0, y: 43.0 },
-  24: { x: 40.0, y: 67.0 },
-  8: { x: 50.5, y: 56.0 },
-  30: { x: 57.0, y: 30.0 },
-  21: { x: 59.0, y: 39.0 },
-  28: { x: 59.0, y: 69.0 },
-  20: { x: 63.5, y: 63.0 },
-  14: { x: 68.0, y: 53.0 },
-  7: { x: 68.0, y: 60.0 },
-  25: { x: 55.0, y: 83.0 },
+  35: { x: 10.5, y: 50.0 },
+  4:  { x: 34.0, y: 35.5 },
+  24: { x: 34.0, y: 64.5 },
+  30: { x: 56.5, y: 20.0 },
+  25: { x: 56.5, y: 78.5 },
+  8:  { x: 50.0, y: 44.5 },
+  28: { x: 50.5, y: 62.5 },
+  21: { x: 68.0, y: 29.5 },
+  20: { x: 68.0, y: 75.0 },
+  14: { x: 68.0, y: 47.0 },
+  7:  { x: 68.0, y: 61.5 },
 };
 
 const CONFRONTO_COORDS_MILAN_FUTURO: Record<number, { x: number; y: number }> = {
-  1: { x: 89.0, y: 53.0 },
-  4: { x: 77.0, y: 43.0 },
-  5: { x: 77.0, y: 73.0 },
-  2: { x: 53.0, y: 27.0 },
-  7: { x: 63.5, y: 36.0 },
-  6: { x: 62.5, y: 56.0 },
-  8: { x: 57.5, y: 59.0 },
-  9: { x: 46.5, y: 46.0 },
-  11: { x: 44.5, y: 53.0 },
-  10: { x: 48.5, y: 66.0 },
-  3: { x: 53.0, y: 73.0 },
+  1:  { x: 89.0, y: 50.0 },
+  2:  { x: 54.0, y: 20.0 },
+  4:  { x: 68.0, y: 36.0 },
+  5:  { x: 72.0, y: 67.0 },
+  3:  { x: 54.0, y: 77.0 },
+  8:  { x: 59.0, y: 46.0 },
+  6:  { x: 57.0, y: 58.0 },
+  11: { x: 46.0, y: 26.0 },
+  7:  { x: 37.0, y: 29.0 },
+  9:  { x: 37.0, y: 48.0 },
+  10: { x: 42.0, y: 63.0 },
 };
 
 export default function TacticalFormationPitch({ homeTeam, awayTeam }: Props) {

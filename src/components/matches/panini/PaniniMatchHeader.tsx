@@ -18,7 +18,7 @@ interface Props {
 }
 
 export default function PaniniMatchHeader({ report, match, homeLogo, awayLogo }: Props) {
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
   const home = report.equipo_local;
   const away = report.equipo_visitante;
 
