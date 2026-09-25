@@ -57,7 +57,7 @@ export default function PaniniReportView({ matchId, match, report, onRefresh }: 
           { id: 'alineaciones', label: 'Alineaciones y Puntos Medios', icon: Shield },
           { id: 'estadisticas', label: 'Estadísticas Generales', icon: BarChart2 },
           { id: 'densidad', label: 'Disposición y Densidad', icon: Layers },
-          { id: 'regates_centros', label: 'Regates y Centros', icon: Activity },
+          { id: 'regates_centros', label: 'Cobertura territorial', icon: Activity },
           { id: 'finalizacion', label: 'Finalización y ABP', icon: Crosshair },
           { id: 'pases', label: 'Flujo de Pases', icon: Share2 },
           { id: 'jugadores', label: 'Jugadores y Rankings', icon: UserCheck },

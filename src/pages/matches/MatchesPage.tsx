@@ -351,7 +351,7 @@ export default function MatchesPage() {
 function MatchDetail({ match, onBack, onUpdate }: { match: MatchDB; onBack: () => void; onUpdate: () => void }) {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const hasPaniniData = match.date === '2026-09-20' || match.scouting_notes?.startsWith('__PANINI_REPORT_JSON__');
+  const hasPaniniData = !!match.scouting_notes?.startsWith('__PANINI_REPORT_JSON__');
   const initialTab = (searchParams.get('view') as 'focuses' | 'data' | 'panini') || (hasPaniniData ? 'panini' : 'focuses');
   const [tab, setTab] = useState<'focuses' | 'data' | 'panini'>(initialTab);
   const [paniniReport, setPaniniReport] = useState<PaniniMatchReport | null>(null);
@@ -385,7 +385,7 @@ function MatchDetail({ match, onBack, onUpdate }: { match: MatchDB; onBack: () =
 
   const loadFocuses = () => getMatchFocuses(match.id).then(setFocuses).catch(() => setFocuses([]));
   const loadDataPoints = () => getMatchDataPoints(match.id).then(setDataPoints).catch(() => setDataPoints([]));
-  const loadPanini = () => getPaniniReportForMatch(match.id, match.date).then(setPaniniReport).catch(() => setPaniniReport(null));
+  const loadPanini = () => getPaniniReportForMatch(match.id).then(setPaniniReport).catch(() => setPaniniReport(null));
 
   useEffect(() => { loadFocuses(); loadDataPoints(); loadPanini(); }, [match.id]);
 
@@ -487,8 +487,9 @@ function MatchDetail({ match, onBack, onUpdate }: { match: MatchDB; onBack: () =
         onClose={() => setShowImportModal(false)}
         currentMatchId={match.id}
         onImportSuccess={() => {
+          // El modal sigue abierto para mostrar el resumen y los avisos de la importación
           loadPanini();
-          setShowImportModal(false);
+          setTab('panini');
         }}
       />
 

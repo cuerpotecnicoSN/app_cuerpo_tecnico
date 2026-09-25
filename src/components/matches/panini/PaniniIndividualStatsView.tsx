@@ -10,7 +10,7 @@ import {
   Shield,
   Zap
 } from 'lucide-react';
-import type { PaniniTeamData, PaniniPlayerStats } from '../../../types/paniniReport';
+import type { PaniniTeamData, PaniniPlayerStats, PaniniMapEvent } from '../../../types/paniniReport';
 
 interface Props {
   homeTeam: PaniniTeamData;
@@ -20,7 +20,7 @@ interface Props {
 export default function PaniniIndividualStatsView({ homeTeam, awayTeam }: Props) {
   const navigate = useNavigate();
   const [selectedTeamKey, setSelectedTeamKey] = useState<'home' | 'away'>('home');
-  const [selectedDorsal, setSelectedDorsal] = useState<number>(35); // Default Offredi
+  const [selectedDorsal, setSelectedDorsal] = useState<number | null>(null);
 
   const isHome = selectedTeamKey === 'home';
   const team = isHome ? homeTeam : awayTeam;
@@ -40,34 +40,32 @@ export default function PaniniIndividualStatsView({ homeTeam, awayTeam }: Props)
           posicion: existing.posicion || lineupP.posicion_desc,
         });
       } else {
-        // Generar entrada básica si no existiera
+        // Jugador sin ficha en el informe: se muestra sin métricas (no se inventan valores)
         list.push({
           dorsal: lineupP.dorsal,
           nombre: lineupP.nombre,
-          anio_nacimiento: 2004,
-          posicion: lineupP.posicion_desc || 'Centrocampista',
+          anio_nacimiento: 0,
+          posicion: lineupP.posicion_desc || '',
           minutos: `${lineupP.minutos_jugados}'`,
           player_id: lineupP.player_id,
-          balones_jugados: lineupP.es_titular ? 35 : 15,
-          posesion_tiempo: lineupP.es_titular ? "1':30\"" : "0':40\"",
-          pases_acertados: lineupP.es_titular ? 22 : 10,
-          acciones_utiles: lineupP.es_titular ? 6 : 2,
-          perdidas_efectivas: lineupP.es_titular ? 7 : 3,
-          recuperaciones_efectivas: lineupP.es_titular ? '5/10' : '2/4',
-          recuperaciones_aereas: 1,
+          balones_jugados: 0,
+          posesion_tiempo: '—',
+          pases_acertados: 0,
+          acciones_utiles: 0,
+          perdidas_efectivas: 0,
+          recuperaciones_efectivas: '—',
+          recuperaciones_aereas: 0,
           recuperaciones_area: 0,
-          intercepciones: 4,
-          anticipaciones_efectivas: '0/0',
-          duelos_efectivos: '1/2',
-          faltas_cometidas: 1,
-          faltas_recibidas: 1,
-          pases_largos_utiles: '0/1',
-          regates_utiles: '0/1',
-          centros_utiles: '0/0',
-          asistencias_pases_clave: '0/1',
-          tiros_a_puerta: '0/0',
-          distribucion_1t: { defensa_pct: 25, medio_pct: 50, ataque_pct: 25 },
-          distribucion_2t: { defensa_pct: 30, medio_pct: 45, ataque_pct: 25 },
+          intercepciones: 0,
+          anticipaciones_efectivas: '—',
+          duelos_efectivos: '—',
+          faltas_cometidas: 0,
+          faltas_recibidas: 0,
+          pases_largos_utiles: '—',
+          regates_utiles: '—',
+          centros_utiles: '—',
+          asistencias_pases_clave: '—',
+          tiros_a_puerta: '—',
         });
       }
     });
@@ -98,7 +96,9 @@ export default function PaniniIndividualStatsView({ homeTeam, awayTeam }: Props)
     );
   }, [allPlayers, selectedDorsal]);
 
-  const isGK = activePlayer.posicion?.toLowerCase().includes('port') || activePlayer.dorsal === 35 || activePlayer.dorsal === 1;
+  const isGK =
+    activePlayer.posicion?.toLowerCase().includes('port') ||
+    team.alineacion.find((a) => a.dorsal === activePlayer.dorsal)?.posicion === 'P';
 
   const navigateToPlayerCard = (playerId?: string) => {
     if (playerId) {
@@ -110,55 +110,18 @@ export default function PaniniIndividualStatsView({ homeTeam, awayTeam }: Props)
 
   const rankings = team.rankings_top || {};
 
-  // Generar puntos dinámicos de toque según el rol y distribución
-  const generateTouchPoints = (isFirstHalf: boolean) => {
-    const dist = isFirstHalf ? activePlayer.distribucion_1t : activePlayer.distribucion_2t;
-    const def = dist?.defensa_pct ?? 33;
-    const med = dist?.medio_pct ?? 34;
-    const atk = dist?.ataque_pct ?? 33;
+  // Toques reales del jugador (mapas verticales del PDF). Datos en coordenadas de ataque;
+  // el campo dibujado (viewBox 60×95) ataca hacia arriba con líneas en x 2-58 e y 2-93.
+  const toPitchPoints = (touches?: PaniniMapEvent[]) =>
+    (touches ?? []).map((t) => ({
+      x: ((2 + t.y * 0.56) / 60) * 100,
+      y: ((2 + (100 - t.x) * 0.91) / 95) * 100,
+      abp: t.balon_parado,
+    }));
 
-    if (isGK) {
-      return [
-        { x: 50, y: 88, abp: false },
-        { x: 35, y: 85, abp: false },
-        { x: 65, y: 86, abp: false },
-        { x: 48, y: 78, abp: true },
-        { x: 25, y: 82, abp: false },
-        { x: 75, y: 84, abp: false },
-        { x: 50, y: 72, abp: true },
-      ];
-    }
-
-    const points = [];
-
-    // Puntos en defensa (eje vertical inferior 65-88%)
-    if (def > 0) {
-      points.push({ x: 30, y: 76, abp: false });
-      if (def > 30) points.push({ x: 60, y: 80, abp: true });
-      if (def > 50) points.push({ x: 45, y: 70, abp: false });
-    }
-
-    // Puntos en medio (eje vertical central 35-65%)
-    if (med > 0) {
-      points.push({ x: 48, y: 50, abp: false });
-      if (med > 25) points.push({ x: 32, y: 44, abp: false });
-      if (med > 40) points.push({ x: 68, y: 56, abp: true });
-      if (med > 60) points.push({ x: 50, y: 38, abp: false });
-    }
-
-    // Puntos en ataque (eje vertical superior 10-35%)
-    if (atk > 0) {
-      points.push({ x: 52, y: 24, abp: false });
-      if (atk > 25) points.push({ x: 36, y: 18, abp: true });
-      if (atk > 45) points.push({ x: 64, y: 16, abp: false });
-      if (atk > 65) points.push({ x: 48, y: 12, abp: false });
-    }
-
-    return points;
-  };
-
-  const points1T = useMemo(() => generateTouchPoints(true), [activePlayer]);
-  const points2T = useMemo(() => generateTouchPoints(false), [activePlayer]);
+  const points1T = useMemo(() => toPitchPoints(activePlayer.toques_1t), [activePlayer]);
+  const points2T = useMemo(() => toPitchPoints(activePlayer.toques_2t), [activePlayer]);
+  const pct = (n?: number) => (n === undefined ? '—' : `${n}%`);
 
   return (
     <div className="space-y-8 animate-fade-in text-gray-800 dark:text-gray-100">
@@ -454,8 +417,10 @@ export default function PaniniIndividualStatsView({ homeTeam, awayTeam }: Props)
                   </div>
 
                   {/* Percentage in Y (Defensa) */}
-                  <div className="absolute right-1 bottom-6 text-[9px] font-mono font-black text-gray-800 -rotate-90">
-                    {activePlayer.distribucion_1t?.defensa_pct ?? 33}%
+                  <div className="absolute right-1 inset-y-6 flex flex-col justify-between items-end text-[9px] font-mono font-black text-gray-800 z-10" title="Ataque / medio / defensa">
+                    <span>{pct(activePlayer.distribucion_1t?.ataque_pct)}</span>
+                    <span>{pct(activePlayer.distribucion_1t?.medio_pct)}</span>
+                    <span>{pct(activePlayer.distribucion_1t?.defensa_pct)}</span>
                   </div>
 
                   {/* Touch Points Plotted (CIRCLES for 1T) */}
@@ -476,9 +441,9 @@ export default function PaniniIndividualStatsView({ homeTeam, awayTeam }: Props)
 
                   {/* Bottom Margins % (3 zones in X) */}
                   <div className="flex justify-between items-center text-[9px] font-mono font-black text-gray-800 z-10 pt-1">
-                    <span>{activePlayer.distribucion_1t?.defensa_pct ?? 30}%</span>
-                    <span>{activePlayer.distribucion_1t?.medio_pct ?? 40}%</span>
-                    <span>{activePlayer.distribucion_1t?.ataque_pct ?? 30}%</span>
+                    <span title="Banda izquierda">{pct(activePlayer.distribucion_1t?.izq_pct)}</span>
+                    <span title="Centro">{pct(activePlayer.distribucion_1t?.cen_pct)}</span>
+                    <span title="Banda derecha">{pct(activePlayer.distribucion_1t?.dcha_pct)}</span>
                   </div>
                 </div>
               </div>
@@ -509,8 +474,10 @@ export default function PaniniIndividualStatsView({ homeTeam, awayTeam }: Props)
                   </div>
 
                   {/* Percentage in Y */}
-                  <div className="absolute right-1 bottom-6 text-[9px] font-mono font-black text-gray-800 -rotate-90">
-                    {activePlayer.distribucion_2t?.defensa_pct ?? 33}%
+                  <div className="absolute right-1 inset-y-6 flex flex-col justify-between items-end text-[9px] font-mono font-black text-gray-800 z-10" title="Ataque / medio / defensa">
+                    <span>{pct(activePlayer.distribucion_2t?.ataque_pct)}</span>
+                    <span>{pct(activePlayer.distribucion_2t?.medio_pct)}</span>
+                    <span>{pct(activePlayer.distribucion_2t?.defensa_pct)}</span>
                   </div>
 
                   {/* Touch Points Plotted (SQUARES for 2T) */}
@@ -531,9 +498,9 @@ export default function PaniniIndividualStatsView({ homeTeam, awayTeam }: Props)
 
                   {/* Bottom Margins % */}
                   <div className="flex justify-between items-center text-[9px] font-mono font-black text-gray-800 z-10 pt-1">
-                    <span>{activePlayer.distribucion_2t?.defensa_pct ?? 30}%</span>
-                    <span>{activePlayer.distribucion_2t?.medio_pct ?? 40}%</span>
-                    <span>{activePlayer.distribucion_2t?.ataque_pct ?? 30}%</span>
+                    <span title="Banda izquierda">{pct(activePlayer.distribucion_2t?.izq_pct)}</span>
+                    <span title="Centro">{pct(activePlayer.distribucion_2t?.cen_pct)}</span>
+                    <span title="Banda derecha">{pct(activePlayer.distribucion_2t?.dcha_pct)}</span>
                   </div>
                 </div>
               </div>

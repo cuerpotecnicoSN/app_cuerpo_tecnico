@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Share2, User, ExternalLink, ArrowRight, ArrowLeft, Smartphone, Monitor } from 'lucide-react';
 import type { PaniniTeamData, PaniniPassingNode } from '../../../types/paniniReport';
+import { toSharedPitch } from './paniniPitch';
 
 interface Props {
   homeTeam: PaniniTeamData;
@@ -9,42 +10,15 @@ interface Props {
 }
 
 /** Coordenadas espaciales exactas calibradas con las líneas del campo del informe oficial Panini Digital (Págs. 10 y 11) */
-const DEFAULT_COORDS_HOME: Record<number, { x: number; y: number }> = {
-  35: { x: 5.0,  y: 50.0 }, // Offredi (Portero centrado en área pequeña izq)
-  4:  { x: 32.5, y: 29.0 }, // Nava (Central Dcho - Fuera de área izq X < 50%)
-  24: { x: 31.5, y: 69.0 }, // Piacentini (Central Izq - Fuera de área izq X < 50%)
-  8:  { x: 48.0, y: 52.0 }, // Serena (Mediocentro - Borde izq círculo central X < 50%)
-  30: { x: 58.0, y: 16.0 }, // Caccia (Carrilero Izq - Campo Derecho X > 50%)
-  25: { x: 58.0, y: 83.0 }, // Martinelli (Lateral Dcho - Campo Derecho X > 50%)
-  21: { x: 61.0, y: 28.5 }, // Danieli (Centrocampista - Campo Derecho X > 50%)
-  20: { x: 66.5, y: 56.5 }, // Strechie (Centrocampista - Campo Derecho X > 50%)
-  28: { x: 64.0, y: 68.5 }, // Rinaldi (Centrocampista - Campo Derecho X > 50%)
-  7:  { x: 72.0, y: 58.0 }, // Ravasi (Delantero - Campo Derecho X > 50%)
-  14: { x: 72.5, y: 43.5 }, // D'Amuri (Delantero - Campo Derecho X > 50%)
-};
-
-const DEFAULT_COORDS_AWAY: Record<number, { x: number; y: number }> = {
-  1:  { x: 95.0, y: 50.0 }, // Pittarella (Portero centrado en área pequeña der)
-  2:  { x: 52.5, y: 16.5 }, // Cappelletti (Banda sup ligeramente a la dcha de la línea central)
-  3:  { x: 52.5, y: 82.0 }, // Borsani (Defensa banda inf)
-  4:  { x: 77.0, y: 34.0 }, // Zukic (Defensa claramente libre fuera del área de penalti)
-  5:  { x: 78.0, y: 77.0 }, // Vladimirov (Defensa claramente libre fuera del área de penalti)
-  6:  { x: 69.5, y: 57.5 }, // Cissé (Centrocampista)
-  7:  { x: 67.5, y: 28.5 }, // Sala (Interior/Medio sup)
-  8:  { x: 57.5, y: 62.0 }, // Pandolfi (Pivote cuadrante inf-der círculo central)
-  9:  { x: 43.5, y: 41.0 }, // Asanji (Delantero borde sup-izq círculo - Campo Izq X < 50%)
-  10: { x: 47.5, y: 68.5 }, // Vos (Medio inf izq fuera círculo - Campo Izq X < 50%)
-  11: { x: 41.5, y: 52.5 }, // Ossola (Extremo vértice izq círculo - Campo Izq X < 50%)
-};
-
+/**
+ * Coordenadas del nodo en el campo de la vista: el local ataca hacia la derecha y el
+ * visitante hacia la izquierda (como en el PDF). Los datos vienen en coordenadas de ataque.
+ */
 function getPlayerCoords(p: PaniniPassingNode, isHome: boolean) {
-  const map = isHome ? DEFAULT_COORDS_HOME : DEFAULT_COORDS_AWAY;
-  const def = map[p.dorsal];
-  return {
-    x: def?.x ?? p.x ?? 50,
-    y: def?.y ?? p.y ?? 50,
-  };
+  return toSharedPitch({ x: p.x ?? 50, y: p.y ?? 50 }, isHome);
 }
+
+const hasCoords = (p: PaniniPassingNode) => p.x !== undefined && p.x !== null && p.y !== undefined && p.y !== null;
 
 export default function PaniniPassingNetworkView({ homeTeam, awayTeam }: Props) {
   const navigate = useNavigate();
@@ -70,9 +44,11 @@ export default function PaniniPassingNetworkView({ homeTeam, awayTeam }: Props) 
     isReverse: boolean;
   }[] = [];
 
-  players.forEach((pFrom) => {
+  // En el campo solo se dibujan los jugadores con posición en la red del PDF
+  const pitchPlayers = players.filter(hasCoords);
+  pitchPlayers.forEach((pFrom) => {
     const row = matrix[pFrom.dorsal] || {};
-    players.forEach((pTo) => {
+    pitchPlayers.forEach((pTo) => {
       if (pFrom.dorsal !== pTo.dorsal) {
         const count = row[pTo.dorsal] || 0;
         if (count >= minPasses) {
@@ -449,11 +425,11 @@ export default function PaniniPassingNetworkView({ homeTeam, awayTeam }: Props) 
             </svg>
 
             {/* Players (Nodes) Compactos */}
-            {players.slice(0, 11).map((p) => {
+            {players.filter(hasCoords).map((p) => {
               const coords = getPlayerCoords(p, isHome);
               const xPos = pitchOrientation === 'vertical' ? coords.y : coords.x;
               const yPos = pitchOrientation === 'vertical' ? (100 - coords.x) : coords.y;
-              const isGK = isHome ? p.dorsal === 35 : p.dorsal === 1;
+              const isGK = team.alineacion.find((a) => a.dorsal === p.dorsal)?.posicion === 'P';
               const isActive = activePlayerDorsal === p.dorsal;
 
               return (

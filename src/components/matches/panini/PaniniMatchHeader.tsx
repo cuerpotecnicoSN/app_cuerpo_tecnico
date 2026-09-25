@@ -96,7 +96,7 @@ export default function PaniniMatchHeader({ report, match, homeLogo, awayLogo }:
               <h3 className="font-black text-lg md:text-xl text-red-400 leading-tight uppercase tracking-wide">
                 {home.nombre}
               </h3>
-              <span className="text-xs text-gray-400 mt-0.5">Entrenador: {home.entrenador || 'Marco Sgrò'}</span>
+              <span className="text-xs text-gray-400 mt-0.5">Entrenador: {home.entrenador || '—'}</span>
             </div>
 
             {/* Score */}
@@ -130,7 +130,7 @@ export default function PaniniMatchHeader({ report, match, homeLogo, awayLogo }:
               <h3 className="font-black text-lg md:text-xl text-blue-400 leading-tight uppercase tracking-wide">
                 {away.nombre}
               </h3>
-              <span className="text-xs text-gray-400 mt-0.5">Entrenador: {away.entrenador || 'Sergio Navarro'}</span>
+              <span className="text-xs text-gray-400 mt-0.5">Entrenador: {away.entrenador || '—'}</span>
             </div>
 
           </div>
@@ -168,34 +168,34 @@ export default function PaniniMatchHeader({ report, match, homeLogo, awayLogo }:
         <div className="lg:col-span-5 grid grid-cols-2 gap-3.5">
           
           {/* IVS Circle Badge */}
-          <div className="bg-white/5 border border-white/10 p-4 rounded-3xl flex flex-col items-center justify-center text-center backdrop-blur-sm">
+          <div className="bg-white/5 border border-white/10 p-3 sm:p-4 rounded-3xl flex flex-col items-center justify-center text-center backdrop-blur-sm min-w-0">
             <span className="text-[11px] font-black text-gray-300 uppercase tracking-wider mb-2">
               Índice IVS (Panini)
             </span>
-            <div className="flex items-center justify-center gap-3">
-              <div className="w-14 h-14 rounded-full bg-gray-200 text-red-600 font-mono font-black text-2xl flex items-center justify-center shadow-lg border-2 border-red-500/60">
-                {home.ims || 57}
+            <div className="flex items-center justify-center gap-1.5 sm:gap-3">
+              <div className="w-10 h-10 sm:w-14 sm:h-14 shrink-0 rounded-full bg-gray-200 text-red-600 font-mono font-black text-sm sm:text-2xl flex items-center justify-center shadow-lg border-2 border-red-500/60">
+                {home.ims ?? '—'}
               </div>
               <span className="font-black text-xs text-amber-400 tracking-wider">IVS</span>
-              <div className="w-14 h-14 rounded-full bg-gray-200 text-blue-800 font-mono font-black text-2xl flex items-center justify-center shadow-lg border-2 border-blue-500/60">
-                {away.ims || 43}
+              <div className="w-10 h-10 sm:w-14 sm:h-14 shrink-0 rounded-full bg-gray-200 text-blue-800 font-mono font-black text-sm sm:text-2xl flex items-center justify-center shadow-lg border-2 border-blue-500/60">
+                {away.ims ?? '—'}
               </div>
             </div>
             <span className="text-[10px] text-gray-400 mt-2 font-medium">Índice de valoración colectiva</span>
           </div>
 
           {/* xPG Circle Badge */}
-          <div className="bg-white/5 border border-white/10 p-4 rounded-3xl flex flex-col items-center justify-center text-center backdrop-blur-sm">
+          <div className="bg-white/5 border border-white/10 p-3 sm:p-4 rounded-3xl flex flex-col items-center justify-center text-center backdrop-blur-sm min-w-0">
             <span className="text-[11px] font-black text-gray-300 uppercase tracking-wider mb-2">
               Métrica xPG (Expected Goals)
             </span>
-            <div className="flex items-center justify-center gap-3">
-              <div className="w-14 h-14 rounded-full bg-gray-200 text-red-600 font-mono font-black text-xl flex items-center justify-center shadow-lg border-2 border-red-500/60">
-                {home.xg ? String(home.xg).replace('.', ',') : '3,19'}
+            <div className="flex items-center justify-center gap-1.5 sm:gap-3">
+              <div className="w-10 h-10 sm:w-14 sm:h-14 shrink-0 rounded-full bg-gray-200 text-red-600 font-mono font-black text-sm sm:text-xl flex items-center justify-center shadow-lg border-2 border-red-500/60">
+                {home.xg || home.xg === 0 ? String(home.xg).replace('.', ',') : '—'}
               </div>
               <span className="font-black text-xs text-emerald-400 tracking-wider">xPG</span>
-              <div className="w-14 h-14 rounded-full bg-gray-200 text-blue-800 font-mono font-black text-xl flex items-center justify-center shadow-lg border-2 border-blue-500/60">
-                {away.xg ? String(away.xg).replace('.', ',') : '0,94'}
+              <div className="w-10 h-10 sm:w-14 sm:h-14 shrink-0 rounded-full bg-gray-200 text-blue-800 font-mono font-black text-sm sm:text-xl flex items-center justify-center shadow-lg border-2 border-blue-500/60">
+                {away.xg || away.xg === 0 ? String(away.xg).replace('.', ',') : '—'}
               </div>
             </div>
             <span className="text-[10px] text-gray-400 mt-2 font-medium">Goles esperados del encuentro</span>
@@ -221,7 +221,7 @@ export default function PaniniMatchHeader({ report, match, homeLogo, awayLogo }:
               </div>
               <div>
                 <span className="text-[10px] text-gray-400 uppercase font-bold block">Tiempo Efectivo</span>
-                <span className="font-mono font-black text-emerald-300 text-sm">{report.tiempo_efectivo || "48':31''"}</span>
+                <span className="font-mono font-black text-emerald-300 text-sm">{report.tiempo_efectivo || '—'}</span>
               </div>
             </div>
           </div>

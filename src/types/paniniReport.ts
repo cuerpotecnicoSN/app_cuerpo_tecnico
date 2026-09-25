@@ -75,9 +75,10 @@ export interface PaniniTacticalBlock {
   densidad_defensa_pct: number;
   densidad_medio_pct: number;
   densidad_ataque_pct: number;
-  carril_izquierdo_pct: number;
-  carril_central_pct: number;
-  carril_derecho_pct: number;
+  /** En el PDF son imágenes de texto girado: no se extraen del informe */
+  carril_izquierdo_pct?: number;
+  carril_central_pct?: number;
+  carril_derecho_pct?: number;
 }
 
 export interface PaniniSpatialCategory {
@@ -197,6 +198,13 @@ export interface PaniniPlayerStats {
   /** Coordenadas estimadas de posición media en el campograma */
   posicion_media_x?: number;
   posicion_media_y?: number;
+  tiros_a_puerta_recibidos?: string;
+  recuperaciones_ataque?: number;
+  /** Toques del jugador (mapas verticales del PDF), en coordenadas de ataque */
+  toques_1t?: PaniniMapEvent[];
+  toques_2t?: PaniniMapEvent[];
+  /** Métricas del PDF sin campo propio (etiqueta original en italiano → valor) */
+  otros?: Record<string, string>;
 }
 
 export interface PaniniPassingMatrix {
@@ -210,9 +218,104 @@ export interface PaniniPassingMatrix {
   enlaces?: PaniniPassingLink[];
 }
 
+/**
+ * Convención de coordenadas de los mapas extraídos del PDF ("coordenadas de ataque"):
+ *  - x: 0 = línea de gol propia → 100 = línea de gol rival (el equipo ataca hacia la derecha)
+ *  - y: 0 = banda izquierda → 100 = banda derecha, desde el punto de vista del equipo
+ * Los datos de ambos equipos usan la misma convención, cada uno respecto a su ataque.
+ */
+export interface PaniniPitchPoint {
+  x: number;
+  y: number;
+}
+
+export type PaniniPeriodo = '1T' | '2T' | 'PR';
+
+/** Evento posicionado (recuperación, falta, toque...). Círculo = 1T, cuadrado = 2T en el PDF */
+export interface PaniniMapEvent extends PaniniPitchPoint {
+  periodo: PaniniPeriodo;
+  /** Tono claro en el PDF: acción a balón parado */
+  balon_parado: boolean;
+}
+
+export interface PaniniDensityCell {
+  /** 0 = fila superior (banda izquierda) */
+  fila: number;
+  /** 0 = columna junto a la portería propia */
+  columna: number;
+  /** Nivel de densidad de balones jugados: 0 (mínimo) → 15 (máximo), escala de 16 verdes del PDF */
+  nivel: number;
+  /** Intensidad continua 0-1 calculada a partir del tono exacto */
+  intensidad: number;
+  /** Color exacto de la celda en el PDF */
+  color: string;
+  /** true si en el PDF la celda es una trama (rayas sobre blanco) en vez de color sólido */
+  trama: boolean;
+}
+
+export interface PaniniDensityPlayer extends PaniniPitchPoint {
+  dorsal?: number;
+  nombre: string;
+  rol: 'P' | 'D' | 'C' | 'A';
+}
+
+export interface PaniniDensityMap {
+  periodo: '1T' | '2T';
+  /** Duración del periodo ("45'") y tiempo efectivo ("23':27''") de la cabecera del PDF */
+  duracion?: string;
+  tiempo_efectivo?: string;
+  sistema: string;
+  longitud_m: number;
+  anchura_m: number;
+  filas: number;
+  columnas: number;
+  celdas: PaniniDensityCell[];
+  /** Posición de cada jugador en el bloque durante el periodo */
+  jugadores: PaniniDensityPlayer[];
+  zonas_pct: { defensa: number; medio: number; ataque: number };
+}
+
+export interface PaniniEventMaps {
+  recuperaciones: PaniniMapEvent[];
+  faltas: PaniniMapEvent[];
+  acciones_utiles: PaniniMapEvent[];
+  pases_largos: PaniniMapEvent[];
+  regates: PaniniMapEvent[];
+  centros: PaniniMapEvent[];
+}
+
+export interface PaniniShotMarker extends PaniniPitchPoint {
+  periodo: PaniniPeriodo;
+  balon_parado: boolean;
+  /** El PDF dibuja los goles con un marcador mayor */
+  gol?: boolean;
+}
+
+export interface PaniniGoalMarker {
+  orden: number;
+  minuto: string;
+  jugador: string;
+  /** Posición en la imagen de la portería del PDF (0-100): x izquierda → derecha, y arriba → abajo */
+  x: number;
+  y: number;
+}
+
+export interface PaniniSetPieceEfficacy {
+  categoria: 'faltas_derecha' | 'faltas_centrales' | 'faltas_izquierda' | 'corners_derecha' | 'corners_izquierda' | 'saques_banda_derecha' | 'saques_banda_izquierda';
+  total: number;
+  exitosas: number;
+}
+
+export interface PaniniPassNetwork {
+  nodos: (PaniniPitchPoint & { dorsal: number })[];
+  enlaces: { origen_dorsal: number; destino_dorsal: number; pases: number }[];
+}
+
 export interface PaniniMatchReport {
   id?: string;
   match_id?: string;
+  /** Origen de los datos: extracción exacta del PDF vectorial */
+  fuente?: { tipo: 'pdf_vectorial'; archivo: string; extraido_en: string; version_parser: number; avisos: string[]; pdf_path?: string };
   fecha: string; // YYYY-MM-DD
   competicion: string;
   jornada: string;
@@ -242,6 +345,15 @@ export interface PaniniMatchReport {
     matriz_pases: PaniniPassingMatrix;
     jugadores_stats: PaniniPlayerStats[];
     rankings_top: { [categoria: string]: { dorsal: number; nombre: string; valor: number }[] };
+    /** Datos espaciales exactos extraídos del PDF vectorial */
+    densidad_1t?: PaniniDensityMap;
+    densidad_2t?: PaniniDensityMap;
+    mapas_eventos?: PaniniEventMaps;
+    mapa_tiros?: PaniniShotMarker[];
+    minutos_tiros?: { minuto: number; periodo: PaniniPeriodo; balon_parado: boolean }[];
+    goles_porteria?: PaniniGoalMarker[];
+    eficacia_balon_parado?: PaniniSetPieceEfficacy[];
+    red_pases?: PaniniPassNetwork;
   };
 
   equipo_visitante: {
@@ -265,6 +377,15 @@ export interface PaniniMatchReport {
     matriz_pases: PaniniPassingMatrix;
     jugadores_stats: PaniniPlayerStats[];
     rankings_top: { [categoria: string]: { dorsal: number; nombre: string; valor: number }[] };
+    /** Datos espaciales exactos extraídos del PDF vectorial */
+    densidad_1t?: PaniniDensityMap;
+    densidad_2t?: PaniniDensityMap;
+    mapas_eventos?: PaniniEventMaps;
+    mapa_tiros?: PaniniShotMarker[];
+    minutos_tiros?: { minuto: number; periodo: PaniniPeriodo; balon_parado: boolean }[];
+    goles_porteria?: PaniniGoalMarker[];
+    eficacia_balon_parado?: PaniniSetPieceEfficacy[];
+    red_pases?: PaniniPassNetwork;
   };
 
   goleadores: { minuto: string; jugador: string; equipo: 'home' | 'away' }[];

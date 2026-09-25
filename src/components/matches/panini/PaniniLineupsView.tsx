@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   ArrowUpRight, 
@@ -12,6 +12,7 @@ import {
   Sliders
 } from 'lucide-react';
 import type { PaniniTeamData, PaniniPlayerLineup, PaniniPlayerStats } from '../../../types/paniniReport';
+import { averagePositions, hasAveragePositions, MISSING_SPATIAL_DATA_MESSAGE, type AveragePosition } from './paniniPitch';
 
 interface Props {
   homeTeam: PaniniTeamData;
@@ -20,37 +21,18 @@ interface Props {
   awayLogo?: string;
 }
 
-// Coordenadas del posicionamiento medio de los dos equipos
-const AVERAGE_POSITIONS_HOME: Record<number, { x: number; y: number; label: string; line: 'def' | 'med' | 'att' | 'gk' }> = {
-  35: { x: 10.5, y: 50.0, label: 'Offredi', line: 'gk' },
-  4:  { x: 34.0, y: 35.5, label: 'Nava', line: 'def' },
-  24: { x: 34.0, y: 64.5, label: 'Piacentini', line: 'def' },
-  30: { x: 56.5, y: 20.0, label: 'Caccia', line: 'def' },
-  25: { x: 56.5, y: 78.5, label: 'Martinelli', line: 'def' },
-  8:  { x: 50.0, y: 44.5, label: 'Serena', line: 'med' },
-  28: { x: 50.5, y: 62.5, label: 'Rinaldi', line: 'med' },
-  21: { x: 68.0, y: 29.5, label: 'Danieli', line: 'med' },
-  20: { x: 68.0, y: 75.0, label: 'Strechie', line: 'med' },
-  14: { x: 68.0, y: 47.0, label: "D'Amuri", line: 'att' },
-  7:  { x: 68.0, y: 61.5, label: 'Ravasi', line: 'att' },
-};
-
-const AVERAGE_POSITIONS_AWAY: Record<number, { x: number; y: number; label: string; line: 'def' | 'med' | 'att' | 'gk' }> = {
-  1:  { x: 89.0, y: 50.0, label: 'Pittarella', line: 'gk' },
-  2:  { x: 54.0, y: 20.0, label: 'Cappelletti', line: 'def' },
-  4:  { x: 68.0, y: 36.0, label: 'Zukic', line: 'def' },
-  5:  { x: 72.0, y: 67.0, label: 'Vladimirov', line: 'def' },
-  3:  { x: 54.0, y: 77.0, label: 'Borsani', line: 'def' },
-  8:  { x: 59.0, y: 46.0, label: 'Pandolfi', line: 'med' },
-  6:  { x: 57.0, y: 58.0, label: 'Cissé', line: 'med' },
-  11: { x: 46.0, y: 26.0, label: 'Ossola', line: 'med' },
-  7:  { x: 37.0, y: 29.0, label: 'Sala', line: 'att' },
-  9:  { x: 37.0, y: 48.0, label: 'Asanji', line: 'att' },
-  10: { x: 42.0, y: 63.0, label: 'Vos', line: 'att' },
-};
+/** El campo dibujado ocupa del 2% al 98% del contenedor */
+const fitToDrawnPitch = (positions: Record<number, AveragePosition>) =>
+  Object.fromEntries(
+    Object.entries(positions).map(([d, p]) => [d, { ...p, x: 2 + p.x * 0.96, y: 2 + p.y * 0.96 }]),
+  ) as Record<number, AveragePosition>;
 
 export default function PaniniLineupsView({ homeTeam, awayTeam, homeLogo, awayLogo }: Props) {
   const navigate = useNavigate();
+  // Posición media real extraída del campograma del PDF
+  const AVERAGE_POSITIONS_HOME = useMemo(() => fitToDrawnPitch(averagePositions(homeTeam, true)), [homeTeam]);
+  const AVERAGE_POSITIONS_AWAY = useMemo(() => fitToDrawnPitch(averagePositions(awayTeam, false)), [awayTeam]);
+  const missingPositions = !hasAveragePositions(homeTeam) && !hasAveragePositions(awayTeam);
   const [selectedPlayer, setSelectedPlayer] = useState<{
     player: PaniniPlayerLineup;
     stats?: PaniniPlayerStats;
@@ -90,11 +72,11 @@ export default function PaniniLineupsView({ homeTeam, awayTeam, homeLogo, awayLo
   const homeBlock = homeTeam.bloque_tactico_1t || { longitud_m: 31.2, anchura_m: 42.5, densidad_defensa_pct: 38, densidad_medio_pct: 42, densidad_ataque_pct: 20 };
   const awayBlock = awayTeam.bloque_tactico_1t || { longitud_m: 28.4, anchura_m: 46.1, densidad_defensa_pct: 28, densidad_medio_pct: 46, densidad_ataque_pct: 26 };
   
-  const homeBaricentro = homeTeam.estadisticas?.total_partido?.baricentro_altura_m || 48.2;
-  const awayBaricentro = awayTeam.estadisticas?.total_partido?.baricentro_altura_m || 54.8;
+  const homeBaricentro = homeTeam.estadisticas?.total_partido?.baricentro_altura_m ?? 0;
+  const awayBaricentro = awayTeam.estadisticas?.total_partido?.baricentro_altura_m ?? 0;
 
-  const homePoss = homeTeam.estadisticas?.total_partido?.posesion_pct || 38;
-  const awayPoss = awayTeam.estadisticas?.total_partido?.posesion_pct || 62;
+  const homePoss = homeTeam.estadisticas?.total_partido?.posesion_pct ?? 50;
+  const awayPoss = awayTeam.estadisticas?.total_partido?.posesion_pct ?? 50;
 
   // Helper para renderizar líneas tácticas discontinuas dinamicas conectadas a los jugadores
   const renderTacticalLines = (
@@ -262,7 +244,7 @@ export default function PaniniLineupsView({ homeTeam, awayTeam, homeLogo, awayLo
                     </span>
                   </div>
                   <span className="text-[10px] text-gray-500 dark:text-gray-400 block truncate">
-                    Entrenador: {homeTeam.entrenador || 'M. Sgrò'} • Ataque ➡
+                    Entrenador: {homeTeam.entrenador || '—'} • Ataque ➡
                   </span>
                 </div>
               </div>
@@ -447,6 +429,10 @@ export default function PaniniLineupsView({ homeTeam, awayTeam, homeLogo, awayLo
             </div>
           </div>
 
+          {missingPositions && (
+            <p className="text-xs font-bold text-amber-800 bg-amber-50 border border-amber-200 rounded-xl p-3">{MISSING_SPATIAL_DATA_MESSAGE}</p>
+          )}
+
           {/* El Campo de Fútbol Horizontal HD */}
           <div className="relative w-full aspect-[105/68] max-h-[520px] rounded-2xl overflow-hidden border-2 border-emerald-900/30 bg-[#255f30] shadow-xl select-none mx-auto">
             
@@ -529,7 +515,7 @@ export default function PaniniLineupsView({ homeTeam, awayTeam, homeLogo, awayLo
             {(filterTeam === 'both' || filterTeam === 'home') &&
               Object.entries(AVERAGE_POSITIONS_HOME).map(([dorsalStr, coords]) => {
                 const dorsal = Number(dorsalStr);
-                const isGK = dorsal === 35;
+                const isGK = coords.line === 'gk';
                 const playerObj = homeTeam.alineacion.find(p => p.dorsal === dorsal);
                 const isSelected = selectedPlayer?.player.dorsal === dorsal && selectedPlayer.isHome;
 
@@ -587,7 +573,7 @@ export default function PaniniLineupsView({ homeTeam, awayTeam, homeLogo, awayLo
             {(filterTeam === 'both' || filterTeam === 'away') &&
               Object.entries(AVERAGE_POSITIONS_AWAY).map(([dorsalStr, coords]) => {
                 const dorsal = Number(dorsalStr);
-                const isGK = dorsal === 1;
+                const isGK = coords.line === 'gk';
                 const playerObj = awayTeam.alineacion.find(p => p.dorsal === dorsal);
                 const isSelected = selectedPlayer?.player.dorsal === dorsal && !selectedPlayer.isHome;
 
@@ -765,7 +751,7 @@ export default function PaniniLineupsView({ homeTeam, awayTeam, homeLogo, awayLo
                     </span>
                   </div>
                   <span className="text-[10px] text-gray-500 dark:text-gray-400 block truncate">
-                    Entrenador: {awayTeam.entrenador || 'D. Bonera'} • ⬇ Ataque
+                    Entrenador: {awayTeam.entrenador || '—'} • ⬇ Ataque
                   </span>
                 </div>
               </div>

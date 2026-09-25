@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, ExternalLink, Clock } from 'lucide-react';
 import type { PaniniTeamData, PaniniPlayerLineup } from '../../../types/paniniReport';
+import { MISSING_SPATIAL_DATA_MESSAGE, toSharedPitch } from './paniniPitch';
 
 interface Props {
   homeTeam: PaniniTeamData;
@@ -9,7 +10,7 @@ interface Props {
 }
 
 interface PlayerPin {
-  dorsal: number;
+  dorsal?: number;
   name: string;
   role: 'P' | 'D' | 'C' | 'A';
   x: number;
@@ -17,106 +18,7 @@ interface PlayerPin {
   badgePos: 'above' | 'below';
 }
 
-// Configuración visual exacta 1º Tiempo Villa Valle (Ataca hacia la derecha)
-const VILLA_VALLE_1T_PLAYERS: PlayerPin[] = [
-  { dorsal: 35, name: 'Offredi', role: 'P', x: 10.5, y: 50.0, badgePos: 'below' },
-  { dorsal: 4,  name: 'Nava', role: 'D', x: 34.0, y: 35.5, badgePos: 'above' },
-  { dorsal: 24, name: 'Piacentini', role: 'D', x: 34.0, y: 64.5, badgePos: 'below' },
-  { dorsal: 30, name: 'Caccia', role: 'D', x: 56.5, y: 20.0, badgePos: 'above' },
-  { dorsal: 25, name: 'Martinelli', role: 'D', x: 56.5, y: 78.5, badgePos: 'below' },
-  { dorsal: 8,  name: 'Serena', role: 'C', x: 50.0, y: 44.5, badgePos: 'above' },
-  { dorsal: 28, name: 'Rinaldi', role: 'C', x: 50.5, y: 62.5, badgePos: 'below' },
-  { dorsal: 21, name: 'Danieli', role: 'C', x: 68.0, y: 29.5, badgePos: 'above' },
-  { dorsal: 20, name: 'Strechie', role: 'C', x: 68.0, y: 75.0, badgePos: 'below' },
-  { dorsal: 14, name: "D'Amuri", role: 'A', x: 68.0, y: 47.0, badgePos: 'above' },
-  { dorsal: 7,  name: 'Ravasi', role: 'A', x: 68.0, y: 61.5, badgePos: 'above' },
-];
-
-// Configuración visual exacta 2º Tiempo Villa Valle
-const VILLA_VALLE_2T_PLAYERS: PlayerPin[] = [
-  { dorsal: 35, name: 'Offredi', role: 'P', x: 10.5, y: 50.0, badgePos: 'below' },
-  { dorsal: 4,  name: 'Nava', role: 'D', x: 44.0, y: 34.0, badgePos: 'above' },
-  { dorsal: 24, name: 'Piacentini', role: 'D', x: 41.0, y: 62.0, badgePos: 'below' },
-  { dorsal: 3,  name: 'Zambelli', role: 'D', x: 54.0, y: 22.0, badgePos: 'above' },
-  { dorsal: 25, name: 'Martinelli', role: 'D', x: 56.0, y: 78.0, badgePos: 'below' },
-  { dorsal: 8,  name: 'Serena', role: 'C', x: 51.5, y: 47.0, badgePos: 'above' },
-  { dorsal: 28, name: 'Rinaldi', role: 'C', x: 55.5, y: 64.0, badgePos: 'below' },
-  { dorsal: 27, name: 'Benzoni', role: 'C', x: 66.0, y: 34.0, badgePos: 'above' },
-  { dorsal: 19, name: 'Nikolli', role: 'C', x: 64.0, y: 74.0, badgePos: 'below' },
-  { dorsal: 11, name: 'Siani', role: 'A', x: 68.5, y: 47.0, badgePos: 'above' },
-  { dorsal: 7,  name: 'Ravasi', role: 'A', x: 66.5, y: 61.0, badgePos: 'above' },
-];
-
-// Configuración visual exacta 1º Tiempo Milan Futuro (Ataca hacia la izquierda)
-const MILAN_FUTURO_1T_PLAYERS: PlayerPin[] = [
-  { dorsal: 1,  name: 'Pittarella', role: 'P', x: 89.0, y: 50.0, badgePos: 'below' },
-  { dorsal: 2,  name: 'Cappelletti', role: 'D', x: 54.0, y: 20.0, badgePos: 'above' },
-  { dorsal: 4,  name: 'Zukic', role: 'D', x: 68.0, y: 36.0, badgePos: 'above' },
-  { dorsal: 5,  name: 'Vladimirov', role: 'D', x: 72.0, y: 67.0, badgePos: 'below' },
-  { dorsal: 3,  name: 'Borsani', role: 'D', x: 54.0, y: 77.0, badgePos: 'below' },
-  { dorsal: 8,  name: 'Pandolfi', role: 'C', x: 59.0, y: 46.0, badgePos: 'above' },
-  { dorsal: 6,  name: 'Cissé', role: 'C', x: 57.0, y: 58.0, badgePos: 'below' },
-  { dorsal: 11, name: 'Ossola', role: 'C', x: 46.0, y: 26.0, badgePos: 'above' },
-  { dorsal: 7,  name: 'Sala', role: 'A', x: 37.0, y: 29.0, badgePos: 'above' },
-  { dorsal: 9,  name: 'Asanji', role: 'A', x: 37.0, y: 48.0, badgePos: 'above' },
-  { dorsal: 10, name: 'Vos', role: 'A', x: 42.0, y: 63.0, badgePos: 'below' },
-];
-
-// Configuración visual exacta 2º Tiempo Milan Futuro
-const MILAN_FUTURO_2T_PLAYERS: PlayerPin[] = [
-  { dorsal: 1,  name: 'Pittarella', role: 'P', x: 88.5, y: 50.0, badgePos: 'below' },
-  { dorsal: 13, name: 'Colombo', role: 'D', x: 58.0, y: 22.0, badgePos: 'above' },
-  { dorsal: 14, name: 'Pagliei', role: 'D', x: 66.0, y: 37.0, badgePos: 'above' },
-  { dorsal: 5,  name: 'Vladimirov', role: 'D', x: 70.0, y: 65.0, badgePos: 'below' },
-  { dorsal: 15, name: 'Perera', role: 'D', x: 55.0, y: 76.0, badgePos: 'below' },
-  { dorsal: 8,  name: 'Pandolfi', role: 'C', x: 56.0, y: 47.0, badgePos: 'above' },
-  { dorsal: 6,  name: 'Cissé', role: 'C', x: 57.0, y: 58.0, badgePos: 'below' },
-  { dorsal: 11, name: 'Ossola', role: 'C', x: 44.0, y: 27.0, badgePos: 'above' },
-  { dorsal: 18, name: 'Menon', role: 'A', x: 35.0, y: 30.0, badgePos: 'above' },
-  { dorsal: 9,  name: 'Asanji', role: 'A', x: 36.0, y: 48.0, badgePos: 'above' },
-  { dorsal: 10, name: 'Vos', role: 'A', x: 43.0, y: 62.0, badgePos: 'below' },
-];
-
-// Matriz de densidad exacta 9 cols x 7 rows del informe oficial Panini Digital
-const DENSITY_MATRIX_VV_1T: number[][] = [
-  [0, 0, 0, 0, 1, 3, 2, 0, 0],
-  [0, 0, 1, 2, 1, 3, 2, 0, 0],
-  [0, 0, 1, 0, 0, 0, 1, 0, 0],
-  [2, 0, 0, 3, 2, 2, 1, 0, 0],
-  [2, 0, 3, 0, 1, 2, 2, 0, 0],
-  [0, 0, 3, 0, 1, 2, 3, 0, 0],
-  [0, 0, 0, 0, 1, 0, 2, 0, 0],
-];
-
-const DENSITY_MATRIX_VV_2T: number[][] = [
-  [0, 0, 0, 0, 1, 2, 3, 1, 0],
-  [0, 0, 1, 1, 2, 3, 2, 0, 0],
-  [0, 0, 1, 0, 1, 2, 2, 0, 0],
-  [2, 0, 0, 2, 2, 3, 2, 0, 0],
-  [2, 0, 2, 1, 2, 2, 3, 0, 0],
-  [0, 0, 2, 1, 1, 3, 3, 0, 0],
-  [0, 0, 0, 0, 1, 2, 2, 0, 0],
-];
-
-const DENSITY_MATRIX_MF_1T: number[][] = [
-  [0, 0, 2, 3, 1, 0, 0, 0, 0],
-  [0, 0, 3, 3, 1, 2, 1, 0, 0],
-  [0, 0, 1, 2, 1, 0, 1, 0, 0],
-  [0, 0, 0, 2, 2, 3, 0, 0, 2],
-  [0, 0, 2, 2, 1, 0, 3, 0, 2],
-  [0, 0, 3, 2, 1, 0, 3, 0, 0],
-  [0, 0, 2, 0, 1, 0, 0, 0, 0],
-];
-
-const DENSITY_MATRIX_MF_2T: number[][] = [
-  [0, 1, 3, 2, 1, 0, 0, 0, 0],
-  [0, 0, 2, 3, 2, 1, 1, 0, 0],
-  [0, 0, 2, 2, 1, 0, 1, 0, 0],
-  [0, 0, 2, 3, 2, 2, 0, 0, 2],
-  [0, 0, 3, 2, 2, 1, 2, 0, 2],
-  [0, 0, 3, 3, 1, 1, 2, 0, 0],
-  [0, 0, 2, 2, 1, 0, 0, 0, 0],
-];
+const formatMeters = (n?: number) => (n ? n.toFixed(1).replace('.', ',') : '—');
 
 export default function PaniniTacticalDensityView({ homeTeam, awayTeam }: Props) {
   const navigate = useNavigate();
@@ -133,25 +35,52 @@ export default function PaniniTacticalDensityView({ homeTeam, awayTeam }: Props)
   const team = isHome ? homeTeam : awayTeam;
   const block = is1T ? team.bloque_tactico_1t : team.bloque_tactico_2t;
 
-  const playerPins = isHome
-    ? is1T ? VILLA_VALLE_1T_PLAYERS : VILLA_VALLE_2T_PLAYERS
-    : is1T ? MILAN_FUTURO_1T_PLAYERS : MILAN_FUTURO_2T_PLAYERS;
+  // Datos reales del informe: rejilla de densidad y posición de cada jugador en el periodo.
+  // En el PDF el visitante se dibuja atacando hacia la izquierda: lo reproducimos igual.
+  const density = is1T ? team.densidad_1t : team.densidad_2t;
 
-  const densityGrid = isHome
-    ? is1T ? DENSITY_MATRIX_VV_1T : DENSITY_MATRIX_VV_2T
-    : is1T ? DENSITY_MATRIX_MF_1T : DENSITY_MATRIX_MF_2T;
+  const playerPins: PlayerPin[] = useMemo(
+    () =>
+      (density?.jugadores ?? []).map((j) => {
+        const pos = toSharedPitch(j, isHome);
+        return { dorsal: j.dorsal, name: j.nombre, role: j.rol, x: pos.x, y: pos.y, badgePos: pos.y < 12 ? 'below' : 'above' };
+      }),
+    [density, isHome],
+  );
+
+  const densityCells = useMemo(
+    () =>
+      (density?.celdas ?? []).map((c) => ({
+        ...c,
+        // Giro de 180º para el visitante, como en el PDF
+        fila: isHome ? c.fila : density!.filas - 1 - c.fila,
+        columna: isHome ? c.columna : density!.columnas - 1 - c.columna,
+      })),
+    [density, isHome],
+  );
+
+  // Extensión del bloque (sin portero) para situar las cotas de longitud y amplitud
+  const outfield = playerPins.filter((p) => p.role !== 'P');
+  const blockBounds = outfield.length
+    ? {
+        x0: Math.min(...outfield.map((p) => p.x)),
+        x1: Math.max(...outfield.map((p) => p.x)),
+        y0: Math.min(...outfield.map((p) => p.y)),
+        y1: Math.max(...outfield.map((p) => p.y)),
+      }
+    : null;
 
   const getRoleStyle = (role: 'P' | 'D' | 'C' | 'A') => {
     switch (role) {
       case 'P':
-        return { bg: '#9da3a8', text: '#000000', label: 'Portiere' };
+        return { bg: '#aaaaaa', text: '#000000', label: 'Portiere' };
       case 'D':
-        return { bg: '#ffea00', text: '#000000', label: 'Difensore' };
+        return { bg: '#feff40', text: '#000000', label: 'Difensore' };
       case 'C':
-        return { bg: '#f99d42', text: '#000000', label: 'Centrocampista' };
+        return { bg: '#ffb05f', text: '#000000', label: 'Centrocampista' };
       case 'A':
       default:
-        return { bg: '#e50914', text: '#ffffff', label: 'Attaccante' };
+        return { bg: '#ff2020', text: '#ffffff', label: 'Attaccante' };
     }
   };
 
@@ -163,23 +92,15 @@ export default function PaniniTacticalDensityView({ homeTeam, awayTeam }: Props)
     }
   };
 
-  // Medidas del bloque (Longitud horizontal y Amplitud vertical)
-  const longitudMetros = isHome
-    ? (is1T ? '29,3' : '33,6')
-    : (is1T ? '41,6' : '42,0');
+  const longitudMetros = formatMeters(density?.longitud_m ?? block.longitud_m);
+  const amplitudMetros = formatMeters(density?.anchura_m ?? block.anchura_m);
 
-  const amplitudMetros = isHome
-    ? (is1T ? '44,8' : '44,0')
-    : (is1T ? '39,2' : '41,6');
-
-  // Densidades en márgenes
-  const densY_top = isHome ? (is1T ? '34,5' : '24,6') : (is1T ? '41,0' : '19,8');
-  const densY_mid = isHome ? (is1T ? '37,6' : '43,6') : (is1T ? '39,7' : '49,8');
-  const densY_bot = isHome ? (is1T ? '27,9' : '31,8') : (is1T ? '19,3' : '30,4');
-
-  const densX_left = isHome ? (is1T ? '28,9' : '25,6') : (is1T ? '12,3' : '20,9');
-  const densX_mid  = isHome ? (is1T ? '42,7' : '31,3') : (is1T ? '37,7' : '31,1');
-  const densX_right= isHome ? (is1T ? '28,4' : '43,1') : (is1T ? '50,0' : '48,0');
+  // % por tercios (de izquierda a derecha tal como se dibuja)
+  const thirds = density?.zonas_pct ?? { defensa: block.densidad_defensa_pct, medio: block.densidad_medio_pct, ataque: block.densidad_ataque_pct };
+  const fmtPct = (n?: number) => (n || n === 0 ? n.toFixed(1).replace('.', ',') : '—');
+  const densX_left = fmtPct(isHome ? thirds.defensa : thirds.ataque);
+  const densX_mid = fmtPct(thirds.medio);
+  const densX_right = fmtPct(isHome ? thirds.ataque : thirds.defensa);
 
   return (
     <div className="space-y-5 animate-fade-in text-gray-800 dark:text-gray-100">
@@ -226,7 +147,7 @@ export default function PaniniTacticalDensityView({ homeTeam, awayTeam }: Props)
             }`}
           >
             <span className={`w-2.5 h-2.5 rounded-full ${selectedTeamKey === 'home' ? 'bg-white' : 'bg-red-500'}`} />
-            {homeTeam.nombre} ({block.sistema})
+            {homeTeam.nombre} ({(is1T ? homeTeam.bloque_tactico_1t : homeTeam.bloque_tactico_2t).sistema})
           </button>
           <button
             onClick={() => { setSelectedTeamKey('away'); setSelectedPlayer(null); }}
@@ -237,27 +158,31 @@ export default function PaniniTacticalDensityView({ homeTeam, awayTeam }: Props)
             }`}
           >
             <span className={`w-2.5 h-2.5 rounded-full ${selectedTeamKey === 'away' ? 'bg-white' : 'bg-blue-500'}`} />
-            {awayTeam.nombre} ({block.sistema})
+            {awayTeam.nombre} ({(is1T ? awayTeam.bloque_tactico_1t : awayTeam.bloque_tactico_2t).sistema})
           </button>
         </div>
       </div>
+
+      {!density && (
+        <p className="max-w-4xl mx-auto text-xs font-bold text-amber-800 bg-amber-50 border border-amber-200 rounded-xl p-3">{MISSING_SPATIAL_DATA_MESSAGE}</p>
+      )}
 
       {/* Tarjeta Campograma Oficial Panini Digital */}
       <div className="max-w-4xl mx-auto bg-white dark:bg-neutral-900 p-4 sm:p-6 md:p-8 rounded-3xl border border-gray-200 dark:border-white/10 shadow-lg space-y-4">
         
         {/* 1. Barra Superior Panini Oficial: 45' | primo tempo | 23':27'' */}
         <div className="bg-[#e2e2e4] dark:bg-neutral-800 rounded-lg px-4 py-1.5 flex items-center justify-between font-black text-sm text-black dark:text-white select-none border border-gray-300 dark:border-white/10">
-          <span className="font-mono text-base">{is1T ? "45'" : "51'"}</span>
+          <span className="font-mono text-base">{density?.duracion || '—'}</span>
           <span className="uppercase tracking-widest text-xs font-extrabold text-gray-800 dark:text-gray-200">
             {is1T ? 'primo tempo' : 'secondo tempo'}
           </span>
-          <span className="font-mono text-base">{is1T ? "23':27''" : "25':04''"}</span>
+          <span className="font-mono text-base">{density?.tiempo_efectivo || '—'}</span>
         </div>
 
         {/* 2. Sistema y Nombre del Equipo */}
         <div className="flex items-center justify-between px-2 pt-1 pb-1">
           <span className="font-black text-2xl font-mono text-black dark:text-white">
-            {block.sistema}
+            {density?.sistema || block.sistema}
           </span>
           <h2 className={`font-black text-2xl sm:text-3xl tracking-wider uppercase ${isHome ? 'text-[#e50914]' : 'text-[#001f7a] dark:text-blue-400'}`}>
             {team.nombre}
@@ -268,13 +193,6 @@ export default function PaniniTacticalDensityView({ homeTeam, awayTeam }: Props)
         {/* 3. Campograma Principal con Porcentajes Laterales y Matriz 9x7 */}
         <div className="flex items-stretch gap-2.5 sm:gap-4">
           
-          {/* Eje Y: Porcentajes de densidad lateral (3 zonas) */}
-          <div className="flex flex-col justify-between py-6 text-xs sm:text-sm font-mono font-black text-black dark:text-white w-9 text-right shrink-0 select-none">
-            <span>{densY_top}</span>
-            <span>{densY_mid}</span>
-            <span>{densY_bot}</span>
-          </div>
-
           {/* Terreno de Juego con Proporciones Oficiales y Líneas Sincronizadas */}
           <div className="relative flex-1 aspect-[100/62] rounded-xl overflow-hidden border-2 border-gray-400 dark:border-white/20 bg-[#def0d3] select-none shadow-inner">
             
@@ -286,25 +204,28 @@ export default function PaniniTacticalDensityView({ homeTeam, awayTeam }: Props)
               }}
             />
 
-            {/* 3.2 Cuadrícula de Densidad 9 cols x 7 rows con Colores Oficiales Panini */}
-            <div className="absolute inset-0 grid grid-cols-9 grid-rows-7 pointer-events-none z-10">
-              {densityGrid.map((row, rIdx) =>
-                row.map((cellVal, cIdx) => {
-                  let bgStyle = 'transparent';
-                  if (cellVal === 1) bgStyle = '#76d66b'; // Verde claro Panini
-                  if (cellVal === 2) bgStyle = '#009e00'; // Verde medio Panini
-                  if (cellVal === 3) bgStyle = '#005500'; // Verde oscuro Panini
-
-                  return (
-                    <div
-                      key={`${rIdx}-${cIdx}`}
-                      style={{ backgroundColor: bgStyle }}
-                      className="border border-white/25 transition-colors"
-                    />
-                  );
-                })
-              )}
-            </div>
+            {/* 3.2 Rejilla de densidad del PDF: tono exacto de cada celda (sólido o trama) */}
+            {density && (
+              <div
+                className="absolute inset-0 grid pointer-events-none z-10"
+                style={{ gridTemplateColumns: `repeat(${density.columnas}, 1fr)`, gridTemplateRows: `repeat(${density.filas}, 1fr)` }}
+              >
+                {densityCells.map((c) => (
+                  <div
+                    key={`${c.fila}-${c.columna}`}
+                    title={`Densidad ${c.nivel}/15`}
+                    style={{
+                      gridRow: c.fila + 1,
+                      gridColumn: c.columna + 1,
+                      background: c.trama
+                        ? `repeating-linear-gradient(45deg, ${c.color} 0px, ${c.color} 1.5px, #ffffff 1.5px, #ffffff 4px)`
+                        : c.color,
+                    }}
+                    className="border border-white/40"
+                  />
+                ))}
+              </div>
+            )}
 
             {/* 3.3 SVG Pitch Markings Sincronizadas con las Áreas y Dimensiones Reales */}
             <svg className="absolute inset-0 w-full h-full pointer-events-none z-15" viewBox="0 0 100 100" preserveAspectRatio="none">
@@ -339,51 +260,50 @@ export default function PaniniTacticalDensityView({ homeTeam, awayTeam }: Props)
             </div>
 
             {/* Escudo del Club en Esquina */}
-            {isHome ? (
-              <div className="absolute top-2 left-2 w-10 h-12 bg-white rounded-xl border border-gray-300 p-0.5 shadow-sm flex flex-col items-center justify-center pointer-events-none z-20">
-                <div className="w-full h-full rounded-lg border border-red-500 flex flex-col items-center justify-center bg-white p-0.5">
-                  <span className="text-[7px] font-black text-red-600 leading-tight text-center">VILLA</span>
-                  <span className="text-[6.5px] font-black text-amber-600 leading-tight text-center">VALLE</span>
-                </div>
-              </div>
-            ) : (
-              <div className="absolute bottom-2 right-2 w-10 h-10 bg-white rounded-full border border-gray-300 p-0.5 shadow-sm flex items-center justify-center pointer-events-none z-20">
-                <div className="w-full h-full bg-black text-white font-black text-[7px] flex items-center justify-center rounded-full border border-red-600">
-                  ACM
-                </div>
-              </div>
-            )}
+            <div className={`absolute ${isHome ? 'top-2 left-2' : 'bottom-2 right-2'} w-10 h-10 bg-white rounded-xl border border-gray-300 shadow-sm flex items-center justify-center pointer-events-none z-20`}>
+              <span className={`text-[8px] font-black leading-tight text-center ${isHome ? 'text-red-600' : 'text-[#001f7a]'}`}>
+                {team.nombre.substring(0, 3).toUpperCase()}
+              </span>
+            </div>
 
             {/* 3.4 Cotas Métricas: Brackets Oficiales de Longitud y Amplitud */}
-            {/* Brackets Amplitud (Eje Y) */}
-            <div className={`absolute ${isHome ? 'right-2' : 'left-2'} top-[20%] bottom-[21.5%] w-8 flex items-center justify-center pointer-events-none z-25`}>
-              <div className={`w-2 h-full ${isHome ? 'border-r-2 border-y-2' : 'border-l-2 border-y-2'} border-black`} />
-              <span className={`absolute ${isHome ? '-right-2' : '-left-2'} top-1/2 -translate-y-1/2 bg-white/95 px-1 py-0.2 rounded text-[10px] font-black text-black font-mono shadow-xs whitespace-nowrap -rotate-90 border border-black/20`}>
-                mt {amplitudMetros}
-              </span>
-            </div>
-
-            {/* Brackets Longitud (Eje X) */}
-            <div className={`absolute bottom-2 ${isHome ? 'left-[34%] right-[32%]' : 'left-[32%] right-[30%]'} h-6 flex items-center justify-center pointer-events-none z-25`}>
-              <div className="h-2 w-full border-b-2 border-x-2 border-black" />
-              <span className="absolute bottom-0.5 bg-white/95 px-1.5 py-0.2 rounded text-[10px] font-black text-black font-mono shadow-xs border border-black/20">
-                mt {longitudMetros}
-              </span>
-            </div>
+            {/* Cotas del bloque (sin portero), situadas sobre la extensión real de los jugadores */}
+            {blockBounds && (
+              <>
+                <div
+                  className="absolute w-8 flex items-center justify-center pointer-events-none z-25"
+                  style={{ top: `${blockBounds.y0}%`, bottom: `${100 - blockBounds.y1}%`, ...(isHome ? { right: '0.5rem' } : { left: '0.5rem' }) }}
+                >
+                  <div className={`w-2 h-full ${isHome ? 'border-r-2 border-y-2' : 'border-l-2 border-y-2'} border-black`} />
+                  <span className={`absolute ${isHome ? '-right-2' : '-left-2'} top-1/2 -translate-y-1/2 bg-white/95 px-1 rounded text-[10px] font-black text-black font-mono shadow-xs whitespace-nowrap -rotate-90 border border-black/20`}>
+                    mt {amplitudMetros}
+                  </span>
+                </div>
+                <div
+                  className="absolute bottom-2 h-6 flex items-center justify-center pointer-events-none z-25"
+                  style={{ left: `${blockBounds.x0}%`, right: `${100 - blockBounds.x1}%` }}
+                >
+                  <div className="h-2 w-full border-b-2 border-x-2 border-black" />
+                  <span className="absolute bottom-0.5 bg-white/95 px-1.5 rounded text-[10px] font-black text-black font-mono shadow-xs border border-black/20">
+                    mt {longitudMetros}
+                  </span>
+                </div>
+              </>
+            )}
 
             {/* 3.5 Pines de Jugadores con Posicionamiento y Etiquetas de Rol */}
             {playerPins.map((pin) => {
               const roleStyle = getRoleStyle(pin.role);
-              const isSelected = selectedPlayer?.player.dorsal === pin.dorsal;
+              const isSelected = pin.dorsal !== undefined && selectedPlayer?.player.dorsal === pin.dorsal;
               const dbPlayer = team.alineacion.find(p => p.dorsal === pin.dorsal);
 
               return (
                 <div
-                  key={pin.dorsal}
+                  key={`${pin.dorsal}-${pin.name}`}
                   onClick={() =>
                     setSelectedPlayer({
                       player: dbPlayer || {
-                        dorsal: pin.dorsal,
+                        dorsal: pin.dorsal ?? 0,
                         nombre: pin.name,
                         posicion: pin.role,
                         posicion_desc: roleStyle.label,

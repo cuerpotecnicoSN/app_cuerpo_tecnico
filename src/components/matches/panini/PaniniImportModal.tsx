@@ -8,11 +8,12 @@ import {
   Sparkles, 
   Loader2, 
   PlusCircle, 
-  Link as LinkIcon 
+  Link as LinkIcon,
+  AlertTriangle
 } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import type { PaniniMatchReport } from '../../../types/paniniReport';
-import { extractPaniniReportFromFile, syncPaniniReportWithPlayersAndMatch } from '../../../services/paniniReports';
+import { extractPaniniReportFromFile, findMatchForReport, sameOpponent, splitTeams, syncPaniniReportWithPlayersAndMatch } from '../../../services/paniniReports';
 
 interface Props {
   isOpen: boolean;
@@ -29,6 +30,8 @@ export default function PaniniImportModal({
 }: Props) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [extractedReport, setExtractedReport] = useState<PaniniMatchReport | null>(null);
+  const [sourceFile, setSourceFile] = useState<File | null>(null);
+  const [extractError, setExtractError] = useState<string | null>(null);
   
   // Match selection state
   const [matchesList, setMatchesList] = useState<any[]>([]);
@@ -42,15 +45,22 @@ export default function PaniniImportModal({
     matchId: string;
     playersCreated: number;
     playersLinked: number;
+    warnings: string[];
     message?: string;
   } | null>(null);
 
   // Load existing matches and players for association
   useEffect(() => {
     if (isOpen) {
+      // Cada apertura empieza de cero
+      setExtractedReport(null);
+      setSourceFile(null);
+      setExtractError(null);
+      setSyncResult(null);
+      setSelectedMatchId(currentMatchId || 'auto');
       loadData();
     }
-  }, [isOpen]);
+  }, [isOpen, currentMatchId]);
 
   const loadData = async () => {
     try {
@@ -74,31 +84,26 @@ export default function PaniniImportModal({
     if (!selected) return;
     setIsProcessing(true);
     setSyncResult(null);
+    setExtractError(null);
 
     try {
       const report = await extractPaniniReportFromFile(selected);
       setExtractedReport(report);
+      setSourceFile(selected.name.toLowerCase().endsWith('.pdf') ? selected : null);
 
-      // Try to auto-match if currentMatchId not explicitly given
-      if (!currentMatchId) {
-        const found = matchesList.find(
-          (m) =>
-            m.date === report.fecha ||
-            (report.equipo_local.nombre.toLowerCase().includes(m.opponent?.toLowerCase()) ||
-             report.equipo_visitante.nombre.toLowerCase().includes(m.opponent?.toLowerCase()))
-        );
-        if (found) {
-          setSelectedMatchId(found.id);
-        } else {
-          setSelectedMatchId('new');
-        }
-      } else {
+      // Abierto desde un partido: se propone ese partido (y se avisa si no coincide).
+      // Si no, se busca por fecha + rival.
+      if (currentMatchId) {
         setSelectedMatchId(currentMatchId);
+      } else {
+        const { match } = findMatchForReport(report, matchesList);
+        setSelectedMatchId(match ? match.id : 'new');
       }
     } catch (err: any) {
-      alert(`Error extrayendo datos del informe: ${err.message || 'Archivo no reconocido'}`);
+      setExtractError(err.message || 'Archivo no reconocido');
     } finally {
       setIsProcessing(false);
+      e.target.value = '';
     }
   };
 
@@ -109,7 +114,7 @@ export default function PaniniImportModal({
 
     try {
       const targetId = selectedMatchId === 'new' || selectedMatchId === 'auto' ? undefined : selectedMatchId;
-      const res = await syncPaniniReportWithPlayersAndMatch(extractedReport, targetId);
+      const res = await syncPaniniReportWithPlayersAndMatch(extractedReport, targetId, sourceFile ?? undefined);
 
       if (res.success) {
         setSyncResult({
@@ -117,6 +122,7 @@ export default function PaniniImportModal({
           matchId: res.matchId,
           playersCreated: res.playersCreated,
           playersLinked: res.playersLinked,
+          warnings: res.warnings,
         });
         if (onImportSuccess) {
           onImportSuccess(res.matchId);
@@ -127,6 +133,7 @@ export default function PaniniImportModal({
           matchId: '',
           playersCreated: 0,
           playersLinked: 0,
+          warnings: res.warnings,
           message: res.error,
         });
       }
@@ -136,6 +143,7 @@ export default function PaniniImportModal({
         matchId: '',
         playersCreated: 0,
         playersLinked: 0,
+        warnings: [],
         message: err.message,
       });
     } finally {
@@ -144,11 +152,19 @@ export default function PaniniImportModal({
   };
 
   // Analyze which players are matched vs to be created
-  const ourTeam = extractedReport
-    ? extractedReport.equipo_visitante.nombre.toLowerCase().includes('milan')
-      ? extractedReport.equipo_visitante
-      : extractedReport.equipo_local
-    : null;
+  const ourTeam = extractedReport ? splitTeams(extractedReport).our : null;
+  const rivalName = extractedReport ? splitTeams(extractedReport).rival.nombre : '';
+  const extractionWarnings = extractedReport?.fuente?.avisos ?? [];
+
+  // ¿El partido elegido corresponde al informe?
+  const selectedMatch = matchesList.find((m) => m.id === selectedMatchId);
+  const mismatch =
+    extractedReport && selectedMatch
+      ? [
+          selectedMatch.date !== extractedReport.fecha && `la fecha del partido (${selectedMatch.date}) no coincide con la del informe (${extractedReport.fecha})`,
+          selectedMatch.opponent && !sameOpponent(selectedMatch.opponent, rivalName) && `el rival del partido (${selectedMatch.opponent}) no coincide con el del informe (${rivalName})`,
+        ].filter(Boolean) as string[]
+      : [];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
@@ -187,7 +203,7 @@ export default function PaniniImportModal({
                 Selecciona o arrastra el archivo del partido
               </span>
               <span className="text-xs text-gray-400 mt-1">
-                Formatos compatibles: Panini Match Analysis (.pdf o .json)
+                PDF original de Panini Digital Match Analysis (o un .json exportado)
               </span>
               <input
                 type="file"
@@ -202,6 +218,13 @@ export default function PaniniImportModal({
               <div className="flex items-center justify-center gap-3 text-sm font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 p-4 rounded-2xl">
                 <Loader2 size={20} className="animate-spin" />
                 <span>Extrayendo campogramas, métricas y jugadores del informe...</span>
+              </div>
+            )}
+
+            {extractError && (
+              <div className="flex items-start gap-2 text-sm font-bold text-red-700 bg-red-50 border border-red-200 p-4 rounded-2xl">
+                <AlertTriangle size={18} className="shrink-0 mt-0.5" />
+                <span>No se pudo leer el informe: {extractError}</span>
               </div>
             )}
           </div>
@@ -230,6 +253,15 @@ export default function PaniniImportModal({
               </div>
             </div>
 
+            {extractionWarnings.length > 0 && (
+              <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 text-xs space-y-1">
+                <p className="font-extrabold flex items-center gap-1.5"><AlertTriangle size={14} /> Revisa estos puntos de la extracción:</p>
+                <ul className="list-disc pl-5 space-y-0.5">
+                  {extractionWarnings.map((w) => <li key={w}>{w}</li>)}
+                </ul>
+              </div>
+            )}
+
             {/* Match Association Selector */}
             <div className="bg-gray-50 dark:bg-neutral-800/60 p-4 rounded-2xl border border-gray-200 dark:border-white/10 space-y-3">
               <label className="font-extrabold text-xs text-gray-800 dark:text-gray-200 uppercase tracking-wider block flex items-center gap-1.5">
@@ -250,6 +282,13 @@ export default function PaniniImportModal({
                   ))}
                 </optgroup>
               </select>
+
+              {mismatch.length > 0 && (
+                <div className="flex items-start gap-2 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-bold">
+                  <AlertTriangle size={14} className="shrink-0 mt-0.5" />
+                  <span>¡Ojo! {mismatch.join(' y ')}. Comprueba que es el partido correcto antes de importar.</span>
+                </div>
+              )}
             </div>
 
             {/* Player Roster & Auto-Creation Preview */}
@@ -307,7 +346,7 @@ export default function PaniniImportModal({
             <div className="flex items-center justify-end gap-3 pt-2">
               <button
                 type="button"
-                onClick={() => setExtractedReport(null)}
+                onClick={() => { setExtractedReport(null); setSourceFile(null); }}
                 className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 text-xs font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-100"
               >
                 Cambiar Archivo
@@ -332,6 +371,13 @@ export default function PaniniImportModal({
               </button>
             </div>
 
+          </div>
+        )}
+
+        {syncResult && !syncResult.success && (
+          <div className="flex items-start gap-2 text-sm font-bold text-red-700 bg-red-50 border border-red-200 p-4 rounded-2xl">
+            <AlertTriangle size={18} className="shrink-0 mt-0.5" />
+            <span>No se pudo guardar el informe: {syncResult.message}</span>
           </div>
         )}
 
@@ -364,6 +410,12 @@ export default function PaniniImportModal({
                 </span>
               </div>
             </div>
+
+            {syncResult.warnings.length > 0 && (
+              <ul className="text-left text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-xl p-3 list-disc pl-6 space-y-0.5 max-w-md mx-auto">
+                {syncResult.warnings.map((w) => <li key={w}>{w}</li>)}
+              </ul>
+            )}
 
             <button
               onClick={onClose}
