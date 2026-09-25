@@ -955,93 +955,456 @@
           "medio_pct": 48,
           "ataque_pct": 22
         }
+      },
+      {
+        "dorsal": 30,
+        "nombre": "Nicola Caccia",
+        "anio_nacimiento": 2002,
+        "posicion": "Centrocampista",
+        "minutos": "96' (45+51)",
+        "balones_jugados": 35,
+        "posesion_tiempo": "1':40\"",
+        "pases_acertados": 21,
+        "acciones_utiles": 11,
+        "perdidas_efectivas": 8,
+        "recuperaciones_efectivas": "6/11",
+        "recuperaciones_aereas": 1,
+        "recuperaciones_area": 1,
+        "intercepciones": 6,
+        "anticipaciones_efectivas": "1/1",
+        "duelos_efectivos": "2/3",
+        "faltas_cometidas": 1,
+        "faltas_recibidas": 2,
+        "pases_largos_utiles": "1/2",
+        "regates_utiles": "2/3",
+        "centros_utiles": "1/2",
+        "asistencias_pases_clave": "0/1",
+        "tiros_a_puerta": "0/0",
+        "distribucion_1t": {
+          "defensa_pct": 20,
+          "medio_pct": 50,
+          "ataque_pct": 30
+        },
+        "distribucion_2t": {
+          "defensa_pct": 25,
+          "medio_pct": 45,
+          "ataque_pct": 30
+        }
+      },
+      {
+        "dorsal": 21,
+        "nombre": "Roberto Strechie",
+        "anio_nacimiento": 2000,
+        "posicion": "Centrocampista",
+        "minutos": "96' (45+51)",
+        "balones_jugados": 34,
+        "posesion_tiempo": "1':22\"",
+        "pases_acertados": 20,
+        "acciones_utiles": 5,
+        "perdidas_efectivas": 7,
+        "recuperaciones_efectivas": "5/9",
+        "recuperaciones_aereas": 2,
+        "recuperaciones_area": 0,
+        "intercepciones": 7,
+        "anticipaciones_efectivas": "0/1",
+        "duelos_efectivos": "1/3",
+        "faltas_cometidas": 1,
+        "faltas_recibidas": 1,
+        "pases_largos_utiles": "0/1",
+        "regates_utiles": "1/1",
+        "centros_utiles": "0/0",
+        "asistencias_pases_clave": "0/0",
+        "tiros_a_puerta": "0/0",
+        "distribucion_1t": {
+          "defensa_pct": 15,
+          "medio_pct": 60,
+          "ataque_pct": 25
+        },
+        "distribucion_2t": {
+          "defensa_pct": 20,
+          "medio_pct": 55,
+          "ataque_pct": 25
+        }
+      },
+      {
+        "dorsal": 28,
+        "nombre": "Nicola Danieli",
+        "anio_nacimiento": 1998,
+        "posicion": "Centrocampista",
+        "minutos": "96' (45+51)",
+        "balones_jugados": 31,
+        "posesion_tiempo": "1':15\"",
+        "pases_acertados": 19,
+        "acciones_utiles": 4,
+        "perdidas_efectivas": 6,
+        "recuperaciones_efectivas": "4/8",
+        "recuperaciones_aereas": 1,
+        "recuperaciones_area": 0,
+        "intercepciones": 6,
+        "anticipaciones_efectivas": "0/0",
+        "duelos_efectivos": "2/4",
+        "faltas_cometidas": 1,
+        "faltas_recibidas": 0,
+        "pases_largos_utiles": "1/2",
+        "regates_utiles": "0/1",
+        "centros_utiles": "0/0",
+        "asistencias_pases_clave": "0/1",
+        "tiros_a_puerta": "0/0",
+        "distribucion_1t": {
+          "defensa_pct": 25,
+          "medio_pct": 55,
+          "ataque_pct": 20
+        },
+        "distribucion_2t": {
+          "defensa_pct": 30,
+          "medio_pct": 50,
+          "ataque_pct": 20
+        }
+      },
+      {
+        "dorsal": 20,
+        "nombre": "Michele Rinaldi",
+        "anio_nacimiento": 2004,
+        "posicion": "Centrocampista",
+        "minutos": "96' (45+51)",
+        "balones_jugados": 33,
+        "posesion_tiempo": "1':28\"",
+        "pases_acertados": 18,
+        "acciones_utiles": 6,
+        "perdidas_efectivas": 8,
+        "recuperaciones_efectivas": "3/7",
+        "recuperaciones_aereas": 1,
+        "recuperaciones_area": 0,
+        "intercepciones": 4,
+        "anticipaciones_efectivas": "0/0",
+        "duelos_efectivos": "1/2",
+        "faltas_cometidas": 2,
+        "faltas_recibidas": 2,
+        "pases_largos_utiles": "0/0",
+        "regates_utiles": "1/2",
+        "centros_utiles": "1/1",
+        "asistencias_pases_clave": "1/2",
+        "tiros_a_puerta": "0/1",
+        "distribucion_1t": {
+          "defensa_pct": 10,
+          "medio_pct": 45,
+          "ataque_pct": 45
+        },
+        "distribucion_2t": {
+          "defensa_pct": 15,
+          "medio_pct": 50,
+          "ataque_pct": 35
+        }
+      },
+      {
+        "dorsal": 7,
+        "nombre": "Riccardo Ravasi",
+        "anio_nacimiento": 1994,
+        "posicion": "Delantero",
+        "minutos": "54' (45+9)",
+        "balones_jugados": 24,
+        "posesion_tiempo": "0':58\"",
+        "pases_acertados": 12,
+        "acciones_utiles": 5,
+        "perdidas_efectivas": 9,
+        "recuperaciones_efectivas": "2/4",
+        "recuperaciones_aereas": 2,
+        "recuperaciones_area": 0,
+        "intercepciones": 1,
+        "anticipaciones_efectivas": "0/0",
+        "duelos_efectivos": "1/3",
+        "faltas_cometidas": 1,
+        "faltas_recibidas": 1,
+        "pases_largos_utiles": "0/0",
+        "regates_utiles": "1/1",
+        "centros_utiles": "0/0",
+        "asistencias_pases_clave": "1/1",
+        "tiros_a_puerta": "1/1",
+        "distribucion_1t": {
+          "defensa_pct": 5,
+          "medio_pct": 35,
+          "ataque_pct": 60
+        },
+        "distribucion_2t": {
+          "defensa_pct": 0,
+          "medio_pct": 30,
+          "ataque_pct": 70
+        }
+      },
+      {
+        "dorsal": 14,
+        "nombre": "Marco D'Amuri",
+        "anio_nacimiento": 1999,
+        "posicion": "Delantero",
+        "minutos": "62' (45+17)",
+        "balones_jugados": 26,
+        "posesion_tiempo": "1':05\"",
+        "pases_acertados": 14,
+        "acciones_utiles": 4,
+        "perdidas_efectivas": 10,
+        "recuperaciones_efectivas": "1/3",
+        "recuperaciones_aereas": 3,
+        "recuperaciones_area": 0,
+        "intercepciones": 2,
+        "anticipaciones_efectivas": "0/0",
+        "duelos_efectivos": "2/4",
+        "faltas_cometidas": 2,
+        "faltas_recibidas": 1,
+        "pases_largos_utiles": "0/0",
+        "regates_utiles": "0/1",
+        "centros_utiles": "0/0",
+        "asistencias_pases_clave": "0/0",
+        "tiros_a_puerta": "1/2",
+        "distribucion_1t": {
+          "defensa_pct": 8,
+          "medio_pct": 32,
+          "ataque_pct": 60
+        },
+        "distribucion_2t": {
+          "defensa_pct": 5,
+          "medio_pct": 25,
+          "ataque_pct": 70
+        }
+      },
+      {
+        "dorsal": 27,
+        "nombre": "Davide Benzoni",
+        "anio_nacimiento": 2002,
+        "posicion": "Delantero",
+        "minutos": "42' (0+42)",
+        "balones_jugados": 19,
+        "posesion_tiempo": "0':49\"",
+        "pases_acertados": 10,
+        "acciones_utiles": 6,
+        "perdidas_efectivas": 5,
+        "recuperaciones_efectivas": "2/3",
+        "recuperaciones_aereas": 1,
+        "recuperaciones_area": 0,
+        "intercepciones": 1,
+        "anticipaciones_efectivas": "0/0",
+        "duelos_efectivos": "1/2",
+        "faltas_cometidas": 0,
+        "faltas_recibidas": 1,
+        "pases_largos_utiles": "0/0",
+        "regates_utiles": "1/2",
+        "centros_utiles": "0/0",
+        "asistencias_pases_clave": "0/0",
+        "tiros_a_puerta": "1/1",
+        "distribucion_1t": {
+          "defensa_pct": 0,
+          "medio_pct": 0,
+          "ataque_pct": 0
+        },
+        "distribucion_2t": {
+          "defensa_pct": 10,
+          "medio_pct": 30,
+          "ataque_pct": 60
+        }
+      },
+      {
+        "dorsal": 11,
+        "nombre": "Giorgio Siani",
+        "anio_nacimiento": 1997,
+        "posicion": "Delantero",
+        "minutos": "42' (0+42)",
+        "balones_jugados": 21,
+        "posesion_tiempo": "0':55\"",
+        "pases_acertados": 11,
+        "acciones_utiles": 7,
+        "perdidas_efectivas": 6,
+        "recuperaciones_efectivas": "3/5",
+        "recuperaciones_aereas": 0,
+        "recuperaciones_area": 0,
+        "intercepciones": 3,
+        "anticipaciones_efectivas": "0/0",
+        "duelos_efectivos": "1/1",
+        "faltas_cometidas": 1,
+        "faltas_recibidas": 1,
+        "pases_largos_utiles": "0/0",
+        "regates_utiles": "2/3",
+        "centros_utiles": "1/1",
+        "asistencias_pases_clave": "1/2",
+        "tiros_a_puerta": "0/1",
+        "distribucion_1t": {
+          "defensa_pct": 0,
+          "medio_pct": 0,
+          "ataque_pct": 0
+        },
+        "distribucion_2t": {
+          "defensa_pct": 5,
+          "medio_pct": 35,
+          "ataque_pct": 60
+        }
+      },
+      {
+        "dorsal": 2,
+        "nombre": "Lorenzo Zambelli",
+        "anio_nacimiento": 2006,
+        "posicion": "Defensa",
+        "minutos": "34' (0+34)",
+        "balones_jugados": 16,
+        "posesion_tiempo": "0':41\"",
+        "pases_acertados": 11,
+        "acciones_utiles": 2,
+        "perdidas_efectivas": 3,
+        "recuperaciones_efectivas": "3/5",
+        "recuperaciones_aereas": 1,
+        "recuperaciones_area": 1,
+        "intercepciones": 4,
+        "anticipaciones_efectivas": "0/0",
+        "duelos_efectivos": "1/2",
+        "faltas_cometidas": 0,
+        "faltas_recibidas": 0,
+        "pases_largos_utiles": "0/0",
+        "regates_utiles": "0/0",
+        "centros_utiles": "0/0",
+        "asistencias_pases_clave": "0/0",
+        "tiros_a_puerta": "0/0",
+        "distribucion_1t": {
+          "defensa_pct": 0,
+          "medio_pct": 0,
+          "ataque_pct": 0
+        },
+        "distribucion_2t": {
+          "defensa_pct": 40,
+          "medio_pct": 50,
+          "ataque_pct": 10
+        }
+      },
+      {
+        "dorsal": 6,
+        "nombre": "Gianpietro Nikolli",
+        "anio_nacimiento": 2005,
+        "posicion": "Centrocampista",
+        "minutos": "34' (0+34)",
+        "balones_jugados": 14,
+        "posesion_tiempo": "0':35\"",
+        "pases_acertados": 9,
+        "acciones_utiles": 2,
+        "perdidas_efectivas": 3,
+        "recuperaciones_efectivas": "2/4",
+        "recuperaciones_aereas": 0,
+        "recuperaciones_area": 0,
+        "intercepciones": 3,
+        "anticipaciones_efectivas": "0/0",
+        "duelos_efectivos": "1/1",
+        "faltas_cometidas": 1,
+        "faltas_recibidas": 0,
+        "pases_largos_utiles": "0/0",
+        "regates_utiles": "0/0",
+        "centros_utiles": "0/0",
+        "asistencias_pases_clave": "0/0",
+        "tiros_a_puerta": "0/0",
+        "distribucion_1t": {
+          "defensa_pct": 0,
+          "medio_pct": 0,
+          "ataque_pct": 0
+        },
+        "distribucion_2t": {
+          "defensa_pct": 20,
+          "medio_pct": 60,
+          "ataque_pct": 20
+        }
+      },
+      {
+        "dorsal": 9,
+        "nombre": "Giuseppe Mouisse",
+        "anio_nacimiento": 2006,
+        "posicion": "Delantero",
+        "minutos": "6' (0+6)",
+        "balones_jugados": 4,
+        "posesion_tiempo": "0':10\"",
+        "pases_acertados": 2,
+        "acciones_utiles": 1,
+        "perdidas_efectivas": 1,
+        "recuperaciones_efectivas": "0/1",
+        "recuperaciones_aereas": 0,
+        "recuperaciones_area": 0,
+        "intercepciones": 0,
+        "anticipaciones_efectivas": "0/0",
+        "duelos_efectivos": "0/0",
+        "faltas_cometidas": 0,
+        "faltas_recibidas": 0,
+        "pases_largos_utiles": "0/0",
+        "regates_utiles": "0/0",
+        "centros_utiles": "0/0",
+        "asistencias_pases_clave": "0/0",
+        "tiros_a_puerta": "0/0",
+        "distribucion_1t": {
+          "defensa_pct": 0,
+          "medio_pct": 0,
+          "ataque_pct": 0
+        },
+        "distribucion_2t": {
+          "defensa_pct": 0,
+          "medio_pct": 25,
+          "ataque_pct": 75
+        }
       }
     ],
     "rankings_top": {
       "Balones jugados": [
-        {
-          "dorsal": 8,
-          "nombre": "Riccardo Serena",
-          "valor": 55
-        },
-        {
-          "dorsal": 25,
-          "nombre": "Davide Martinelli",
-          "valor": 50
-        },
-        {
-          "dorsal": 4,
-          "nombre": "Riccardo Nava",
-          "valor": 41
-        }
+        { "dorsal": 8, "nombre": "Riccardo Serena", "valor": 55 },
+        { "dorsal": 25, "nombre": "Davide Martinelli", "valor": 50 },
+        { "dorsal": 4, "nombre": "Riccardo Nava", "valor": 41 },
+        { "dorsal": 24, "nombre": "Giorgio Piacentini", "valor": 36 },
+        { "dorsal": 30, "nombre": "Nicola Caccia", "valor": 35 }
       ],
       "Pases acertados": [
-        {
-          "dorsal": 25,
-          "nombre": "Davide Martinelli",
-          "valor": 36
-        },
-        {
-          "dorsal": 8,
-          "nombre": "Riccardo Serena",
-          "valor": 31
-        },
-        {
-          "dorsal": 4,
-          "nombre": "Riccardo Nava",
-          "valor": 26
-        }
+        { "dorsal": 25, "nombre": "Davide Martinelli", "valor": 36 },
+        { "dorsal": 8, "nombre": "Riccardo Serena", "valor": 31 },
+        { "dorsal": 4, "nombre": "Riccardo Nava", "valor": 26 },
+        { "dorsal": 24, "nombre": "Giorgio Piacentini", "valor": 23 },
+        { "dorsal": 30, "nombre": "Nicola Caccia", "valor": 21 }
       ],
       "Acciones útiles": [
-        {
-          "dorsal": 35,
-          "nombre": "Daniel Offredi",
-          "valor": 13
-        },
-        {
-          "dorsal": 30,
-          "nombre": "Nicola Caccia",
-          "valor": 11
-        },
-        {
-          "dorsal": 8,
-          "nombre": "Riccardo Serena",
-          "valor": 10
-        }
+        { "dorsal": 35, "nombre": "Daniel Offredi", "valor": 13 },
+        { "dorsal": 30, "nombre": "Nicola Caccia", "valor": 11 },
+        { "dorsal": 8, "nombre": "Riccardo Serena", "valor": 10 },
+        { "dorsal": 11, "nombre": "Giorgio Siani", "valor": 7 },
+        { "dorsal": 25, "nombre": "Davide Martinelli", "valor": 6 }
       ],
-      "Recuperaciones": [
-        {
-          "dorsal": 8,
-          "nombre": "Riccardo Serena",
-          "valor": 25
-        },
-        {
-          "dorsal": 4,
-          "nombre": "Riccardo Nava",
-          "valor": 19
-        },
-        {
-          "dorsal": 28,
-          "nombre": "Michele Rinaldi",
-          "valor": 15
-        }
+      "Balones perdidos": [
+        { "dorsal": 8, "nombre": "Riccardo Serena", "valor": 22 },
+        { "dorsal": 20, "nombre": "Roberto Strechie", "valor": 16 },
+        { "dorsal": 27, "nombre": "Davide Benzoni", "valor": 15 },
+        { "dorsal": 4, "nombre": "Riccardo Nava", "valor": 15 },
+        { "dorsal": 7, "nombre": "Riccardo Ravasi", "valor": 15 }
+      ],
+      "Balones recuperados": [
+        { "dorsal": 8, "nombre": "Riccardo Serena", "valor": 25 },
+        { "dorsal": 4, "nombre": "Riccardo Nava", "valor": 19 },
+        { "dorsal": 28, "nombre": "Michele Rinaldi", "valor": 15 },
+        { "dorsal": 24, "nombre": "Giorgio Piacentini", "valor": 13 },
+        { "dorsal": 25, "nombre": "Davide Martinelli", "valor": 12 }
+      ],
+      "Faltas recibidas": [
+        { "dorsal": 7, "nombre": "Riccardo Ravasi", "valor": 4 },
+        { "dorsal": 19, "nombre": "Gianpietro Nikolli", "valor": 2 },
+        { "dorsal": 28, "nombre": "Michele Rinaldi", "valor": 2 },
+        { "dorsal": 25, "nombre": "Davide Martinelli", "valor": 1 },
+        { "dorsal": 24, "nombre": "Giorgio Piacentini", "valor": 1 }
+      ],
+      "Faltas cometidas": [
+        { "dorsal": 4, "nombre": "Riccardo Nava", "valor": 3 },
+        { "dorsal": 19, "nombre": "Gianpietro Nikolli", "valor": 2 },
+        { "dorsal": 7, "nombre": "Riccardo Ravasi", "valor": 2 },
+        { "dorsal": 8, "nombre": "Riccardo Serena", "valor": 2 },
+        { "dorsal": 27, "nombre": "Davide Benzoni", "valor": 1 }
+      ],
+      "Asistencias / Claves": [
+        { "dorsal": 8, "nombre": "Riccardo Serena", "valor": 4 },
+        { "dorsal": 25, "nombre": "Davide Martinelli", "valor": 3 },
+        { "dorsal": 21, "nombre": "Nicola Danieli", "valor": 2 },
+        { "dorsal": 27, "nombre": "Davide Benzoni", "valor": 1 },
+        { "dorsal": 30, "nombre": "Nicola Caccia", "valor": 1 }
       ],
       "Tiros": [
-        {
-          "dorsal": 11,
-          "nombre": "Giorgio Siani",
-          "valor": 5
-        },
-        {
-          "dorsal": 7,
-          "nombre": "Riccardo Ravasi",
-          "valor": 3
-        },
-        {
-          "dorsal": 27,
-          "nombre": "Davide Benzoni",
-          "valor": 2
-        }
+        { "dorsal": 11, "nombre": "Giorgio Siani", "valor": 5 },
+        { "dorsal": 7, "nombre": "Riccardo Ravasi", "valor": 3 },
+        { "dorsal": 27, "nombre": "Davide Benzoni", "valor": 2 },
+        { "dorsal": 21, "nombre": "Nicola Danieli", "valor": 2 },
+        { "dorsal": 19, "nombre": "Gianpietro Nikolli", "valor": 2 }
       ]
     }
   },
@@ -2081,93 +2444,211 @@
           "medio_pct": 41,
           "ataque_pct": 6
         }
+      },
+      {
+        "dorsal": 14,
+        "nombre": "Federico Colombo",
+        "anio_nacimiento": 2007,
+        "posicion": "Defensa",
+        "minutos": "25' (0+25)",
+        "balones_jugados": 19,
+        "posesion_tiempo": "0':48\"",
+        "pases_acertados": 17,
+        "acciones_utiles": 3,
+        "perdidas_efectivas": 2,
+        "recuperaciones_efectivas": "2/4",
+        "recuperaciones_aereas": 1,
+        "recuperaciones_area": 1,
+        "intercepciones": 2,
+        "anticipaciones_efectivas": "0/0",
+        "duelos_efectivos": "1/1",
+        "faltas_cometidas": 0,
+        "faltas_recibidas": 0,
+        "pases_largos_utiles": "0/0",
+        "regates_utiles": "0/0",
+        "centros_utiles": "0/0",
+        "asistencias_pases_clave": "0/0",
+        "tiros_a_puerta": "0/0",
+        "distribucion_1t": {
+          "defensa_pct": 0,
+          "medio_pct": 0,
+          "ataque_pct": 0
+        },
+        "distribucion_2t": {
+          "defensa_pct": 60,
+          "medio_pct": 40,
+          "ataque_pct": 0
+        }
+      },
+      {
+        "dorsal": 15,
+        "nombre": "Matteo Pagliei",
+        "anio_nacimiento": 2008,
+        "posicion": "Centrocampista",
+        "minutos": "25' (0+25)",
+        "balones_jugados": 16,
+        "posesion_tiempo": "0':40\"",
+        "pases_acertados": 8,
+        "acciones_utiles": 2,
+        "perdidas_efectivas": 4,
+        "recuperaciones_efectivas": "3/5",
+        "recuperaciones_aereas": 0,
+        "recuperaciones_area": 0,
+        "intercepciones": 3,
+        "anticipaciones_efectivas": "0/0",
+        "duelos_efectivos": "1/2",
+        "faltas_cometidas": 1,
+        "faltas_recibidas": 0,
+        "pases_largos_utiles": "0/0",
+        "regates_utiles": "0/0",
+        "centros_utiles": "0/0",
+        "asistencias_pases_clave": "0/0",
+        "tiros_a_puerta": "0/0",
+        "distribucion_1t": {
+          "defensa_pct": 0,
+          "medio_pct": 0,
+          "ataque_pct": 0
+        },
+        "distribucion_2t": {
+          "defensa_pct": 20,
+          "medio_pct": 60,
+          "ataque_pct": 20
+        }
+      },
+      {
+        "dorsal": 16,
+        "nombre": "Nirash Perera",
+        "anio_nacimiento": 2007,
+        "posicion": "Defensa",
+        "minutos": "18' (0+18)",
+        "balones_jugados": 12,
+        "posesion_tiempo": "0':31\"",
+        "pases_acertados": 8,
+        "acciones_utiles": 1,
+        "perdidas_efectivas": 2,
+        "recuperaciones_efectivas": "2/3",
+        "recuperaciones_aereas": 1,
+        "recuperaciones_area": 1,
+        "intercepciones": 2,
+        "anticipaciones_efectivas": "0/0",
+        "duelos_efectivos": "0/1",
+        "faltas_cometidas": 0,
+        "faltas_recibidas": 0,
+        "pases_largos_utiles": "0/0",
+        "regates_utiles": "0/0",
+        "centros_utiles": "0/0",
+        "asistencias_pases_clave": "0/0",
+        "tiros_a_puerta": "0/0",
+        "distribucion_1t": {
+          "defensa_pct": 0,
+          "medio_pct": 0,
+          "ataque_pct": 0
+        },
+        "distribucion_2t": {
+          "defensa_pct": 50,
+          "medio_pct": 50,
+          "ataque_pct": 0
+        }
+      },
+      {
+        "dorsal": 18,
+        "nombre": "Luca Menon",
+        "anio_nacimiento": 2008,
+        "posicion": "Centrocampista",
+        "minutos": "18' (0+18)",
+        "balones_jugados": 14,
+        "posesion_tiempo": "0':35\"",
+        "pases_acertados": 5,
+        "acciones_utiles": 2,
+        "perdidas_efectivas": 3,
+        "recuperaciones_efectivas": "2/4",
+        "recuperaciones_aereas": 0,
+        "recuperaciones_area": 0,
+        "intercepciones": 2,
+        "anticipaciones_efectivas": "0/0",
+        "duelos_efectivos": "1/2",
+        "faltas_cometidas": 1,
+        "faltas_recibidas": 0,
+        "pases_largos_utiles": "0/0",
+        "regates_utiles": "0/0",
+        "centros_utiles": "0/0",
+        "asistencias_pases_clave": "0/0",
+        "tiros_a_puerta": "0/1",
+        "distribucion_1t": {
+          "defensa_pct": 0,
+          "medio_pct": 0,
+          "ataque_pct": 0
+        },
+        "distribucion_2t": {
+          "defensa_pct": 10,
+          "medio_pct": 60,
+          "ataque_pct": 30
+        }
       }
     ],
     "rankings_top": {
       "Balones jugados": [
-        {
-          "dorsal": 8,
-          "nombre": "Fabio Pandolfi",
-          "valor": 71
-        },
-        {
-          "dorsal": 5,
-          "nombre": "Valeri Vladimirov",
-          "valor": 61
-        },
-        {
-          "dorsal": 1,
-          "nombre": "Matteo Pittarella",
-          "valor": 55
-        }
+        { "dorsal": 8, "nombre": "Fabio Pandolfi", "valor": 71 },
+        { "dorsal": 5, "nombre": "Valeri Vladimirov", "valor": 61 },
+        { "dorsal": 1, "nombre": "Matteo Pittarella", "valor": 55 },
+        { "dorsal": 6, "nombre": "El Hadji Malick Cissé", "valor": 53 },
+        { "dorsal": 11, "nombre": "Lorenzo Ossola", "valor": 48 }
       ],
       "Pases acertados": [
-        {
-          "dorsal": 1,
-          "nombre": "Matteo Pittarella",
-          "valor": 47
-        },
-        {
-          "dorsal": 5,
-          "nombre": "Valeri Vladimirov",
-          "valor": 44
-        },
-        {
-          "dorsal": 8,
-          "nombre": "Fabio Pandolfi",
-          "valor": 43
-        }
+        { "dorsal": 1, "nombre": "Matteo Pittarella", "valor": 47 },
+        { "dorsal": 5, "nombre": "Valeri Vladimirov", "valor": 44 },
+        { "dorsal": 8, "nombre": "Fabio Pandolfi", "valor": 43 },
+        { "dorsal": 6, "nombre": "El Hadji Malick Cissé", "valor": 33 },
+        { "dorsal": 4, "nombre": "Damir Zukic", "valor": 31 }
       ],
       "Acciones útiles": [
-        {
-          "dorsal": 8,
-          "nombre": "Fabio Pandolfi",
-          "valor": 25
-        },
-        {
-          "dorsal": 11,
-          "nombre": "Lorenzo Ossola",
-          "valor": 17
-        },
-        {
-          "dorsal": 1,
-          "nombre": "Matteo Pittarella",
-          "valor": 12
-        }
+        { "dorsal": 8, "nombre": "Fabio Pandolfi", "valor": 25 },
+        { "dorsal": 11, "nombre": "Lorenzo Ossola", "valor": 17 },
+        { "dorsal": 1, "nombre": "Matteo Pittarella", "valor": 12 },
+        { "dorsal": 4, "nombre": "Damir Zukic", "valor": 12 },
+        { "dorsal": 6, "nombre": "El Hadji Malick Cissé", "valor": 9 }
       ],
-      "Recuperaciones": [
-        {
-          "dorsal": 1,
-          "nombre": "Matteo Pittarella",
-          "valor": 24
-        },
-        {
-          "dorsal": 6,
-          "nombre": "El Hadji Malick Cissé",
-          "valor": 21
-        },
-        {
-          "dorsal": 4,
-          "nombre": "Damir Zukic",
-          "valor": 18
-        }
+      "Balones perdidos": [
+        { "dorsal": 11, "nombre": "Lorenzo Ossola", "valor": 21 },
+        { "dorsal": 9, "nombre": "Levis Asanji", "valor": 17 },
+        { "dorsal": 8, "nombre": "Fabio Pandolfi", "valor": 13 },
+        { "dorsal": 2, "nombre": "Mattia Cappelletti", "valor": 13 },
+        { "dorsal": 3, "nombre": "Emanuele Borsani", "valor": 10 }
+      ],
+      "Balones recuperados": [
+        { "dorsal": 1, "nombre": "Matteo Pittarella", "valor": 24 },
+        { "dorsal": 6, "nombre": "El Hadji Malick Cissé", "valor": 21 },
+        { "dorsal": 4, "nombre": "Damir Zukic", "valor": 18 },
+        { "dorsal": 8, "nombre": "Fabio Pandolfi", "valor": 17 },
+        { "dorsal": 3, "nombre": "Emanuele Borsani", "valor": 15 }
+      ],
+      "Faltas recibidas": [
+        { "dorsal": 8, "nombre": "Fabio Pandolfi", "valor": 3 },
+        { "dorsal": 7, "nombre": "Emanuele Sala", "valor": 2 },
+        { "dorsal": 2, "nombre": "Mattia Cappelletti", "valor": 1 },
+        { "dorsal": 5, "nombre": "Valeri Vladimirov", "valor": 1 },
+        { "dorsal": 10, "nombre": "Silvano Vos", "valor": 1 }
+      ],
+      "Faltas cometidas": [
+        { "dorsal": 5, "nombre": "Valeri Vladimirov", "valor": 2 },
+        { "dorsal": 6, "nombre": "El Hadji Malick Cissé", "valor": 2 },
+        { "dorsal": 9, "nombre": "Levis Asanji", "valor": 2 },
+        { "dorsal": 2, "nombre": "Mattia Cappelletti", "valor": 1 },
+        { "dorsal": 3, "nombre": "Emanuele Borsani", "valor": 1 }
+      ],
+      "Asistencias / Claves": [
+        { "dorsal": 8, "nombre": "Fabio Pandolfi", "valor": 2 },
+        { "dorsal": 11, "nombre": "Lorenzo Ossola", "valor": 2 },
+        { "dorsal": 7, "nombre": "Emanuele Sala", "valor": 1 },
+        { "dorsal": 2, "nombre": "Mattia Cappelletti", "valor": 1 },
+        { "dorsal": 10, "nombre": "Silvano Vos", "valor": 1 }
       ],
       "Tiros": [
-        {
-          "dorsal": 11,
-          "nombre": "Lorenzo Ossola",
-          "valor": 2
-        },
-        {
-          "dorsal": 8,
-          "nombre": "Fabio Pandolfi",
-          "valor": 2
-        },
-        {
-          "dorsal": 15,
-          "nombre": "Nirash Perera",
-          "valor": 1
-        }
+        { "dorsal": 8, "nombre": "Fabio Pandolfi", "valor": 2 },
+        { "dorsal": 11, "nombre": "Lorenzo Ossola", "valor": 2 },
+        { "dorsal": 7, "nombre": "Emanuele Sala", "valor": 1 },
+        { "dorsal": 10, "nombre": "Silvano Vos", "valor": 1 },
+        { "dorsal": 18, "nombre": "Luca Menon", "valor": 1 }
       ]
     }
   }

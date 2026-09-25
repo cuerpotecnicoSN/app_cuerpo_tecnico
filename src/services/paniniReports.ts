@@ -394,35 +394,140 @@ export async function extractPaniniReportFromFile(file: File): Promise<PaniniMat
       const { GoogleGenAI } = await import('@google/genai');
       const ai = new GoogleGenAI({ apiKey });
 
-      const prompt = `Actúa como el extractor oficial de informes Panini Digital Match Analysis. 
-Extrae exhaustivamente todos los datos del PDF adjunto, traduce todos los términos del italiano al español profesional del fútbol (ej. Possesso palla -> Posesión de balón, Baricentro -> Altura media del bloque, Giocate utili -> Acciones útiles, Passaggi riusciti -> Pases completados, etc.) y genera la estructura JSON requerida.
+      const prompt = `Actúa como el extractor oficial e inteligente de informes Panini Digital Match Analysis de fútbol profesional.
+Extrae minuciosamente todos los datos del PDF adjunto estructurando toda la información en JSON y traduciendo absolutamente todos los términos técnicos del italiano al español estándar del fútbol profesional.
 
-Estructura requerida:
+DIRECTRICES METODOLÓGICAS DEL DOCUMENTO PANINI DIGITAL MATCH ANALYSIS:
+1. IDENTIFICACIÓN DE EQUIPOS: 
+   - Rojo = Equipo Local (Home).
+   - Azul Oscuro = Equipo Visitante (Away).
+2. COVERTURA / PORTADA (p. 1): Información principal, resultado, IVS (Índice de Valoración / IMS), xPG (Goles Esperados), tiempos (total y efectivo) y timeline cronológico de eventos (goles, tarjetas, sustituciones).
+3. ALINEACIONES Y DISPOSICIONES TÁCTICAS (p. 2): Formaciones titulares y suplentes con minutos, tarjetas y sustituciones. En el campograma táctico, el jugador se sitúa en su PUNTO MEDIO (promedio de todos los puntos donde recibió el balón).
+4. SCORE / ESTADÍSTICAS GENERALES (p. 3): 1T, 2T y Total del partido:
+   - Balones Jugados (Palle Giocate): Cada posesión de balón de un jugador (múltiples toques en una acción = 1 balón jugado).
+   - % Pases Acertados (Passaggi Riusciti): Relación entre pases completados y balones jugados.
+   - Jugadas / Acciones Útiles (Giocate Utili): Gestos técnicos que eliminan a un rival de la fase defensiva.
+   - Baricentro / Altura Media: Punto medio entre todas las zonas donde el equipo tocó balón.
+   - Supremacía Territorial: Tiempo total de posesión de balón en campo contrario.
+   - Pressing / Altura de Recuperación: Punto medio donde el equipo recuperó el balón.
+   - % Protección de Área: Índice de capacidad para defender la propia portería.
+   - % Ataque a Portería: Índice de capacidad para amenazar y penetrar la portería rival.
+5. DISPOSICIÓN TÁCTICA Y DENSIDAD (pp. 4-5): Longitud X y Amplitud Y del bloque táctico en metros (sin contar portero), densidades perimetrales en 3 zonas X/Y y matriz de densidad 9x7.
+6. COBERTURA TERRITORIAL - REGATES Y CENTROS (pp. 6-7): Ambos equipos orientados de izquierda a derecha (hacia ataque), con distribución porcentual en 3 zonas en X (Defensa, Medio, Ataque) y 3 zonas en Y (Izq, Centro, Der).
+7. FINALIZACIÓN Y ABP (pp. 8-9): Cronología de tiros en tramos de 15 minutos (0-15', 15-30', 30-45', 45-60', 60-75', 75-90'+), desglose de cómo, dónde, tipo de remate y éxito, mapa de tiros (1T círculos, 2T cuadrados, tono claro si es ABP), y portería con goles y secuencia.
+8. FLUJO DE PASES (pp. 10-11): Red de pases y matriz cruzada (DA \\ A) con volumen de combinaciones y precisión por jugador.
+9. ZOOM JUGADORES Y RANKINGS (pp. 12-19): Fichas individuales con métricas específicas de rol, 2 campogramas verticales (1T y 2T) orientados hacia arriba y rankings Top 5 por equipo en las 9 categorías principales.
+10. NOTAS Y METODOLOGÍA (p. 20).
+
+Devuelve EXCLUSIVAMENTE un JSON válido con esta estructura:
 {
   "fecha": "YYYY-MM-DD",
-  "competicion": "Serie D 2026-27",
-  "jornada": "Incontro della 04^ giornata",
+  "competicion": "Nombre de la competición",
+  "jornada": "Jornada del partido",
   "estadio": "Nombre del estadio",
   "arbitro": "Nombre del árbitro",
   "duracion_total": "96' (45+51)",
   "tiempo_efectivo": "48':31''",
   "goleadores": [{"minuto": "65'", "jugador": "Nombre", "equipo": "home" | "away"}],
-  "timeline_eventos": [{"minute": "30'", "type": "yellow_card"|"goal"|"substitution_in", "team": "home"|"away", "player": "Nombre"}],
+  "timeline_eventos": [{"minute": "30'", "type": "yellow_card"|"goal"|"substitution_in"|"substitution_out"|"red_card", "team": "home"|"away", "player": "Nombre"}],
   "equipo_local": {
-    "nombre": "Villa Valle",
+    "nombre": "Nombre Local",
     "goles": 1,
     "entrenador": "Nombre Entrenador",
     "xg": 3.19,
     "ims": 57,
-    "alineacion": [{"dorsal": 1, "nombre": "Nombre", "posicion": "P"|"D"|"C"|"A", "posicion_desc": "Portero", "minutos_jugados": 96, "es_titular": true}],
+    "alineacion": [{"dorsal": 1, "nombre": "Nombre", "posicion": "P"|"D"|"C"|"A", "posicion_desc": "Portero", "minutos_jugados": 90, "es_titular": true, "x": 15, "y": 50}],
+    "suplentes_no_utilizados": [{"dorsal": 12, "nombre": "Nombre", "posicion": "P"}],
     "estadisticas": {
-      "total_partido": { "posesion_tiempo": "22':25''", "posesion_pct": 46, "balones_jugados_total": 457, "pases_acertados_total": 246, "precision_pases_pct": 56.8, "acciones_utiles_total": 78, "baricentro_altura_m": 63.4, "altura_pressing_m": 53.7, ... }
+      "primer_tiempo": { ... },
+      "segundo_tiempo": { ... },
+      "total_partido": { ... }
     },
     "bloque_tactico_1t": { "sistema": "1-3-4-1-2", "longitud_m": 22.8, "anchura_m": 37.7, "densidad_defensa_pct": 45, "densidad_medio_pct": 35, "densidad_ataque_pct": 20, "carril_izquierdo_pct": 32, "carril_central_pct": 38, "carril_derecho_pct": 30 },
+    "bloque_tactico_2t": { ... },
     "cobertura_recuperaciones": { "defensa_pct": 45, "medio_pct": 35, "ataque_pct": 20, "izquierda_pct": 30, "centro_pct": 40, "derecha_pct": 30 },
-    "finalizacion": { "tiros_totales": 12, "tiros_a_puerta": 8, "goles": 1, ... },
-    "matriz_pases": { "jugadores": [{"dorsal": 1, "nombre": "Nombre", "x": 50, "y": 10}], "matriz": { ... }, "totales_dados": { ... }, "totales_recibidos": { ... }, "precision_individual_pct": { ... }, "total_equipo_pases": 246, "precision_equipo_pct": 56.8 },
-    "jugadores_stats": [{"dorsal": 1, "nombre": "Nombre", "anio_nacimiento": 2004, "posicion": "Portero", "minutos": "96'", "balones_jugados": 35, "pases_acertados": 24, ...}]
+    "cobertura_faltas": { ... },
+    "cobertura_acciones_utiles": { ... },
+    "cobertura_pases_largos": { ... },
+    "cobertura_regates": { ... },
+    "cobertura_centros": { ... },
+    "finalizacion": {
+      "tiros_totales": 12,
+      "tiros_a_puerta": 8,
+      "goles": 1,
+      "ocasiones": 7,
+      "llegada_jugada": 10,
+      "llegada_abp_indirecto": 2,
+      "llegada_abp_directo": 0,
+      "zona_area_pequena": 3,
+      "zona_area_penalti": 6,
+      "zona_fuera_area": 3,
+      "remate_pie_raso": 8,
+      "remate_acrobacia": 1,
+      "remate_cabeza": 3,
+      "resultado_a_puerta": 8,
+      "resultado_bloqueado": 2,
+      "resultado_fuera": 2,
+      "abp_faltas_derecha": 2,
+      "abp_faltas_centrales": 1,
+      "abp_faltas_izquierda": 3,
+      "abp_corners_derecha": 4,
+      "abp_corners_izquierda": 2,
+      "abp_saques_banda_derecha": 12,
+      "abp_saques_banda_izquierda": 8,
+      "remates_detalle": [
+        {"id": "r1", "dorsal": 7, "jugador": "Jugador", "minuto": "14'", "resultado": "gol", "tipo": "pie_raso", "origen": "jugada", "zona": "area_penalti", "x": 60, "y": 80, "xg": 0.35}
+      ]
+    },
+    "matriz_pases": {
+      "jugadores": [{"dorsal": 1, "nombre": "Nombre", "x": 15, "y": 50}],
+      "matriz": {},
+      "totales_dados": {},
+      "totales_recibidos": {},
+      "precision_individual_pct": {},
+      "total_equipo_pases": 246,
+      "precision_equipo_pct": 56.8
+    },
+    "jugadores_stats": [
+      {
+        "dorsal": 1,
+        "nombre": "Nombre",
+        "anio_nacimiento": 2004,
+        "posicion": "Portero",
+        "minutos": "96'",
+        "balones_jugados": 35,
+        "posesion_tiempo": "02':15''",
+        "pases_acertados": 24,
+        "acciones_utiles": 18,
+        "perdidas_efectivas": 2,
+        "recuperaciones_efectivas": "6/4",
+        "recuperaciones_aereas": 2,
+        "recuperaciones_area": 4,
+        "intercepciones": 1,
+        "anticipaciones_efectivas": "2/2",
+        "duelos_efectivos": "3/2",
+        "faltas_cometidas": 0,
+        "faltas_recibidas": 1,
+        "pases_largos_utiles": "4/3",
+        "regates_utiles": "0/0",
+        "centros_utiles": "0/0",
+        "asistencias_pases_clave": "0/0",
+        "tiros_a_puerta": "0/0",
+        "distribucion_1t": {"defensa_pct": 90, "medio_pct": 10, "ataque_pct": 0, "izq_pct": 20, "cen_pct": 60, "dcha_pct": 20},
+        "distribucion_2t": {"defensa_pct": 85, "medio_pct": 15, "ataque_pct": 0, "izq_pct": 25, "cen_pct": 55, "dcha_pct": 20}
+      }
+    ],
+    "rankings_top": {
+      "balones_jugados": [{"dorsal": 8, "nombre": "Nombre", "valor": 65}],
+      "pases_completados": [{"dorsal": 8, "nombre": "Nombre", "valor": 45}],
+      "acciones_utiles": [{"dorsal": 20, "nombre": "Nombre", "valor": 28}],
+      "pases_largos": [{"dorsal": 4, "nombre": "Nombre", "valor": 7}],
+      "recuperaciones": [{"dorsal": 4, "nombre": "Nombre", "valor": 12}],
+      "duelos_ganados": [{"dorsal": 24, "nombre": "Nombre", "valor": 9}],
+      "regates_completados": [{"dorsal": 20, "nombre": "Nombre", "valor": 4}],
+      "centros_acertados": [{"dorsal": 25, "nombre": "Nombre", "valor": 3}],
+      "tiros": [{"dorsal": 14, "nombre": "Nombre", "valor": 3}]
+    }
   },
   "equipo_visitante": { ... }
 }`;
@@ -458,3 +563,4 @@ Estructura requerida:
   // Fallback seguro: devuelve el reporte de muestra enriquecido
   return enrichReportWithCoordinates(sampleReportData as unknown as PaniniMatchReport);
 }
+
