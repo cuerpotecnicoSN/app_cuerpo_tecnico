@@ -149,8 +149,8 @@ export const METRIC_BLOCKS: MetricBlock[] = [
     key: 'block',
     label: 'Bloque táctico (media 1T/2T)',
     metrics: [
-      { key: 'length', label: 'Longitud del bloque', unit: 'm', decimals: 1, better: 'neutral', get: (e) => avg2(e.our.bloque_tactico_1t?.longitud_m, e.our.bloque_tactico_2t?.longitud_m) },
-      { key: 'width', label: 'Anchura del bloque', unit: 'm', decimals: 1, better: 'neutral', get: (e) => avg2(e.our.bloque_tactico_1t?.anchura_m, e.our.bloque_tactico_2t?.anchura_m) },
+      { key: 'length', label: 'Longitud del bloque', unit: 'm', decimals: 1, better: 'low', get: (e) => avg2(e.our.bloque_tactico_1t?.longitud_m, e.our.bloque_tactico_2t?.longitud_m) },
+      { key: 'width', label: 'Anchura del bloque', unit: 'm', decimals: 1, better: 'low', get: (e) => avg2(e.our.bloque_tactico_1t?.anchura_m, e.our.bloque_tactico_2t?.anchura_m) },
       { key: 'dens_att', label: 'Densidad en ataque', unit: '%', decimals: 1, better: 'high', get: (e) => avg2(e.our.bloque_tactico_1t?.densidad_ataque_pct, e.our.bloque_tactico_2t?.densidad_ataque_pct) },
       { key: 'dens_def', label: 'Densidad en defensa', unit: '%', decimals: 1, better: 'neutral', get: (e) => avg2(e.our.bloque_tactico_1t?.densidad_defensa_pct, e.our.bloque_tactico_2t?.densidad_defensa_pct) },
     ],
@@ -205,8 +205,25 @@ export const formatValue = (value: number | null, def: MetricDef): string => {
 
 // --- Jornadas y tramos ---
 
+/** true si el partido es de liga ("Liga - Serie D - Grupo B - Jornada 3") y no de copa u otra competición */
+export const isLeagueMatch = (e: SeasonPaniniEntry): boolean => {
+  const competition = e.match.competition?.trim();
+  return !competition || /^liga\b|jornada/i.test(competition);
+};
+
+/** Siglas de una competición: "Premier League International Cup" → "PLIC" */
+const competitionAcronym = (competition: string) =>
+  competition
+    .split(/[\s-]+/)
+    .filter((w) => /^[A-ZÀ-Ú]/.test(w))
+    .map((w) => w[0])
+    .join('')
+    .slice(0, 5);
+
+/** Etiqueta de columna: jornada de liga (J3) o siglas de la competición (PLIC) */
 export const matchdayLabel = (e: SeasonPaniniEntry, index: number): string => {
-  const n = e.report.jornada?.match(/\d+/)?.[0];
+  if (!isLeagueMatch(e)) return competitionAcronym(e.match.competition!) || `P${index + 1}`;
+  const n = e.match.competition?.match(/jornada\s*(\d+)/i)?.[1] ?? e.report.jornada?.match(/\d+/)?.[0];
   return n ? `J${parseInt(n, 10)}` : `P${index + 1}`;
 };
 

@@ -31,11 +31,15 @@ export interface AveragePosition {
   line: PitchLine;
 }
 
-/** Posición media de los titulares, lista para un campo compartido (local → derecha) */
+/**
+ * Posición media de los jugadores dibujados en el campograma de Panini, lista para
+ * un campo compartido (local → derecha). Panini puede incluir a un suplente que
+ * jugó muchos minutos, así que manda el campograma y no la condición de titular.
+ */
 export function averagePositions(team: PaniniTeamData, isHome: boolean): Record<number, AveragePosition> {
   const out: Record<number, AveragePosition> = {};
   for (const p of team.alineacion) {
-    if (!p.es_titular || p.x === undefined || p.y === undefined) continue;
+    if (p.x === undefined || p.y === undefined) continue;
     const pos = toSharedPitch({ x: p.x, y: p.y }, isHome);
     out[p.dorsal] = { ...pos, label: shortName(p.nombre), line: lineOf(p.posicion) };
   }

@@ -7,6 +7,7 @@ import {
   chunk,
   deviationColor,
   formatValue,
+  isLeagueMatch,
   matchdayLabel,
   mean,
   opponentLogo,
@@ -30,6 +31,30 @@ const OpponentCrest: React.FC<{ entry: SeasonPaniniEntry }> = ({ entry }) => {
     <div title={name} className="w-8 h-8 rounded-full bg-gray-200 dark:bg-neutral-700 text-gray-600 dark:text-gray-300 flex items-center justify-center text-[10px] font-black uppercase">
       {name.split(/\s+/).map((w) => w[0]).join('').slice(0, 3)}
     </div>
+  );
+};
+
+const ResultBadge: React.FC<{ entry: SeasonPaniniEntry }> = ({ entry }) => {
+  const our = Number(entry.our.goles ?? 0);
+  const rival = Number(entry.rival.goles ?? 0);
+  const isWin = our > rival;
+  const isLoss = our < rival;
+
+  const colorClass = isWin
+    ? 'bg-emerald-600 text-white ring-1 ring-emerald-600/30'
+    : isLoss
+      ? 'bg-[#db0030] text-white ring-1 ring-[#db0030]/30'
+      : 'bg-neutral-950 text-white dark:bg-neutral-100 dark:text-neutral-950 ring-1 ring-neutral-900/40';
+
+  const label = isWin ? 'Victoria' : isLoss ? 'Derrota' : 'Empate';
+
+  return (
+    <span
+      title={`${label}: ${entry.our.goles} - ${entry.rival.goles}`}
+      className={`px-2 py-0.5 rounded-md text-[11px] font-black tabular-nums tracking-tight shadow-xs transition-transform hover:scale-105 select-none ${colorClass}`}
+    >
+      {entry.our.goles}–{entry.rival.goles}
+    </span>
   );
 };
 
@@ -76,7 +101,12 @@ const TeamMetricsTable: React.FC<Props> = ({ entries }) => {
                 col.kind === 'match' ? (
                   <th key={col.entry.match.id} className="min-w-[78px] px-2 py-2.5 border-b border-gray-100 dark:border-white/10 align-bottom">
                     <div className="flex flex-col items-center gap-1">
-                      <span className="text-[11px] font-black text-gray-900 dark:text-white">{matchdayLabel(col.entry, col.index)}</span>
+                      <span
+                        title={[col.entry.match.competition, col.entry.match.date].filter(Boolean).join(' · ')}
+                        className={`text-[11px] font-black ${isLeagueMatch(col.entry) ? 'text-gray-900 dark:text-white' : 'text-amber-600 dark:text-amber-400'}`}
+                      >
+                        {matchdayLabel(col.entry, col.index)}
+                      </span>
                       <OpponentCrest entry={col.entry} />
                       <span
                         title={col.entry.isHome ? 'Local' : 'Visitante'}
@@ -89,9 +119,7 @@ const TeamMetricsTable: React.FC<Props> = ({ entries }) => {
                         {col.entry.isHome ? <Home size={10} strokeWidth={3} /> : <Plane size={10} strokeWidth={3} />}
                         {col.entry.isHome ? 'L' : 'V'}
                       </span>
-                      <span className="text-[10.5px] font-bold tabular-nums text-gray-500">
-                        {col.entry.our.goles}–{col.entry.rival.goles}
-                      </span>
+                      <ResultBadge entry={col.entry} />
                     </div>
                   </th>
                 ) : (

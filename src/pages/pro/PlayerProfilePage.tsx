@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { User, Weight, Stethoscope, ArrowLeft, Edit2, Target, Users2, FileText, Plus, Trash2, CalendarDays, MapPin, BarChart2, Sparkles, Loader2 } from 'lucide-react';
+import { User, Weight, Stethoscope, ArrowLeft, Edit2, Target, Users2, FileText, Plus, Trash2, CalendarDays, MapPin, BarChart2, Sparkles, Loader2, Activity } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import type { Player, PlayerObjective, MeetingDB, SeasonReport, MeetingInsightCategory } from '../../components/types';
 import { MEETING_INSIGHT_CATEGORIES } from '../../components/types';
@@ -16,10 +16,11 @@ import RichTextEditor from '../../components/common/RichTextEditor';
 import { extractFeedbackFromHtml } from '../../utils/feedbackExtractor';
 import TranslatedText from '../../components/common/TranslatedText';
 import SubNavTabs from '../../components/common/SubNavTabs';
+import PlayerMatchStatsTab from '../../components/players/stats/PlayerMatchStatsTab';
 
 import PlayerImportModal from '../../components/pro/PlayerImportModal';
 
-type Tab = 'ficha' | 'peso' | 'lesiones' | 'plan' | 'reuniones' | 'informes' | 'feedback';
+type Tab = 'ficha' | 'partidos' | 'peso' | 'lesiones' | 'plan' | 'reuniones' | 'informes' | 'feedback';
 
 export default function PlayerProfilePage() {
   const { id } = useParams<{ id: string }>();
@@ -30,7 +31,7 @@ export default function PlayerProfilePage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const rawViewParam = searchParams.get('view');
-  const initialTab = rawViewParam && ['ficha', 'peso', 'lesiones', 'plan', 'reuniones', 'informes', 'evaluations', 'feedback'].includes(rawViewParam)
+  const initialTab = rawViewParam && ['ficha', 'partidos', 'peso', 'lesiones', 'plan', 'reuniones', 'informes', 'evaluations', 'feedback'].includes(rawViewParam)
     ? (rawViewParam === 'evaluations' ? 'informes' : rawViewParam as Tab)
     : 'ficha';
 
@@ -38,7 +39,7 @@ export default function PlayerProfilePage() {
 
   useEffect(() => {
     const param = searchParams.get('view');
-    if (param && ['ficha', 'peso', 'lesiones', 'plan', 'reuniones', 'informes', 'evaluations', 'feedback'].includes(param)) {
+    if (param && ['ficha', 'partidos', 'peso', 'lesiones', 'plan', 'reuniones', 'informes', 'evaluations', 'feedback'].includes(param)) {
       setActiveTab(param === 'evaluations' ? 'informes' : param as Tab);
     }
   }, [searchParams]);
@@ -94,6 +95,7 @@ export default function PlayerProfilePage() {
       <SubNavTabs
         tabs={[
           { id: 'ficha', label: t('playerTabs.technicalSheet', 'Ficha Técnica'), icon: User },
+          { id: 'partidos', label: t('playerStats.tab'), icon: Activity },
           { id: 'peso', label: t('playerTabs.weightControl', 'Control de Peso'), icon: Weight },
           { id: 'lesiones', label: t('playerTabs.medicalInjuries', 'Lesiones'), icon: Stethoscope },
           { id: 'plan', label: t('playerTabs.individualPlan', 'Plan Individual'), icon: Target },
@@ -284,6 +286,8 @@ export default function PlayerProfilePage() {
             )}
           </div>
         )}
+
+        {activeTab === 'partidos' && <PlayerMatchStatsTab playerId={activePlayer.id} playerName={activePlayer.name} />}
 
         {activeTab === 'peso' && (
           <PlayerWeightTab playerId={activePlayer.id} />

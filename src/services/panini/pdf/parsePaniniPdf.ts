@@ -453,7 +453,12 @@ const parseLineups = (page: PdfPageContent, warnings: string[]): { home: LineupD
         side = border ? teamColor(border.stroke)!.side : null;
       }
       if (!side) continue;
-      const num = page.words.find((wd) => /^\d+$/.test(wd.str) && insideRect(wordCenter(wd), s.rect, 1));
+      // Los círculos pueden solaparse: el dorsal es el número más cercano al centro, no el primero que cae dentro
+      const center = rectCenter(s.rect);
+      const dist = (wd: PdfWord) => Math.hypot(wordCenter(wd).x - center.x, wordCenter(wd).y - center.y);
+      const num = page.words
+        .filter((wd) => /^\d+$/.test(wd.str) && insideRect(wordCenter(wd), s.rect, 1))
+        .sort((a, b) => dist(a) - dist(b))[0];
       if (!num) continue;
       const team = side === 'home' ? home : away;
       const player = team.alineacion.find((p) => p.dorsal === Number(num.str));

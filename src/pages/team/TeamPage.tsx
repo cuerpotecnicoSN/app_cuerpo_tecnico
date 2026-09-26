@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { BarChart3, FileUp, Loader2, Map as MapIcon, Table2 } from 'lucide-react';
+import { BarChart3, FileDown, FileUp, Loader2, Map as MapIcon, Table2 } from 'lucide-react';
 import SubNavTabs from '../../components/common/SubNavTabs';
 import TeamMetricsTable from '../../components/team/TeamMetricsTable';
 import TeamEvolutionCharts from '../../components/team/TeamEvolutionCharts';
 import AccumulatedHeatmaps from '../../components/team/AccumulatedHeatmaps';
+import TeamReportPdfModal from '../../components/team/TeamReportPdfModal';
 import { getSeasonPaniniReports, type SeasonPaniniEntry } from '../../services/paniniReports';
 import { mean } from '../../utils/teamPaniniMetrics';
 
@@ -49,6 +50,7 @@ export default function TeamPage() {
   const [view, setView] = useState<View>('table');
   const [venue, setVenue] = useState<Venue>('all');
   const [range, setRange] = useState<Range>('all');
+  const [pdfOpen, setPdfOpen] = useState(false);
 
   useEffect(() => {
     getSeasonPaniniReports()
@@ -103,6 +105,15 @@ export default function TeamPage() {
         <div className="flex flex-wrap items-center gap-2">
           <Segmented<Venue> value={venue} onChange={setVenue} options={[['all', 'Todos'], ['home', 'Local'], ['away', 'Visitante']]} />
           <Segmented<Range> value={range} onChange={setRange} options={[['all', 'Temporada'], ['last5', 'Últimos 5'], ['last3', 'Últimos 3']]} />
+          <button
+            type="button"
+            onClick={() => setPdfOpen(true)}
+            disabled={!entries.length}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-900 hover:bg-black text-white text-xs font-black shadow-sm disabled:opacity-40 transition-colors"
+          >
+            <FileDown size={15} className="text-[#ff4d6d]" />
+            {t('teamReport.exportButton')}
+          </button>
         </div>
       </div>
 
@@ -155,6 +166,13 @@ export default function TeamPage() {
           )}
         </>
       )}
+
+      <TeamReportPdfModal
+        isOpen={pdfOpen}
+        onClose={() => setPdfOpen(false)}
+        entries={entries}
+        filterLabel={`${t(`teamReport.filters.${venue}`)} · ${t(`teamReport.filters.${range === 'all' ? 'season' : range}`)}`}
+      />
     </div>
   );
 }

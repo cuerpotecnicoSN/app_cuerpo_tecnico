@@ -61,7 +61,7 @@ const parseDate = (iso: string) => new Date(`${iso}T00:00:00`);
 const toIsoLocal = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
-type LoadedImage = { dataUrl: string; ratio: number };
+export type LoadedImage = { dataUrl: string; ratio: number };
 
 const rasterize = (url: string, useCors: boolean): Promise<LoadedImage | null> =>
   new Promise((resolve) => {
@@ -87,7 +87,7 @@ const rasterize = (url: string, useCors: boolean): Promise<LoadedImage | null> =
     img.src = url;
   });
 
-const loadImage = async (url: string): Promise<LoadedImage | null> => {
+export const loadImage = async (url: string): Promise<LoadedImage | null> => {
   if (!url) return null;
   const isRemote = /^https?:\/\//i.test(url);
   if (!isRemote) return rasterize(url, false);

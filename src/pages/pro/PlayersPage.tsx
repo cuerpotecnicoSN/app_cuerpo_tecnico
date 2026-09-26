@@ -7,9 +7,10 @@ import { useSearchParams } from 'react-router-dom';
 
 import { useSupabaseData } from '../../hooks/useSupabaseData';
 import PlayerImportModal from '../../components/pro/PlayerImportModal';
-import { Plus, Users as UsersIcon, Grid, List, Filter, Globe, Search, Download, Edit2, UsersRound, MessageSquareText } from 'lucide-react';
+import { Plus, Users as UsersIcon, Grid, List, Filter, Globe, Search, Download, Edit2, UsersRound, MessageSquareText, Activity } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import SubNavTabs from '../../components/common/SubNavTabs';
+import PlayerStatsHub from '../../components/players/stats/PlayerStatsHub';
 import './players-grid.css';
 
 const getPositionOrder = (pos: string) => {
@@ -275,7 +276,7 @@ export default function PlayersPage() {
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight uppercase">
-              {currentView === 'meetings' ? t('nav.meetings', 'Reuniones Individuales') : t('players.title', 'Jugadores')}
+              {currentView === 'meetings' ? t('nav.meetings', 'Reuniones Individuales') : currentView === 'stats' ? t('playerStats.hub.title') : t('players.title', 'Jugadores')}
             </h1>
             {loading ? (
               <span className="text-xs text-gray-400 font-bold animate-pulse">{t('players.management.loadingData', 'Cargando datos...')}</span>
@@ -367,6 +368,11 @@ export default function PlayersPage() {
             id: 'meetings',
             label: t('nav.meetings', 'Reuniones Individuales'),
             icon: MessageSquareText,
+          },
+          {
+            id: 'stats',
+            label: t('playerStats.hubTab'),
+            icon: Activity,
           },
         ]}
         activeTab={currentView}
@@ -587,6 +593,10 @@ export default function PlayersPage() {
 
       {currentView === 'meetings' && (
         <GlobalIndividualMeetingsView players={players} />
+      )}
+
+      {currentView === 'stats' && (
+        <PlayerStatsHub players={players.map((p) => ({ id: p.id, name: p.name, avatar: p.avatar }))} />
       )}
     </div>
   );
