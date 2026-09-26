@@ -20,8 +20,12 @@
     "matchFocuses": "Fondi partita",
     "matchData": "Dati in diretta",
     "roster": "Rosa",
+    "rosterDesc": "Schede, stati e rosa",
     "individualPlan": "Piano Individuale",
     "meetings": "Riunioni Individuali",
+    "meetingsDesc": "Monitoraggio 1 a 1 e accordi",
+    "playerStats": "Statistiche",
+    "playerStatsDesc": "Metriche individuali e di squadra",
     "evaluations": "Rapporti",
     "editSession": "Modifica Sessione"
   },
@@ -838,6 +842,169 @@
         "pdfTitle": "Campogrammi · Avversari"
       }
     },
+    "blocks": {
+      "result": "Risultato",
+      "possession": "Possesso e costruzione",
+      "territory": "Territorio",
+      "defense": "Difesa e pressione",
+      "duels": "Duelli e recuperi",
+      "chances": "Occasioni e conclusioni",
+      "rival_threat": "Minaccia avversaria",
+      "discipline": "Disciplina"
+    },
+    "metrics": {
+      "gf": "Gol fatti",
+      "gc": "Gol subiti",
+      "xgf": "xG fatti",
+      "xgc": "xG subiti",
+      "ims": "Indice IMS",
+      "pos": "Possesso",
+      "pos_time": "Tempo di possesso",
+      "balls": "Palloni giocati",
+      "passes": "Passaggi riusciti",
+      "pass_acc": "Precisione passaggi",
+      "useful": "Azioni utili",
+      "build": "Costruzione dal basso",
+      "long_jump": "Salto linea lungo",
+      "long_ok": "Passaggi lunghi utili",
+      "ground_opp": "Passaggi rasoterra trequarti avv.",
+      "switches": "Cambi di gioco",
+      "barycenter": "Baricentro (altezza media)",
+      "supremacy": "Supremazia territoriale",
+      "box_balls": "Palloni in area avversaria",
+      "goal_attack": "Attacco verso la porta",
+      "press_h": "Altezza del pressing",
+      "recov_opp": "Recuperi campo avversario",
+      "press_eff": "Efficacia del pressing",
+      "compact": "Compattezza del blocco",
+      "interceptions": "Intercettazioni",
+      "offside_won": "Fuorigioco provocati",
+      "recoveries": "Recuperi totali",
+      "tackles_pct": "% Contrasti vinti",
+      "aerial_pct": "% Duelli aerei vinti",
+      "dribbles_pct": "% Dribbling riusciti",
+      "crosses": "Cross riusciti",
+      "shots": "Tiri totali",
+      "shots_on": "Tiri in porta",
+      "chances": "Occasioni create",
+      "key_passes": "Passaggi chiave",
+      "efficiency": "Efficacia realizzativa",
+      "r_shots": "Tiri subiti",
+      "r_shots_on": "Tiri in porta subiti",
+      "r_chances": "Occasioni avversarie",
+      "r_box_balls": "Palloni avversari nella nostra area",
+      "fouls": "Falli commessi",
+      "yellow": "Cartellini gialli",
+      "red": "Cartellini rossi"
+    },
+    "heatmaps": {
+      "title": "Campogrammi Cumulativi ed Evoluzione per Blocchi",
+      "subtitle": "Distribuzione territoriale per zone (% media in 3×3). Campogramma generale a confronto con i 3 blocchi della stagione.",
+      "ourTeam": "La nostra squadra",
+      "rivals": "Avversari",
+      "allMetrics": "Vedi tutte le metriche ({{count}})",
+      "dominantZone": "Zona predominante:",
+      "noMatchesInTramo": "Nessuna partita in questo blocco",
+      "general": "Generale",
+      "allSeason": "Tutta la stagione",
+      "global": "Globale",
+      "tramo1": "Blocco 1 (Inizio)",
+      "tramo2": "Blocco 2 (Metà)",
+      "tramo3": "Blocco 3 (Recente)",
+      "tramoBadge": "Blocco {{n}}",
+      "pj": "{{count}} PG",
+      "cols": {
+        "defense": "Difesa",
+        "middle": "Centrocampo",
+        "attack": "Attacco"
+      },
+      "rows": {
+        "left": "Sin",
+        "center": "Centro",
+        "right": "Des"
+      },
+      "actions": {
+        "cobertura_recuperaciones": {
+          "label": "Recuperi",
+          "desc": "Distribuzione territoriale di palle recuperate e intercettazioni"
+        },
+        "cobertura_acciones_utiles": {
+          "label": "Azioni utili",
+          "desc": "Zone di maggiore attività positiva e interventi produttivi"
+        },
+        "cobertura_pases_largos": {
+          "label": "Passaggi lunghi",
+          "desc": "Zone di origine e ricezione dei lanci lunghi"
+        },
+        "cobertura_regates": {
+          "label": "Dribbling",
+          "desc": "Settori dove si concentrano 1vs1 e spunti individuali"
+        },
+        "cobertura_centros": {
+          "label": "Cross",
+          "desc": "Zone laterali d'invio di cross nell'area avversaria"
+        },
+        "cobertura_faltas": {
+          "label": "Falli",
+          "desc": "Densità territoriale delle infrazioni commesse"
+        }
+      }
+    },
+    "page": {
+      "title": "Squadra",
+      "paniniReportsCount": "{{count}} report Panini",
+      "paniniSubtitle": "Cumulativo stagionale dai report Panini Digital Match Analysis importati",
+      "loading": "Caricamento report…",
+      "error": "Impossibile caricare i report della stagione.",
+      "empty": "Ancora nessun report Panini",
+      "emptyDesc": "Importa il PDF Panini di ogni partita per costruire le statistiche della squadra.",
+      "goToMatches": "Vai a Partite",
+      "kpi": {
+        "record": "Bilancio V-N-P",
+        "goals": "Gol",
+        "diff": "Diff.",
+        "xgForPerMatch": "xG a favore / PG",
+        "xgAgainstPerMatch": "xG subiti / PG",
+        "possessionMean": "Possesso medio",
+        "goalsPerMatch": "Gol / PG",
+        "against": "{{count}} subiti"
+      },
+      "venues": {
+        "all": "Tutte",
+        "home": "Casa",
+        "away": "Trasferta"
+      },
+      "ranges": {
+        "all": "Stagione",
+        "last5": "Ultime 5",
+        "last3": "Ultime 3"
+      },
+      "tabs": {
+        "table": "Tabella cumulativa",
+        "charts": "Andamento",
+        "heatmaps": "Campogrammi"
+      }
+    },
+    "table": {
+      "title": "Cumulativo per giornata",
+      "subtitle": "Colore rispetto alla media: più è intenso, più se ne discosta. Blocchi di {{n}} partite.",
+      "betterThanMean": "Meglio della media",
+      "worseThanMean": "Peggio della media",
+      "noRating": "Non valutato",
+      "metric": "Metrica",
+      "mean": "Media",
+      "win": "Vittoria",
+      "loss": "Sconfitta",
+      "draw": "Pareggio",
+      "tramo": "Blocco {{n}}"
+    },
+    "evolution": {
+      "value": "Valore",
+      "rollingMean": "Media {{n}}P",
+      "perMatch": "Per giornata",
+      "rollingMeanLine": "Media mobile {{n}} partite",
+      "meanLabel": "Media {{val}}"
+    },
     "pdf": {
       "reportTitle": "Report squadra",
       "season": "Stagione",
@@ -912,6 +1079,7 @@
   "playerStats": {
     "tab": "Statistiche partite",
     "hubTab": "Statistiche",
+    "exportPdf": "Esporta PDF",
     "loading": "Caricamento statistiche dei report…",
     "error": "Impossibile caricare i report Panini.",
     "empty": "Nessun dato partita",
@@ -930,6 +1098,21 @@
       "all": "Partita",
       "1T": "1° tempo",
       "2T": "2° tempo"
+    },
+    "tramos": {
+      "general": "Generale",
+      "allSeason": "Tutta la stagione",
+      "global": "Globale",
+      "tramo1": "Blocco 1 (Inizio)",
+      "tramo2": "Blocco 2 (Metà)",
+      "tramo3": "Blocco 3 (Recente)",
+      "tramoBadge": "Blocco {{n}}",
+      "singleMatch": "Partita selezionata",
+      "singleMatchSub": "Partita singola",
+      "badgeMatch": "Partita",
+      "showTouches": "Mostra tocchi",
+      "avgPositionShort": "Pos. media",
+      "noMatches": "Nessuna partita"
     },
     "allMatches": "Tutte le partite",
     "kpi": {
@@ -1006,6 +1189,20 @@
       "table": "Tabella completa",
       "heatmaps": "Mappe di calore",
       "positions": "Posizioni medie",
+      "passingNetwork": "Rete di passaggi",
+      "passingNetworkSubtitle": "Passaggi più frequenti tra compagni · Spessore freccia = volume passaggi",
+      "minPasses": "Min. passaggi",
+      "connections": "connessioni",
+      "topConnections": "Intese più frequenti",
+      "selectedPlayer": "Giocatore selezionato",
+      "instructions": "Interazione",
+      "recoveries": "Recuperi",
+      "recoveriesTitle": "Top 3 Giocatori per Recuperi",
+      "recoveriesSubtitle": "Campogramma con le zone d'influenza e posizioni dei 3 migliori recuperatori",
+      "crosses": "Cross",
+      "crossesTitle": "Top 3 Giocatori per Cross",
+      "crossesSubtitle": "Campogramma con le zone di arrivo e cross dei 3 giocatori più attivi sulla fascia",
+      "top3Combined": "Tutti (Top 3)",
       "minMinutes": "Min. minuti",
       "position": "Ruolo",
       "allPositions": "Tutti",
@@ -1016,7 +1213,37 @@
       "noRank": "Nessun giocatore raggiunge i minuti minimi",
       "player": "Giocatore",
       "positionsSubtitle": "Posizione media di ogni giocatore nella selezione, ponderata per minuti · dimensione = minuti",
-      "heatmapsSubtitle": "Tocchi accumulati di ogni giocatore nella selezione · ordinati per minuti"
+      "heatmapsSubtitle": "Tocchi accumulati di ogni giocatore nella selezione · ordinati per minuti",
+      "exportPdf": "Esporta PDF",
+      "closeFocus": "Chiudi focus",
+      "viewProfile": "Vedi profilo",
+      "ofTeam": "{{pct}}% della squadra",
+      "playedMatches": "{{minutes}}' giocati · {{matches}} partite",
+      "oppHalf": "In campo avversario",
+      "efficiency": "Efficacia",
+      "mainZone": "Zona principale:",
+      "leftWing": "Fascia sinistra",
+      "rightWing": "Fascia destra",
+      "centerZone": "Zona centrale",
+      "topRecoverer": "Recuperatore",
+      "topCrosser": "Crossatore",
+      "passesGiven": "Passaggi effettuati",
+      "passesReceived": "Passaggi ricevuti",
+      "passesCount": "{{count}} passaggi",
+      "passInstruction": "Fai clic su qualsiasi giocatore per isolare i suoi passaggi in uscita (giallo) e in entrata (blu).",
+      "shownOfTotal": "{{shown}} mostrate di {{total}} totali",
+      "startingXI": "XI Titolare (11)",
+      "allSquad": "Tutti ({{count}})",
+      "allSquadCount": "Tutti i giocatori ({{count}})",
+      "mainPartner": "Partner principale:",
+      "ballTouches": "Tocchi di palla",
+      "clickToOpen": "Clicca per aprire la scheda",
+      "passer": "Passatore",
+      "receiver": "Ricevitore",
+      "connectionVolume": "Volume di connessione",
+      "frequency": "Frequenza",
+      "pctOfPasser": "{{pct}}% del passatore",
+      "noDataForMetric": "Dati insufficienti nei report selezionati."
     },
     "roles": {
       "P": "Portieri",
@@ -1150,6 +1377,62 @@
       "finishing": "Finalizzazione",
       "discipline": "Disciplina",
       "goalkeeper": "Portiere"
+    },
+    "matchesCount": "{{count}} presenze",
+    "pdfModal": {
+      "individualTitle": "Report Individuale in PDF (A4 Verticale)",
+      "individualSub": "Dati partita completa · {{count}} partite",
+      "selectSections": "Seleziona quali sezioni includere nel PDF:",
+      "all": "Tutte",
+      "none": "Nessuna",
+      "cancel": "Annulla",
+      "generating": "Generazione PDF...",
+      "downloadVertical": "Scarica PDF (Verticale)",
+      "downloadHorizontal": "Scarica PDF (Orizzontale)",
+      "squadTitle": "Report Rosa in PDF (A4 Orizzontale)",
+      "squadSub": "Statistiche della Rosa",
+      "squadSubDetails": "{{count}} giocatori · {{mode}}",
+      "sections": {
+        "summary": "Riepilogo e KPI Principali",
+        "summarySub": "Partite, presenze da titolare, minuti, gol, assist e rendimento",
+        "metrics": "Statistiche Dettagliate per Blocchi",
+        "metricsSub": "Partecipazione, Passaggio, Attacco, Finalizzazione, Difesa e Portiere (Totale e Per 90 min)",
+        "heatmap": "Campogramma e Mappa di Calore",
+        "heatmapSub": "Densità termica dei tocchi, posizione media e distribuzione per terzi e corsie",
+        "passing": "Intese e Rete di Passaggi",
+        "passingSub": "Principali ricevitori dei passaggi e passatori del giocatore",
+        "matches": "Storico Partita per Partita",
+        "matchesSub": "Dettaglio completo di tutte le partite disputate",
+        "rankings": "Classifiche per Metrica in Primo Piano",
+        "rankingsSub": "Top giocatori per minuti, gol, assist, giocate utili, passaggi e contrasti",
+        "table": "Tabella Comparativa della Rosa",
+        "tableSub": "Confronto completo di tutti i calciatori con statistiche a partita completa",
+        "positions": "Posizioni Medie Tattiche",
+        "positionsSub": "Campogramma orizzontale completo con il posizionamento medio di ciascun giocatore",
+        "participation": "Minuti e Partecipazione",
+        "participationSub": "Distribuzione di presenze da titolare, subentri e minutaggio"
+      }
+    },
+    "report": {
+      "individualReport": "REPORT INDIVIDUALE",
+      "fullMatch": "Partita Completa",
+      "footer": "AC Milan Futuro · Dipartimento di Analisi & Rendimento",
+      "tacticalPitchesTitle": "CAMPI TATTICI ED EVOLUZIONE PER FASI",
+      "noMatrixData": "Nessun dato di matrice registrato",
+      "startPeriod": "Inizio Stagione",
+      "midPeriod": "Fase Intermedia",
+      "recentPeriod": "Fase Recente"
+    },
+    "squadReport": {
+      "title": "REPORT STATISTICO DELLA ROSA",
+      "rankingsTitle": "CLASSIFICHE DI RENDIMENTO IN PRIMO PIANO",
+      "playersAnalyzed": "Giocatori analizzati",
+      "tableTitle": "TABELLA COMPARATIVA DELLA ROSA",
+      "positionsTitle": "POSIZIONI MEDIE TATTICHE E PARTECIPAZIONE",
+      "roleLegend": "LEGENDA RUOLI",
+      "coordsNote1": "Coordinate medie calcolate",
+      "coordsNote2": "dai report Panini",
+      "coordsNote3": "con direzione d'attacco verso destra."
     }
   }
 }

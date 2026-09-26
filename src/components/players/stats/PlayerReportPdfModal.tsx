@@ -37,29 +37,6 @@ const ICONS: Record<PlayerReportSection, LucideIcon> = {
   matches: CalendarDays,
 };
 
-const LABELS: Record<PlayerReportSection, { title: string; subtitle: string }> = {
-  summary: {
-    title: 'Resumen y KPIs Principales',
-    subtitle: 'Partidos, titularidades, minutos, goles, asistencias y rendimiento',
-  },
-  metrics: {
-    title: 'Estadísticas Detalladas por Bloques',
-    subtitle: 'Participación, Pase, Creación, Ataque, Defensa y Portería (Total y Por 90 min)',
-  },
-  heatmap: {
-    title: 'Campograma y Mapa de Calor',
-    subtitle: 'Densidad térmica de toques, posición media y distribución por tercios y carriles',
-  },
-  passing: {
-    title: 'Socios y Red de Pases',
-    subtitle: 'Principales receptores de pases y pasadores del jugador',
-  },
-  matches: {
-    title: 'Historial Partido a Partido',
-    subtitle: 'Desglose detallado de todos los encuentros disputados',
-  },
-};
-
 export default function PlayerReportPdfModal({
   isOpen,
   onClose,
@@ -75,6 +52,29 @@ export default function PlayerReportPdfModal({
   const [error, setError] = useState<string | null>(null);
 
   if (!isOpen) return null;
+
+  const labels: Record<PlayerReportSection, { title: string; subtitle: string }> = {
+    summary: {
+      title: t('playerStats.pdfModal.sections.summary', 'Resumen y KPIs Principales'),
+      subtitle: t('playerStats.pdfModal.sections.summarySub', 'Partidos, titularidades, minutos, goles, asistencias y rendimiento'),
+    },
+    metrics: {
+      title: t('playerStats.pdfModal.sections.metrics', 'Estadísticas Detalladas por Bloques'),
+      subtitle: t('playerStats.pdfModal.sections.metricsSub', 'Participación, Pase, Creación, Ataque, Defensa y Portería (Total y Por 90 min)'),
+    },
+    heatmap: {
+      title: t('playerStats.pdfModal.sections.heatmap', 'Campograma y Mapa de Calor'),
+      subtitle: t('playerStats.pdfModal.sections.heatmapSub', 'Densidad térmica de toques, posición media y distribución por tercios y carriles'),
+    },
+    passing: {
+      title: t('playerStats.pdfModal.sections.passing', 'Socios y Red de Pases'),
+      subtitle: t('playerStats.pdfModal.sections.passingSub', 'Principales receptores de pases y pasadores del jugador'),
+    },
+    matches: {
+      title: t('playerStats.pdfModal.sections.matches', 'Historial Partido a Partido'),
+      subtitle: t('playerStats.pdfModal.sections.matchesSub', 'Desglose detallado de todos los encuentros disputados'),
+    },
+  };
 
   const toggle = (s: PlayerReportSection) =>
     setSelected((cur) => (cur.includes(s) ? cur.filter((x) => x !== s) : [...cur, s]));
@@ -103,6 +103,8 @@ export default function PlayerReportPdfModal({
     }
   };
 
+  const validMatchesCount = lines.filter((l) => l.minutes > 0).length;
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in"
@@ -119,13 +121,13 @@ export default function PlayerReportPdfModal({
             <img src="/escudo.png" alt="AC Milan" className="w-11 h-11 rounded-xl bg-white p-1 object-contain shrink-0" />
             <div>
               <span className="text-[10px] font-black uppercase tracking-wider text-[#db0030] block">
-                Informe Individual en PDF (A4 Vertical)
+                {t('playerStats.pdfModal.individualTitle', 'Informe Individual en PDF (A4 Vertical)')}
               </span>
               <h3 className="text-lg font-black tracking-tight text-white">
                 #{player.dorsal} {player.name}
               </h3>
               <p className="text-xs text-gray-400">
-                Datos de partido completo · {lines.filter((l) => l.minutes > 0).length} partidos
+                {t('playerStats.pdfModal.individualSub', { count: validMatchesCount })}
               </p>
             </div>
           </div>
@@ -143,21 +145,21 @@ export default function PlayerReportPdfModal({
         {/* Cuerpo del Modal: Selector de Secciones */}
         <div className="p-6 space-y-3 overflow-y-auto">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-gray-500">Selecciona qué secciones incluir en el PDF:</span>
+            <span className="text-xs font-bold text-gray-500">{t('playerStats.pdfModal.selectSections', 'Selecciona qué secciones incluir en el PDF:')}</span>
             <div className="flex gap-3 text-[11px] font-black uppercase tracking-wider">
               <button
                 type="button"
                 className="text-[#db0030] hover:underline"
                 onClick={() => setSelected(PLAYER_REPORT_SECTIONS)}
               >
-                Todas
+                {t('playerStats.pdfModal.all', 'Todas')}
               </button>
               <button
                 type="button"
                 className="text-gray-400 hover:underline"
                 onClick={() => setSelected([])}
               >
-                Ninguna
+                {t('playerStats.pdfModal.none', 'Ninguna')}
               </button>
             </div>
           </div>
@@ -165,7 +167,7 @@ export default function PlayerReportPdfModal({
           {PLAYER_REPORT_SECTIONS.map((s) => {
             const Icon = ICONS[s];
             const on = selected.includes(s);
-            const { title, subtitle } = LABELS[s];
+            const { title, subtitle } = labels[s];
             return (
               <button
                 key={s}
@@ -216,7 +218,7 @@ export default function PlayerReportPdfModal({
             disabled={busy}
             className="px-4 py-2 rounded-xl text-xs font-bold text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-neutral-800 transition-colors"
           >
-            Cancelar
+            {t('playerStats.pdfModal.cancel', 'Cancelar')}
           </button>
 
           <button
@@ -228,12 +230,12 @@ export default function PlayerReportPdfModal({
             {busy ? (
               <>
                 <Loader2 size={16} className="animate-spin" />
-                <span>Generando PDF...</span>
+                <span>{t('playerStats.pdfModal.generating', 'Generando PDF...')}</span>
               </>
             ) : (
               <>
                 <FileDown size={16} />
-                <span>Descargar PDF (Vertical)</span>
+                <span>{t('playerStats.pdfModal.downloadVertical', 'Descargar PDF (Vertical)')}</span>
               </>
             )}
           </button>

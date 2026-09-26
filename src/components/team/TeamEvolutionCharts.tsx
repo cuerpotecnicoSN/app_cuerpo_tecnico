@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Bar,
   CartesianGrid,
@@ -57,18 +58,26 @@ const barColor = (v: number | null, m: number | null, metric: MetricDef) => {
 };
 
 const ChartTooltip: React.FC<{ active?: boolean; payload?: any[]; metric: MetricDef }> = ({ active, payload, metric }) => {
+  const { t } = useTranslation();
   if (!active || !payload?.length) return null;
   const p = payload[0].payload;
   return (
     <div className="bg-gray-900/95 backdrop-blur text-white rounded-xl px-3 py-2 shadow-xl text-xs">
       <div className="font-black">{p.label} · {p.venue === 'L' ? 'vs' : '@'} {p.rival}</div>
-      <div className="mt-1 flex justify-between gap-4"><span className="text-gray-400">Valor</span><span className="font-bold tabular-nums">{formatValue(p.value, metric)}</span></div>
-      <div className="flex justify-between gap-4"><span className="text-gray-400">Media {TRAMO_SIZE}P</span><span className="font-bold tabular-nums">{formatValue(p.rolling, metric)}</span></div>
+      <div className="mt-1 flex justify-between gap-4">
+        <span className="text-gray-400">{t('teamReport.evolution.value', 'Valor')}</span>
+        <span className="font-bold tabular-nums">{formatValue(p.value, metric)}</span>
+      </div>
+      <div className="flex justify-between gap-4">
+        <span className="text-gray-400">{t('teamReport.evolution.rollingMean', { n: TRAMO_SIZE })}</span>
+        <span className="font-bold tabular-nums">{formatValue(p.rolling, metric)}</span>
+      </div>
     </div>
   );
 };
 
 const MetricChart: React.FC<{ entries: SeasonPaniniEntry[]; metric: MetricDef; height: number; compact?: boolean }> = ({ entries, metric, height, compact }) => {
+  const { t } = useTranslation();
   const { data, s } = useMemo(() => buildSeries(entries, metric), [entries, metric]);
   return (
     <ResponsiveContainer width="100%" height={height}>
@@ -84,17 +93,17 @@ const MetricChart: React.FC<{ entries: SeasonPaniniEntry[]; metric: MetricDef; h
             stroke="#111827"
             strokeOpacity={0.5}
             strokeDasharray="6 4"
-            label={compact ? undefined : { value: `Media ${formatValue(s.mean, metric)}`, position: 'insideTopRight', fontSize: 11, fontWeight: 800, fill: '#6b7280' }}
+            label={compact ? undefined : { value: t('teamReport.evolution.meanLabel', { val: formatValue(s.mean, metric) }), position: 'insideTopRight', fontSize: 11, fontWeight: 800, fill: '#6b7280' }}
           />
         )}
-        <Bar dataKey="value" name="Por jornada" radius={[6, 6, 0, 0]} maxBarSize={36}>
+        <Bar dataKey="value" name={t('teamReport.evolution.perMatch', 'Por jornada')} radius={[6, 6, 0, 0]} maxBarSize={36}>
           {data.map((d) => (
             <Cell key={d.label} fill={barColor(d.value, s.mean, metric)} fillOpacity={0.85} />
           ))}
         </Bar>
         <Line
           dataKey="rolling"
-          name={`Media móvil ${TRAMO_SIZE} partidos`}
+          name={t('teamReport.evolution.rollingMeanLine', { n: TRAMO_SIZE })}
           type="monotone"
           stroke="#111827"
           strokeWidth={2.5}
@@ -107,6 +116,7 @@ const MetricChart: React.FC<{ entries: SeasonPaniniEntry[]; metric: MetricDef; h
 };
 
 const XgDuelChart: React.FC<{ entries: SeasonPaniniEntry[] }> = ({ entries }) => {
+  const { t } = useTranslation();
   const data = entries.map((e, i) => ({
     label: matchdayLabel(e, i),
     xgf: e.our.xg ?? null,
@@ -126,10 +136,10 @@ const XgDuelChart: React.FC<{ entries: SeasonPaniniEntry[] }> = ({ entries }) =>
           formatter={(v: any) => (typeof v === 'number' ? v.toFixed(2).replace(/\.00$/, '') : v)}
         />
         <Legend wrapperStyle={{ fontSize: 11, fontWeight: 700 }} />
-        <Bar dataKey="gf" name="Goles a favor" fill={RED} radius={[6, 6, 0, 0]} maxBarSize={18} />
-        <Bar dataKey="gc" name="Goles en contra" fill="#111827" radius={[6, 6, 0, 0]} maxBarSize={18} />
-        <Line dataKey="xgf" name="xG a favor" type="monotone" stroke={RED} strokeWidth={2.5} dot={{ r: 3 }} connectNulls />
-        <Line dataKey="xgc" name="xG en contra" type="monotone" stroke="#6b7280" strokeWidth={2.5} strokeDasharray="5 4" dot={{ r: 3 }} connectNulls />
+        <Bar dataKey="gf" name={t('teamReport.pdf.goalsFor', 'Goles a favor')} fill={RED} radius={[6, 6, 0, 0]} maxBarSize={18} />
+        <Bar dataKey="gc" name={t('teamReport.pdf.goalsAgainst', 'Goles en contra')} fill="#111827" radius={[6, 6, 0, 0]} maxBarSize={18} />
+        <Line dataKey="xgf" name={t('teamReport.pdf.xgFor', 'xG a favor')} type="monotone" stroke={RED} strokeWidth={2.5} dot={{ r: 3 }} connectNulls />
+        <Line dataKey="xgc" name={t('teamReport.pdf.xgAgainst', 'xG en contra')} type="monotone" stroke="#6b7280" strokeWidth={2.5} strokeDasharray="5 4" dot={{ r: 3 }} connectNulls />
       </ComposedChart>
     </ResponsiveContainer>
   );
@@ -138,6 +148,7 @@ const XgDuelChart: React.FC<{ entries: SeasonPaniniEntry[] }> = ({ entries }) =>
 const card = 'bg-white dark:bg-neutral-900 rounded-3xl ring-1 ring-gray-200/80 dark:ring-white/10 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_12px_32px_-16px_rgba(0,0,0,0.15)]';
 
 const TeamEvolutionCharts: React.FC<Props> = ({ entries }) => {
+  const { t } = useTranslation();
   const [selected, setSelected] = useState('pos');
   const metric = metricByKey(selected) ?? METRIC_BLOCKS[0].metrics[0];
 
@@ -147,8 +158,12 @@ const TeamEvolutionCharts: React.FC<Props> = ({ entries }) => {
         <div className={`${card} p-5 xl:col-span-3`}>
           <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
             <div>
-              <h3 className="text-base font-black text-gray-900 dark:text-white tracking-tight">Evolución por jornada</h3>
-              <p className="text-xs text-gray-500">Barras verdes/rojas respecto a la media · línea: media móvil de {TRAMO_SIZE} partidos</p>
+              <h3 className="text-base font-black text-gray-900 dark:text-white tracking-tight">
+                {t('teamReport.sections.evolution.title', 'Evolución por jornada')}
+              </h3>
+              <p className="text-xs text-gray-500">
+                {t('teamReport.pdf.evolutionSubtitle', { n: TRAMO_SIZE })}
+              </p>
             </div>
             <select
               value={selected}
@@ -156,9 +171,9 @@ const TeamEvolutionCharts: React.FC<Props> = ({ entries }) => {
               className="!rounded-xl !py-2 !px-3 text-sm font-bold dark:!bg-neutral-800 dark:!text-white dark:!border-white/10"
             >
               {METRIC_BLOCKS.map((b) => (
-                <optgroup key={b.key} label={b.label}>
+                <optgroup key={b.key} label={t(`teamReport.blocks.${b.key}`, b.label)}>
                   {b.metrics.map((m) => (
-                    <option key={m.key} value={m.key}>{m.label}</option>
+                    <option key={m.key} value={m.key}>{t(`teamReport.metrics.${m.key}`, m.label)}</option>
                   ))}
                 </optgroup>
               ))}
@@ -168,8 +183,12 @@ const TeamEvolutionCharts: React.FC<Props> = ({ entries }) => {
         </div>
 
         <div className={`${card} p-5 xl:col-span-2`}>
-          <h3 className="text-base font-black text-gray-900 dark:text-white tracking-tight">Goles vs xG</h3>
-          <p className="text-xs text-gray-500 mb-3">Rendimiento real frente a esperado, a favor y en contra</p>
+          <h3 className="text-base font-black text-gray-900 dark:text-white tracking-tight">
+            {t('teamReport.pdf.goalsVsXg', 'Goles vs xG')}
+          </h3>
+          <p className="text-xs text-gray-500 mb-3">
+            {t('teamReport.sections.evolution.description', 'Goles vs xG, tendencia reciente y métricas clave con media móvil')}
+          </p>
           <XgDuelChart entries={entries} />
         </div>
       </div>
@@ -180,6 +199,7 @@ const TeamEvolutionCharts: React.FC<Props> = ({ entries }) => {
           if (!m) return null;
           const s = summarize(entries.map(m.get));
           const active = key === selected;
+          const metricLabel = t(`teamReport.metrics.${m.key}`, m.label);
           return (
             <button
               key={key}
@@ -188,7 +208,7 @@ const TeamEvolutionCharts: React.FC<Props> = ({ entries }) => {
               className={`${card} p-4 text-left transition-all hover:-translate-y-0.5 ${active ? '!ring-2 !ring-[#db0030]' : ''}`}
             >
               <div className="flex items-baseline justify-between gap-2">
-                <span className="text-xs font-black uppercase tracking-wider text-gray-500">{m.label}</span>
+                <span className="text-xs font-black uppercase tracking-wider text-gray-500">{metricLabel}</span>
                 <span className="text-lg font-black text-gray-900 dark:text-white tabular-nums">{formatValue(s.mean, m)}</span>
               </div>
               <MetricChart entries={entries} metric={m} height={130} compact />

@@ -470,3 +470,88 @@ export function passPartners(lines: PlayerMatchLine[], dir: 'to' | 'from', limit
   }
   return [...totals.values()].sort((a, b) => b.passes - a.passes).slice(0, limit);
 }
+
+export interface PlayerTramoData {
+  index: 1 | 2 | 3;
+  name: string;
+  label: string;
+  matchCount: number;
+  lines: PlayerMatchLine[];
+  touches: PaniniMapEvent[];
+  avgPos: { x: number; y: number } | null;
+  zones: { thirds: number[]; lanes: number[] };
+}
+
+export function partitionPlayerTramos(
+  lines: PlayerMatchLine[],
+  period: 'all' | '1T' | '2T' = 'all',
+  t?: (key: string, opts?: any) => string
+): PlayerTramoData[] {
+  const n = lines.length;
+  const tramo1Name = t ? t('playerStats.tramos.tramo1', 'Tramo 1 (Inicio)') : 'Tramo 1 (Inicio)';
+  const tramo2Name = t ? t('playerStats.tramos.tramo2', 'Tramo 2 (Medio)') : 'Tramo 2 (Medio)';
+  const tramo3Name = t ? t('playerStats.tramos.tramo3', 'Tramo 3 (Reciente)') : 'Tramo 3 (Reciente)';
+  const noMatches = t ? t('playerStats.tramos.noMatches', 'Sin partidos') : 'Sin partidos';
+
+  if (n === 0) {
+    return [
+      { index: 1, name: tramo1Name, label: '0 PJ', matchCount: 0, lines: [], touches: [], avgPos: null, zones: { thirds: [0, 0, 0], lanes: [0, 0, 0] } },
+      { index: 2, name: tramo2Name, label: '0 PJ', matchCount: 0, lines: [], touches: [], avgPos: null, zones: { thirds: [0, 0, 0], lanes: [0, 0, 0] } },
+      { index: 3, name: tramo3Name, label: '0 PJ', matchCount: 0, lines: [], touches: [], avgPos: null, zones: { thirds: [0, 0, 0], lanes: [0, 0, 0] } },
+    ];
+  }
+
+  const base = Math.floor(n / 3);
+  const rem = n % 3;
+  let s1 = base;
+  let s2 = base;
+  let s3 = base;
+
+  if (rem === 1) {
+    s2 += 1;
+  } else if (rem === 2) {
+    s1 += 1;
+    s3 += 1;
+  }
+
+  if (n === 1) {
+    s1 = 1; s2 = 0; s3 = 0;
+  } else if (n === 2) {
+    s1 = 1; s2 = 0; s3 = 1;
+  }
+
+  const t1 = lines.slice(0, s1);
+  const t2 = lines.slice(s1, s1 + s2);
+  const t3 = lines.slice(s1 + s2);
+
+  const buildTramo = (idx: 1 | 2 | 3, name: string, slice: PlayerMatchLine[]): PlayerTramoData => {
+    const tchs = slice.flatMap((l) => l.touches).filter((tc) => period === 'all' || tc.periodo === period);
+    const avg = averagePosition(slice);
+    const zns = touchZones(tchs);
+
+    let label = noMatches;
+    if (slice.length === 1) {
+      label = `${lineLabel(slice[0])} (1 PJ)`;
+    } else if (slice.length > 1) {
+      label = `${lineLabel(slice[0])} - ${lineLabel(slice[slice.length - 1])} (${slice.length} PJ)`;
+    }
+
+    return {
+      index: idx,
+      name,
+      label,
+      matchCount: slice.length,
+      lines: slice,
+      touches: tchs,
+      avgPos: avg,
+      zones: zns,
+    };
+  };
+
+  return [
+    buildTramo(1, tramo1Name, t1),
+    buildTramo(2, tramo2Name, t2),
+    buildTramo(3, tramo3Name, t3),
+  ];
+}
+

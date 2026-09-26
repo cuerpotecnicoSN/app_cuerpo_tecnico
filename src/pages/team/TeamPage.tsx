@@ -57,10 +57,10 @@ export default function TeamPage() {
       .then(setAll)
       .catch((err) => {
         console.error('Error cargando informes Panini de la temporada:', err);
-        setError('No se pudieron cargar los informes de la temporada.');
+        setError(t('teamReport.page.error', 'No se pudieron cargar los informes de la temporada.'));
         setAll([]);
       });
-  }, []);
+  }, [t]);
 
   const entries = useMemo(() => {
     let list = (all ?? []).filter((e) => venue === 'all' || (venue === 'home' ? e.isHome : !e.isHome));
@@ -92,19 +92,35 @@ export default function TeamPage() {
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight uppercase">
-              {t('nav.team', 'Equipo')}
+              {t('teamReport.page.title', 'Equipo')}
             </h1>
             <span className="px-3 py-1 bg-red-50 dark:bg-red-950/40 text-[var(--color-primary,#db0030)] text-xs font-black uppercase tracking-wider rounded-full border border-red-200/60 dark:border-red-800/40">
-              {all?.length ?? 0} informes Panini
+              {t('teamReport.page.paniniReportsCount', { count: all?.length ?? 0 })}
             </span>
           </div>
           <p className="text-xs text-gray-500 font-medium mt-1">
-            Acumulado de temporada a partir de los informes Panini Digital Match Analysis importados
+            {t('teamReport.page.paniniSubtitle', 'Acumulado de temporada a partir de los informes Panini Digital Match Analysis importados')}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Segmented<Venue> value={venue} onChange={setVenue} options={[['all', 'Todos'], ['home', 'Local'], ['away', 'Visitante']]} />
-          <Segmented<Range> value={range} onChange={setRange} options={[['all', 'Temporada'], ['last5', 'Últimos 5'], ['last3', 'Últimos 3']]} />
+          <Segmented<Venue>
+            value={venue}
+            onChange={setVenue}
+            options={[
+              ['all', t('teamReport.page.venues.all', 'Todos')],
+              ['home', t('teamReport.page.venues.home', 'Local')],
+              ['away', t('teamReport.page.venues.away', 'Visitante')],
+            ]}
+          />
+          <Segmented<Range>
+            value={range}
+            onChange={setRange}
+            options={[
+              ['all', t('teamReport.page.ranges.all', 'Temporada')],
+              ['last5', t('teamReport.page.ranges.last5', 'Últimos 5')],
+              ['last3', t('teamReport.page.ranges.last3', 'Últimos 3')],
+            ]}
+          />
           <button
             type="button"
             onClick={() => setPdfOpen(true)}
@@ -119,7 +135,7 @@ export default function TeamPage() {
 
       {all === null ? (
         <div className="flex items-center justify-center py-24 text-gray-400">
-          <Loader2 className="animate-spin mr-2" size={20} /> Cargando informes…
+          <Loader2 className="animate-spin mr-2" size={20} /> {t('teamReport.page.loading', 'Cargando informes…')}
         </div>
       ) : error ? (
         <div className="rounded-2xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 p-6 text-sm font-semibold text-red-700 dark:text-red-300">{error}</div>
@@ -128,26 +144,48 @@ export default function TeamPage() {
           <div className="mx-auto w-14 h-14 rounded-2xl bg-gray-900 text-white flex items-center justify-center mb-4">
             <FileUp size={24} />
           </div>
-          <h2 className="text-lg font-black text-gray-900 dark:text-white">Aún no hay informes Panini</h2>
-          <p className="text-sm text-gray-500 mt-1 mb-5">Importa el PDF de Panini en cada partido para construir el acumulado del equipo.</p>
-          <Link to="/matches" className="btn btn-primary">Ir a Partidos</Link>
+          <h2 className="text-lg font-black text-gray-900 dark:text-white">{t('teamReport.page.empty', 'Aún no hay informes Panini')}</h2>
+          <p className="text-sm text-gray-500 mt-1 mb-5">{t('teamReport.page.emptyDesc', 'Importa el PDF de Panini en cada partido para construir el acumulado del equipo.')}</p>
+          <Link to="/matches" className="btn btn-primary">{t('teamReport.page.goToMatches', 'Ir a Partidos')}</Link>
         </div>
       ) : (
         <>
           <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
-            <Kpi accent label="Balance V-E-D" value={kpis.record} sub={`${kpis.points} pts · ${entries.length} PJ`} />
-            <Kpi label="Goles" value={`${kpis.gf} – ${kpis.gc}`} sub={`Dif. ${kpis.gf - kpis.gc >= 0 ? '+' : ''}${kpis.gf - kpis.gc}`} />
-            <Kpi label="xG a favor / PJ" value={kpis.xgf !== null ? kpis.xgf.toFixed(2) : '–'} />
-            <Kpi label="xG en contra / PJ" value={kpis.xgc !== null ? kpis.xgc.toFixed(2) : '–'} />
-            <Kpi label="Posesión media" value={kpis.pos !== null ? `${kpis.pos.toFixed(0)}%` : '–'} />
-            <Kpi label="Goles / PJ" value={entries.length ? (kpis.gf / entries.length).toFixed(2) : '–'} sub={entries.length ? `${(kpis.gc / entries.length).toFixed(2)} en contra` : undefined} />
+            <Kpi
+              accent
+              label={t('teamReport.page.kpi.record', 'Balance V-E-D')}
+              value={kpis.record}
+              sub={`${kpis.points} pts · ${entries.length} PJ`}
+            />
+            <Kpi
+              label={t('teamReport.page.kpi.goals', 'Goles')}
+              value={`${kpis.gf} – ${kpis.gc}`}
+              sub={`${t('teamReport.page.kpi.diff', 'Dif.')} ${kpis.gf - kpis.gc >= 0 ? '+' : ''}${kpis.gf - kpis.gc}`}
+            />
+            <Kpi
+              label={t('teamReport.page.kpi.xgForPerMatch', 'xG a favor / PJ')}
+              value={kpis.xgf !== null ? kpis.xgf.toFixed(2) : '–'}
+            />
+            <Kpi
+              label={t('teamReport.page.kpi.xgAgainstPerMatch', 'xG en contra / PJ')}
+              value={kpis.xgc !== null ? kpis.xgc.toFixed(2) : '–'}
+            />
+            <Kpi
+              label={t('teamReport.page.kpi.possessionMean', 'Posesión media')}
+              value={kpis.pos !== null ? `${kpis.pos.toFixed(0)}%` : '–'}
+            />
+            <Kpi
+              label={t('teamReport.page.kpi.goalsPerMatch', 'Goles / PJ')}
+              value={entries.length ? (kpis.gf / entries.length).toFixed(2) : '–'}
+              sub={entries.length ? t('teamReport.page.kpi.against', { count: (kpis.gc / entries.length).toFixed(2) }) : undefined}
+            />
           </div>
 
           <SubNavTabs
             tabs={[
-              { id: 'table', label: 'Tabla acumulada', icon: Table2, count: entries.length },
-              { id: 'charts', label: 'Evolución', icon: BarChart3 },
-              { id: 'heatmaps', label: 'Campogramas', icon: MapIcon },
+              { id: 'table', label: t('teamReport.page.tabs.table', 'Tabla acumulada'), icon: Table2, count: entries.length },
+              { id: 'charts', label: t('teamReport.page.tabs.charts', 'Evolución'), icon: BarChart3 },
+              { id: 'heatmaps', label: t('teamReport.page.tabs.heatmaps', 'Campogramas'), icon: MapIcon },
             ]}
             activeTab={view}
             onChange={(v) => setView(v as View)}
@@ -155,7 +193,7 @@ export default function TeamPage() {
 
           {!entries.length ? (
             <div className="rounded-2xl bg-gray-100 dark:bg-white/5 p-8 text-center text-sm font-semibold text-gray-500">
-              No hay partidos con este filtro.
+              {t('common.noData', 'Sin datos todavía')}
             </div>
           ) : view === 'table' ? (
             <TeamMetricsTable entries={entries} />

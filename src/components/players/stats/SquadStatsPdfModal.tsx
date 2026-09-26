@@ -36,25 +36,6 @@ const ICONS: Record<SquadStatsPdfSection, LucideIcon> = {
   participation: Users2,
 };
 
-const LABELS: Record<SquadStatsPdfSection, { title: string; subtitle: string }> = {
-  rankings: {
-    title: 'Rankings por Métrica Destacada',
-    subtitle: 'Top jugadores en minutos, goles, asistencias, acciones útiles, pases y duelos',
-  },
-  table: {
-    title: 'Tabla Comparativa de la Plantilla',
-    subtitle: 'Comparativa completa de todos los futbolistas con estadísticas de partido completo',
-  },
-  positions: {
-    title: 'Posiciones Medias Tácticas',
-    subtitle: 'Campograma horizontal completo con la colocación media de cada jugador',
-  },
-  participation: {
-    title: 'Minutos y Participación',
-    subtitle: 'Distribución de titularidades, suplencias y tiempo de juego',
-  },
-};
-
 export default function SquadStatsPdfModal({
   isOpen,
   onClose,
@@ -71,6 +52,25 @@ export default function SquadStatsPdfModal({
   const [error, setError] = useState<string | null>(null);
 
   if (!isOpen) return null;
+
+  const labels: Record<SquadStatsPdfSection, { title: string; subtitle: string }> = {
+    rankings: {
+      title: t('playerStats.pdfModal.sections.rankings', 'Rankings por Métrica Destacada'),
+      subtitle: t('playerStats.pdfModal.sections.rankingsSub', 'Top jugadores en minutos, goles, asistencias, acciones útiles, pases y duelos'),
+    },
+    table: {
+      title: t('playerStats.pdfModal.sections.table', 'Tabla Comparativa de la Plantilla'),
+      subtitle: t('playerStats.pdfModal.sections.tableSub', 'Comparativa completa de todos los futbolistas con estadísticas de partido completo'),
+    },
+    positions: {
+      title: t('playerStats.pdfModal.sections.positions', 'Posiciones Medias Tácticas'),
+      subtitle: t('playerStats.pdfModal.sections.positionsSub', 'Campograma horizontal completo con la colocación media de cada jugador'),
+    },
+    participation: {
+      title: t('playerStats.pdfModal.sections.participation', 'Minutos y Participación'),
+      subtitle: t('playerStats.pdfModal.sections.participationSub', 'Distribución de titularidades, suplencias y tiempo de juego'),
+    },
+  };
 
   const toggle = (s: SquadStatsPdfSection) =>
     setSelected((cur) => (cur.includes(s) ? cur.filter((x) => x !== s) : [...cur, s]));
@@ -100,6 +100,8 @@ export default function SquadStatsPdfModal({
     }
   };
 
+  const modeString = valueMode === 'per90' ? t('playerStats.mode.per90') : t('playerStats.mode.total');
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in"
@@ -116,13 +118,13 @@ export default function SquadStatsPdfModal({
             <img src="/escudo.png" alt="AC Milan" className="w-11 h-11 rounded-xl bg-white p-1 object-contain shrink-0" />
             <div>
               <span className="text-[10px] font-black uppercase tracking-wider text-[#db0030] block">
-                Informe de Plantilla en PDF (A4 Horizontal)
+                {t('playerStats.pdfModal.squadTitle', 'Informe de Plantilla en PDF (A4 Horizontal)')}
               </span>
               <h3 className="text-lg font-black tracking-tight text-white">
-                Estadísticas de la Plantilla
+                {t('playerStats.pdfModal.squadSub', 'Estadísticas de la Plantilla')}
               </h3>
               <p className="text-xs text-gray-400">
-                {squad.length} jugadores · {valueMode === 'per90' ? 'Por 90 min' : 'Valores Totales'}
+                {t('playerStats.pdfModal.squadSubDetails', { count: squad.length, mode: modeString })}
               </p>
             </div>
           </div>
@@ -140,21 +142,21 @@ export default function SquadStatsPdfModal({
         {/* Cuerpo del Modal: Selector de Secciones */}
         <div className="p-6 space-y-3 overflow-y-auto">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-gray-500">Selecciona qué secciones incluir en el PDF:</span>
+            <span className="text-xs font-bold text-gray-500">{t('playerStats.pdfModal.selectSections', 'Selecciona qué secciones incluir en el PDF:')}</span>
             <div className="flex gap-3 text-[11px] font-black uppercase tracking-wider">
               <button
                 type="button"
                 className="text-[#db0030] hover:underline"
                 onClick={() => setSelected(SQUAD_STATS_PDF_SECTIONS)}
               >
-                Todas
+                {t('playerStats.pdfModal.all', 'Todas')}
               </button>
               <button
                 type="button"
                 className="text-gray-400 hover:underline"
                 onClick={() => setSelected([])}
               >
-                Ninguna
+                {t('playerStats.pdfModal.none', 'Ninguna')}
               </button>
             </div>
           </div>
@@ -162,7 +164,7 @@ export default function SquadStatsPdfModal({
           {SQUAD_STATS_PDF_SECTIONS.map((s) => {
             const Icon = ICONS[s];
             const on = selected.includes(s);
-            const { title, subtitle } = LABELS[s];
+            const { title, subtitle } = labels[s];
             return (
               <button
                 key={s}
@@ -213,7 +215,7 @@ export default function SquadStatsPdfModal({
             disabled={busy}
             className="px-4 py-2 rounded-xl text-xs font-bold text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-neutral-800 transition-colors"
           >
-            Cancelar
+            {t('playerStats.pdfModal.cancel', 'Cancelar')}
           </button>
 
           <button
@@ -225,12 +227,12 @@ export default function SquadStatsPdfModal({
             {busy ? (
               <>
                 <Loader2 size={16} className="animate-spin" />
-                <span>Generando PDF...</span>
+                <span>{t('playerStats.pdfModal.generating', 'Generando PDF...')}</span>
               </>
             ) : (
               <>
                 <FileDown size={16} />
-                <span>Descargar PDF (Horizontal)</span>
+                <span>{t('playerStats.pdfModal.downloadHorizontal', 'Descargar PDF (Horizontal)')}</span>
               </>
             )}
           </button>

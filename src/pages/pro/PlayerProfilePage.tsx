@@ -17,6 +17,8 @@ import { extractFeedbackFromHtml } from '../../utils/feedbackExtractor';
 import TranslatedText from '../../components/common/TranslatedText';
 import SubNavTabs from '../../components/common/SubNavTabs';
 import PlayerMatchStatsTab from '../../components/players/stats/PlayerMatchStatsTab';
+import { usePlayerPaniniLines } from '../../hooks/usePlayerPaniniLines';
+import { aggregatePlayer, normalize } from '../../utils/playerPaniniStats';
 
 import PlayerImportModal from '../../components/pro/PlayerImportModal';
 
@@ -77,7 +79,25 @@ export default function PlayerProfilePage() {
   }, [dbPlayers]);
 
   const activePlayer = players.find(p => p.id === id) || players[0];
-  const activeDbPlayer = dbPlayers.find((p: any) => p.id === activePlayer?.id);
+  const activeDbPlayer = dbPlayers?.find((p: any) => p.id === activePlayer?.id);
+
+  const { lines: paniniLines } = usePlayerPaniniLines();
+
+  const playerStats = useMemo(() => {
+    if (!paniniLines || !activePlayer) return null;
+    const byId = paniniLines.filter((l) => l.playerId === activePlayer.id);
+    let matched = byId;
+    if (!matched.length && activeDbPlayer?.dorsal) {
+      const byDorsal = paniniLines.filter((l) => l.dorsal === activeDbPlayer.dorsal);
+      if (byDorsal.length) matched = byDorsal;
+    }
+    if (!matched.length && activePlayer.name) {
+      const tokens = normalize(activePlayer.name).split(' ').filter((t) => t.length > 2);
+      matched = paniniLines.filter((l) => !l.playerId && tokens.length > 0 && tokens.every((t) => normalize(l.stats?.nombre ?? l.name).includes(t)));
+    }
+    if (!matched.length) return null;
+    return aggregatePlayer(matched);
+  }, [paniniLines, activePlayer, activeDbPlayer]);
 
   if (loading) {
     return <div className="p-8 text-muted">Cargando perfil desde base de datos...</div>;
@@ -171,18 +191,45 @@ export default function PlayerProfilePage() {
           <div className="flex-1 flex flex-col justify-center w-full pt-2">
             <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2 text-center md:text-left">{t('playerProfile.performanceSummary')}</h3>
             {/* Mini stats */}
-            <div className="flex flex-wrap gap-8 justify-center md:justify-start">
-              <div className="text-center md:text-left bg-white border border-gray-100 shadow-sm p-4 rounded-xl min-w-[120px]">
-                <span className="text-xs text-gray-400 uppercase font-bold block mb-1 tracking-wider">{t('playerProfile.matchesPlayed')}</span>
-                <span className="text-3xl font-extrabold text-gray-800 block leading-none">0</span>
+            <div className="flex flex-wrap gap-4 sm:gap-6 justify-center md:justify-start">
+              <div className="text-center md:text-left bg-white border border-gray-100 shadow-sm p-4 rounded-xl min-w-[110px]">
+                <span className="text-xs text-gray-400 uppercase font-bold block mb-1 tracking-wider">{t('playerProfile.matchesPlayed', 'Partidos')}</span>
+                <span className="text-3xl font-extrabold text-gray-800 block leading-none tabular-nums">
+                  {playerStats?.matches ?? 0}
+                </span>
+                {playerStats?.total.starts ? (
+                  <span className="text-[10px] text-gray-400 font-bold block mt-1">
+                    {playerStats.total.starts} de titular
+                  </span>
+                ) : null}
               </div>
-              <div className="text-center md:text-left bg-white border border-gray-100 shadow-sm p-4 rounded-xl min-w-[120px]">
-                <span className="text-xs text-gray-400 uppercase font-bold block mb-1 tracking-wider">{t('playerProfile.goals')}</span>
-                <span className="text-3xl font-extrabold text-emerald-600 block leading-none">0</span>
+              <div className="text-center md:text-left bg-white border border-gray-100 shadow-sm p-4 rounded-xl min-w-[110px]">
+                <span className="text-xs text-gray-400 uppercase font-bold block mb-1 tracking-wider">{t('playerStats.kpi.minutes', 'Minutos')}</span>
+                <span className="text-3xl font-extrabold text-gray-800 block leading-none tabular-nums">
+                  {playerStats ? `${playerStats.minutes}'` : "0'"}
+                </span>
+                {playerStats?.matches ? (
+                  <span className="text-[10px] text-gray-400 font-bold block mt-1">
+                    ~{Math.round(playerStats.minutes / playerStats.matches)}'/partido
+                  </span>
+                ) : null}
               </div>
-              <div className="text-center md:text-left bg-white border border-gray-100 shadow-sm p-4 rounded-xl min-w-[120px]">
-                <span className="text-xs text-gray-400 uppercase font-bold block mb-1 tracking-wider">{t('playerProfile.assists')}</span>
-                <span className="text-3xl font-extrabold text-blue-600 block leading-none">0</span>
+              <div className="text-center md:text-left bg-white border border-gray-100 shadow-sm p-4 rounded-xl min-w-[110px]">
+                <span className="text-xs text-gray-400 uppercase font-bold block mb-1 tracking-wider">{t('playerProfile.goals', 'Goles')}</span>
+                <span className="text-3xl font-extrabold text-emerald-600 block leading-none tabular-nums">
+                  {playerStats?.total.goals ?? 0}
+                </span>
+              </div>
+              <div className="text-center md:text-left bg-white border border-gray-100 shadow-sm p-4 rounded-xl min-w-[110px]">
+                <span className="text-xs text-gray-400 uppercase font-bold block mb-1 tracking-wider">{t('playerProfile.assists', 'Asistencias')}</span>
+                <span className="text-3xl font-extrabold text-blue-600 block leading-none tabular-nums">
+                  {playerStats?.total.assists ?? 0}
+                </span>
+                {playerStats?.total.key_passes ? (
+                  <span className="text-[10px] text-gray-400 font-bold block mt-1">
+                    {playerStats.total.key_passes} pases clave
+                  </span>
+                ) : null}
               </div>
             </div>
           </div>
@@ -287,7 +334,7 @@ export default function PlayerProfilePage() {
           </div>
         )}
 
-        {activeTab === 'partidos' && <PlayerMatchStatsTab playerId={activePlayer.id} playerName={activePlayer.name} />}
+        {activeTab === 'partidos' && <PlayerMatchStatsTab playerId={activePlayer.id} playerName={activePlayer.name} playerDbInfo={activePlayer} />}
 
         {activeTab === 'peso' && (
           <PlayerWeightTab playerId={activePlayer.id} />

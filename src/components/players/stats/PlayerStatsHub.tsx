@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowDown, ArrowUp, ChevronDown, FileDown, FileUp, Info, Loader2, Map as MapIcon, Search, Table2, Target, Trophy } from 'lucide-react';
+import { ArrowDown, ArrowUp, ChevronDown, Crosshair, FileDown, FileUp, Info, Loader2, Map as MapIcon, Search, Share2, ShieldCheck, Table2, Target, Trophy } from 'lucide-react';
 import { usePlayerPaniniLines } from '../../../hooks/usePlayerPaniniLines';
 import {
   METRIC_GROUPS,
@@ -24,6 +24,9 @@ import { isLeagueMatch } from '../../../utils/teamPaniniMetrics';
 import PitchHeatmap, { Grass, PitchLines, PITCH_H, PITCH_W } from './PitchHeatmap';
 import { Segmented, card, defaultMinMinutes } from './PlayerMatchStatsTab';
 import SquadStatsPdfModal from './SquadStatsPdfModal';
+import PassingNetworkPitch from './PassingNetworkPitch';
+import TopMetricPitch from './TopMetricPitch';
+import { PitchPlayerTooltip, type PlayerTooltipData } from './PitchPlayerTooltip';
 
 export interface HubPlayer {
   id: string;
@@ -35,7 +38,7 @@ interface Props {
   players: HubPlayer[];
 }
 
-type Section = 'rankings' | 'table' | 'heatmaps' | 'positions';
+type Section = 'rankings' | 'table' | 'heatmaps' | 'positions' | 'passes' | 'recoveries' | 'crosses';
 
 const ROLE_COLOR: Record<Role, string> = { P: '#f59e0b', D: '#3b82f6', C: '#10b981', A: '#db0030' };
 const PLACEHOLDER = 'unsplash.com';
@@ -129,7 +132,7 @@ const PlayerStatsHub: React.FC<Props> = ({ players }) => {
             className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#db0030] hover:bg-red-700 text-white text-xs font-black uppercase tracking-wider transition-all shadow-sm"
           >
             <FileDown size={14} />
-            <span>Exportar PDF</span>
+            <span>{t('playerStats.exportPdf', 'Exportar PDF')}</span>
           </button>
         </div>
       </div>
@@ -138,17 +141,20 @@ const PlayerStatsHub: React.FC<Props> = ({ players }) => {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex p-1 rounded-2xl bg-white dark:bg-neutral-900 ring-1 ring-gray-200/80 dark:ring-white/10 shadow-sm overflow-x-auto max-w-full">
           {([
-            ['rankings', t('playerStats.hub.rankings'), Trophy],
-            ['table', t('playerStats.hub.table'), Table2],
-            ['heatmaps', t('playerStats.hub.heatmaps'), MapIcon],
-            ['positions', t('playerStats.hub.positions'), Target],
+            ['rankings', t('playerStats.hub.rankings', 'Rankings'), Trophy],
+            ['table', t('playerStats.hub.table', 'Tabla completa'), Table2],
+            ['heatmaps', t('playerStats.hub.heatmaps', 'Mapas de calor'), MapIcon],
+            ['positions', t('playerStats.hub.positions', 'Posiciones medias'), Target],
+            ['passes', t('playerStats.hub.passingNetwork', 'Red de pases'), Share2],
+            ['recoveries', t('playerStats.hub.recoveries', 'Recuperaciones'), ShieldCheck],
+            ['crosses', t('playerStats.hub.crosses', 'Centros'), Crosshair],
           ] as const).map(([id, label, Icon]) => (
             <button
               key={id}
               type="button"
               onClick={() => setSection(id)}
-              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-black whitespace-nowrap transition-all ${
-                section === id ? 'bg-[#db0030] text-white shadow' : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black whitespace-nowrap transition-all ${
+                section === id ? 'bg-[#db0030] text-white shadow-xs' : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
               }`}
             >
               <Icon size={14} /> {label}
@@ -221,7 +227,30 @@ const PlayerStatsHub: React.FC<Props> = ({ players }) => {
           </div>
         </div>
       )}
-      {section === 'positions' && <Positions squad={visible} displayName={displayName} onOpen={openPlayer} />}
+      {section === 'positions' && <Positions squad={visible} info={info} displayName={displayName} onOpen={openPlayer} />}
+      {section === 'passes' && <PassingNetworkPitch squad={visible} info={info} displayName={displayName} onOpen={openPlayer} />}
+      {section === 'recoveries' && (
+        <TopMetricPitch
+          metricType="recoveries"
+          squad={visible}
+          vm={vm}
+          minMinutes={minMin}
+          info={info}
+          displayName={displayName}
+          onOpen={openPlayer}
+        />
+      )}
+      {section === 'crosses' && (
+        <TopMetricPitch
+          metricType="crosses"
+          squad={visible}
+          vm={vm}
+          minMinutes={minMin}
+          info={info}
+          displayName={displayName}
+          onOpen={openPlayer}
+        />
+      )}
 
       <SquadStatsPdfModal
         isOpen={pdfModalOpen}
@@ -339,7 +368,7 @@ const RankingCard: React.FC<ListProps & { metric: PlayerMetric; focused: boolean
                     />
                   </div>
                   <div className="text-[9.5px] font-semibold text-gray-400">
-                    {r.player.minutes}' · {r.player.matches} PJ
+                    {r.player.minutes}' · {t('playerStats.matchesCount', { count: r.player.matches })}
                     {effectiveVm === 'per90' && r.player.total[metric.key] !== null ? ` · ${t('playerStats.col.total')} ${formatMetric(r.player.total[metric.key], metric)}` : ''}
                   </div>
                 </div>
@@ -449,7 +478,7 @@ const FullTable: React.FC<ListProps> = ({ squad, vm, minMinutes, info, displayNa
                     <Avatar player={p} info={p.playerId ? info.get(p.playerId) : undefined} size={26} />
                     <span>
                       <span className="block text-xs font-black text-gray-900 dark:text-white hover:text-[#db0030]">{displayName(p)}</span>
-                      <span className="block text-[10px] font-bold text-gray-400">#{p.dorsal} · {t(`playerStats.roleShort.${p.role}`)} · {p.matches} PJ</span>
+                      <span className="block text-[10px] font-bold text-gray-400">#{p.dorsal} · {t(`playerStats.roleShort.${p.role}`)} · {t('playerStats.matchesCount', { count: p.matches })}</span>
                     </span>
                   </button>
                 </td>
@@ -482,44 +511,138 @@ const FullTable: React.FC<ListProps> = ({ squad, vm, minMinutes, info, displayNa
 // ---------------------------------------------------------------------------
 // Posiciones medias
 // ---------------------------------------------------------------------------
-const Positions: React.FC<{ squad: PlayerAggregate[]; displayName: (p: PlayerAggregate) => string; onOpen: (p: PlayerAggregate) => void }> = ({ squad, displayName, onOpen }) => {
+const Positions: React.FC<{
+  squad: PlayerAggregate[];
+  info?: Map<string, HubPlayer>;
+  displayName: (p: PlayerAggregate) => string;
+  onOpen: (p: PlayerAggregate) => void;
+}> = ({ squad, info, displayName, onOpen }) => {
   const { t } = useTranslation();
-  const maxMin = Math.max(1, ...squad.map((p) => p.minutes));
-  const points = squad
+  const [onlyStartingXI, setOnlyStartingXI] = useState<boolean>(false);
+  const [playerTooltip, setPlayerTooltip] = useState<{ data: PlayerTooltipData; coords: { x: number; y: number } } | null>(null);
+
+  const activeSquad = useMemo(() => {
+    const sorted = [...squad].sort((a, b) => b.minutes - a.minutes);
+    if (onlyStartingXI) {
+      return sorted.slice(0, 11);
+    }
+    return sorted.filter((p) => p.minutes > 0);
+  }, [squad, onlyStartingXI]);
+
+  const maxMin = Math.max(1, ...activeSquad.map((p) => p.minutes));
+  const points = activeSquad
     .map((p) => ({ p, pos: averagePosition(p.lines) }))
     .filter((x): x is { p: PlayerAggregate; pos: { x: number; y: number } } => !!x.pos);
 
   return (
-    <div className={`${card} p-5`}>
-      <p className="text-xs text-gray-500 mb-3">{t('playerStats.hub.positionsSubtitle')}</p>
-      <svg viewBox={`0 0 ${PITCH_W} ${PITCH_H}`} className="w-full block rounded-2xl overflow-hidden">
-        <Grass id="avgpos" />
-        <PitchLines />
-        {points
-          .sort((a, b) => b.p.minutes - a.p.minutes)
-          .map(({ p, pos }) => {
-            const cx = (pos.x / 100) * PITCH_W;
-            const cy = (pos.y / 100) * PITCH_H;
-            const r = 1.6 + (p.minutes / maxMin) * 1.8;
-            return (
-              <g key={p.key} className="cursor-pointer" onClick={() => onOpen(p)}>
-                <title>{`${displayName(p)} · ${p.minutes}'`}</title>
-                <circle cx={cx} cy={cy} r={r} fill={ROLE_COLOR[p.role]} stroke="#fff" strokeWidth={0.4} fillOpacity={0.95} />
-                <text x={cx} y={cy + 0.9} textAnchor="middle" fontSize={2.4} fontWeight={900} fill="#fff">{p.dorsal}</text>
-                <text x={cx} y={cy + r + 2.6} textAnchor="middle" fontSize={1.9} fontWeight={800} fill="#fff" style={{ paintOrder: 'stroke', stroke: 'rgba(0,0,0,0.55)', strokeWidth: 0.5 }}>
-                  {displayName(p).split(' ').slice(-1)[0]}
-                </text>
-              </g>
-            );
-          })}
-      </svg>
-      <div className="flex flex-wrap gap-4 mt-3 text-[11px] font-bold text-gray-500">
-        {(['P', 'D', 'C', 'A'] as Role[]).map((r) => (
-          <span key={r} className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-full" style={{ background: ROLE_COLOR[r] }} /> {t(`playerStats.roles.${r}`)}
-          </span>
-        ))}
+    <div className={`${card} p-5 space-y-4`}>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight">
+            {t('playerStats.hub.positions', 'Posiciones Medias del Equipo')}
+          </h3>
+          <p className="text-xs text-gray-500 mt-0.5">{t('playerStats.hub.positionsSubtitle')}</p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          {/* Toggle XI Habitual */}
+          <div className="flex items-center p-0.5 rounded-xl bg-gray-100 dark:bg-neutral-800 ring-1 ring-gray-200/60 dark:ring-white/10 text-xs font-bold">
+            <button
+              type="button"
+              onClick={() => setOnlyStartingXI(true)}
+              className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all ${
+                onlyStartingXI
+                  ? 'bg-white dark:bg-neutral-700 text-gray-900 dark:text-white shadow-xs'
+                  : 'text-gray-500 hover:text-gray-900'
+              }`}
+            >
+              {t('playerStats.hub.startingXI', 'XI Principal (11)')}
+            </button>
+            <button
+              type="button"
+              onClick={() => setOnlyStartingXI(false)}
+              className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all ${
+                !onlyStartingXI
+                  ? 'bg-white dark:bg-neutral-700 text-gray-900 dark:text-white shadow-xs'
+                  : 'text-gray-500 hover:text-gray-900'
+              }`}
+            >
+              {t('playerStats.hub.allSquad', { count: squad.length })}
+            </button>
+          </div>
+
+          <div className="flex flex-wrap gap-2.5 text-[11px] font-bold text-gray-500">
+            {(['P', 'D', 'C', 'A'] as Role[]).map((r) => (
+              <span key={r} className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full" style={{ background: ROLE_COLOR[r] }} /> {t(`playerStats.roles.${r}`)}
+              </span>
+            ))}
+          </div>
+        </div>
       </div>
+
+      <div className="w-full max-w-[760px] mx-auto">
+        <div className="relative aspect-[105/68] w-full max-h-[420px] rounded-2xl overflow-hidden shadow-xl ring-1 ring-black/10 dark:ring-white/10 bg-[#0a1f14]">
+          <svg viewBox={`0 0 ${PITCH_W} ${PITCH_H}`} className="w-full h-full block select-none">
+            <Grass id="avgpos" />
+            <PitchLines stroke="rgba(255,255,255,0.75)" />
+            {points
+              .sort((a, b) => b.p.minutes - a.p.minutes)
+              .map(({ p, pos }) => {
+                const cx = (pos.x / 100) * PITCH_W;
+                const cy = (pos.y / 100) * PITCH_H;
+                const r = 2.0 + (p.minutes / maxMin) * 1.4;
+                return (
+                  <g
+                    key={p.key}
+                    className="cursor-pointer group"
+                    onClick={() => onOpen(p)}
+                    onMouseEnter={(e) => {
+                      setPlayerTooltip({
+                        data: {
+                          player: p,
+                          hubInfo: p.playerId ? info?.get(p.playerId) : undefined,
+                          context: 'positions',
+                        },
+                        coords: { x: e.clientX, y: e.clientY },
+                      });
+                    }}
+                    onMouseMove={(e) => {
+                      setPlayerTooltip((prev) => (prev ? { ...prev, coords: { x: e.clientX, y: e.clientY } } : null));
+                    }}
+                    onMouseLeave={() => setPlayerTooltip(null)}
+                  >
+                    <title>{`${displayName(p)} · ${p.minutes}'`}</title>
+                    <circle
+                      cx={cx}
+                      cy={cy}
+                      r={r}
+                      fill={ROLE_COLOR[p.role]}
+                      stroke="#fff"
+                      strokeWidth={0.4}
+                      fillOpacity={0.96}
+                      className="transition-transform group-hover:scale-115"
+                    />
+                    <text x={cx} y={cy + 0.8} textAnchor="middle" fontSize={2.1} fontWeight={900} fill="#fff">{p.dorsal}</text>
+                    <text
+                      x={cx}
+                      y={cy + r + 2.4}
+                      textAnchor="middle"
+                      fontSize={1.7}
+                      fontWeight={800}
+                      fill="#fff"
+                      style={{ paintOrder: 'stroke', stroke: 'rgba(0,0,0,0.85)', strokeWidth: 0.6 }}
+                    >
+                      {displayName(p).split(' ').slice(-1)[0]}
+                    </text>
+                  </g>
+                );
+              })}
+          </svg>
+        </div>
+      </div>
+
+      <PitchPlayerTooltip data={playerTooltip?.data ?? null} coords={playerTooltip?.coords ?? null} />
     </div>
   );
 };

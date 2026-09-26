@@ -20,8 +20,12 @@
     "matchFocuses": "Match Focuses",
     "matchData": "Live Data Record",
     "roster": "Roster",
+    "rosterDesc": "Cards, status and squad",
     "individualPlan": "Individual Plan",
     "meetings": "Individual Meetings",
+    "meetingsDesc": "1-on-1 tracking and agreements",
+    "playerStats": "Statistics",
+    "playerStatsDesc": "Individual and squad metrics",
     "evaluations": "Evaluations",
     "editSession": "Edit Session"
   },
@@ -838,6 +842,169 @@
         "pdfTitle": "Pitch maps · Opponents"
       }
     },
+    "blocks": {
+      "result": "Result",
+      "possession": "Possession & build-up",
+      "territory": "Territory",
+      "defense": "Defending & pressing",
+      "duels": "Duels & recoveries",
+      "chances": "Chances & finishing",
+      "rival_threat": "Opponent threat",
+      "discipline": "Discipline"
+    },
+    "metrics": {
+      "gf": "Goals for",
+      "gc": "Goals against",
+      "xgf": "xG for",
+      "xgc": "xG against",
+      "ims": "IMS Index",
+      "pos": "Possession",
+      "pos_time": "Possession time",
+      "balls": "Balls played",
+      "passes": "Completed passes",
+      "pass_acc": "Pass accuracy",
+      "useful": "Useful actions",
+      "build": "Build-up from deep",
+      "long_jump": "Long line-breaking passes",
+      "long_ok": "Useful long passes",
+      "ground_opp": "Ground passes in opp. half",
+      "switches": "Switches of play",
+      "barycenter": "Team height (barycenter)",
+      "supremacy": "Territorial dominance",
+      "box_balls": "Balls in opp. box",
+      "goal_attack": "Attacking threat",
+      "press_h": "Pressing height",
+      "recov_opp": "Recoveries in opp. half",
+      "press_eff": "Pressing efficiency",
+      "compact": "Block compactness",
+      "interceptions": "Interceptions",
+      "offside_won": "Offsides forced",
+      "recoveries": "Total recoveries",
+      "tackles_pct": "Tackles won %",
+      "aerial_pct": "Aerial duels won %",
+      "dribbles_pct": "Dribble success %",
+      "crosses": "Completed crosses",
+      "shots": "Total shots",
+      "shots_on": "Shots on target",
+      "chances": "Chances created",
+      "key_passes": "Key passes",
+      "efficiency": "Finishing efficiency",
+      "r_shots": "Shots conceded",
+      "r_shots_on": "Shots on target conceded",
+      "r_chances": "Opponent chances",
+      "r_box_balls": "Opp. balls in our box",
+      "fouls": "Fouls committed",
+      "yellow": "Yellow cards",
+      "red": "Red cards"
+    },
+    "heatmaps": {
+      "title": "Cumulative Pitch Heatmaps & Period Evolution",
+      "subtitle": "Territorial distribution by zones (avg % in 3×3). Overall pitch map compared with 3 season periods.",
+      "ourTeam": "Our team",
+      "rivals": "Opponents",
+      "allMetrics": "View all metrics ({{count}})",
+      "dominantZone": "Dominant zone:",
+      "noMatchesInTramo": "No matches in this period",
+      "general": "General",
+      "allSeason": "All season",
+      "global": "Global",
+      "tramo1": "Period 1 (Start)",
+      "tramo2": "Period 2 (Mid)",
+      "tramo3": "Period 3 (Recent)",
+      "tramoBadge": "Period {{n}}",
+      "pj": "{{count}} P",
+      "cols": {
+        "defense": "Defence",
+        "middle": "Midfield",
+        "attack": "Attack"
+      },
+      "rows": {
+        "left": "Left",
+        "center": "Centre",
+        "right": "Right"
+      },
+      "actions": {
+        "cobertura_recuperaciones": {
+          "label": "Recoveries",
+          "desc": "Territorial distribution of ball recoveries and interceptions"
+        },
+        "cobertura_acciones_utiles": {
+          "label": "Useful actions",
+          "desc": "Zones with highest positive activity and productive interventions"
+        },
+        "cobertura_pases_largos": {
+          "label": "Long passes",
+          "desc": "Origin and target zones of long balls"
+        },
+        "cobertura_regates": {
+          "label": "Dribbles",
+          "desc": "Sectors where 1v1s and take-ons concentrate"
+        },
+        "cobertura_centros": {
+          "label": "Crosses",
+          "desc": "Wide zones delivering crosses into the opp. box"
+        },
+        "cobertura_faltas": {
+          "label": "Fouls",
+          "desc": "Territorial density of fouls committed"
+        }
+      }
+    },
+    "page": {
+      "title": "Team",
+      "paniniReportsCount": "{{count}} Panini reports",
+      "paniniSubtitle": "Season cumulative metrics from imported Panini Digital Match Analysis reports",
+      "loading": "Loading reports…",
+      "error": "The season reports could not be loaded.",
+      "empty": "No Panini reports yet",
+      "emptyDesc": "Import each match's Panini PDF to build the team's season stats.",
+      "goToMatches": "Go to Matches",
+      "kpi": {
+        "record": "Record W-D-L",
+        "goals": "Goals",
+        "diff": "Diff.",
+        "xgForPerMatch": "xG for / Match",
+        "xgAgainstPerMatch": "xG against / Match",
+        "possessionMean": "Average possession",
+        "goalsPerMatch": "Goals / Match",
+        "against": "{{count}} conceded"
+      },
+      "venues": {
+        "all": "All",
+        "home": "Home",
+        "away": "Away"
+      },
+      "ranges": {
+        "all": "Season",
+        "last5": "Last 5",
+        "last3": "Last 3"
+      },
+      "tabs": {
+        "table": "Cumulative table",
+        "charts": "Evolution",
+        "heatmaps": "Pitch maps"
+      }
+    },
+    "table": {
+      "title": "Matchday-by-matchday cumulative",
+      "subtitle": "Colour relative to the average: the stronger the colour, the further away. Periods of {{n}} matches.",
+      "betterThanMean": "Better than average",
+      "worseThanMean": "Worse than average",
+      "noRating": "No rating",
+      "metric": "Metric",
+      "mean": "Average",
+      "win": "Win",
+      "loss": "Loss",
+      "draw": "Draw",
+      "tramo": "Period {{n}}"
+    },
+    "evolution": {
+      "value": "Value",
+      "rollingMean": "Avg {{n}}M",
+      "perMatch": "Per matchday",
+      "rollingMeanLine": "Rolling average {{n}} matches",
+      "meanLabel": "Avg {{val}}"
+    },
     "pdf": {
       "reportTitle": "Team report",
       "season": "Season",
@@ -912,6 +1079,7 @@
   "playerStats": {
     "tab": "Match stats",
     "hubTab": "Stats",
+    "exportPdf": "Export PDF",
     "loading": "Loading report stats…",
     "error": "The Panini reports could not be loaded.",
     "empty": "No match data",
@@ -930,6 +1098,21 @@
       "all": "Match",
       "1T": "1st half",
       "2T": "2nd half"
+    },
+    "tramos": {
+      "general": "General",
+      "allSeason": "All season",
+      "global": "Global",
+      "tramo1": "Period 1 (Start)",
+      "tramo2": "Period 2 (Mid)",
+      "tramo3": "Period 3 (Recent)",
+      "tramoBadge": "Period {{n}}",
+      "singleMatch": "Selected match",
+      "singleMatchSub": "Individual match",
+      "badgeMatch": "Match",
+      "showTouches": "Show touches",
+      "avgPositionShort": "Avg pos",
+      "noMatches": "No matches"
     },
     "allMatches": "All matches",
     "kpi": {
@@ -1006,6 +1189,20 @@
       "table": "Full table",
       "heatmaps": "Heat maps",
       "positions": "Average positions",
+      "passingNetwork": "Pass network",
+      "passingNetworkSubtitle": "Most frequent passes between teammates · Arrow thickness = pass volume",
+      "minPasses": "Min. passes",
+      "connections": "connections",
+      "topConnections": "Most frequent partnerships",
+      "selectedPlayer": "Selected player",
+      "instructions": "Interaction",
+      "recoveries": "Recoveries",
+      "recoveriesTitle": "Top 3 Players in Recoveries",
+      "recoveriesSubtitle": "Pitch diagram showing influence zones and average positions of top 3 recoverers",
+      "crosses": "Crosses",
+      "crossesTitle": "Top 3 Players in Crosses",
+      "crossesSubtitle": "Pitch diagram showing delivery zones and positions of top 3 crossers",
+      "top3Combined": "All (Top 3)",
       "minMinutes": "Min. minutes",
       "position": "Position",
       "allPositions": "All",
@@ -1016,7 +1213,37 @@
       "noRank": "No player meets the minimum minutes",
       "player": "Player",
       "positionsSubtitle": "Each player's average position in the selection, weighted by minutes · size = minutes",
-      "heatmapsSubtitle": "Accumulated touches of every player in the selection · sorted by minutes"
+      "heatmapsSubtitle": "Accumulated touches of every player in the selection · sorted by minutes",
+      "exportPdf": "Export PDF",
+      "closeFocus": "Clear focus",
+      "viewProfile": "View profile",
+      "ofTeam": "{{pct}}% of team",
+      "playedMatches": "{{minutes}}' played · {{matches}} matches",
+      "oppHalf": "In opponent half",
+      "efficiency": "Efficiency",
+      "mainZone": "Main zone:",
+      "leftWing": "Left wing",
+      "rightWing": "Right wing",
+      "centerZone": "Central zone",
+      "topRecoverer": "Recoverer",
+      "topCrosser": "Crosser",
+      "passesGiven": "Passes made",
+      "passesReceived": "Passes received",
+      "passesCount": "{{count}} passes",
+      "passInstruction": "Click any player to isolate outgoing (yellow) and incoming (blue) passes.",
+      "shownOfTotal": "{{shown}} shown of {{total}} total",
+      "startingXI": "Starting XI (11)",
+      "allSquad": "All ({{count}})",
+      "allSquadCount": "All players ({{count}})",
+      "mainPartner": "Main partner:",
+      "ballTouches": "Ball touches",
+      "clickToOpen": "Click to open profile",
+      "passer": "Passer",
+      "receiver": "Receiver",
+      "connectionVolume": "Connection volume",
+      "frequency": "Frequency",
+      "pctOfPasser": "{{pct}}% of passer",
+      "noDataForMetric": "Not enough data in the selected reports."
     },
     "roles": {
       "P": "Goalkeepers",
@@ -1150,6 +1377,62 @@
       "finishing": "Finishing",
       "discipline": "Discipline",
       "goalkeeper": "Goalkeeping"
+    },
+    "matchesCount": "{{count}} apps",
+    "pdfModal": {
+      "individualTitle": "Individual Report in PDF (A4 Portrait)",
+      "individualSub": "Full-match data · {{count}} matches",
+      "selectSections": "Select sections to include in PDF:",
+      "all": "All",
+      "none": "None",
+      "cancel": "Cancel",
+      "generating": "Generating PDF...",
+      "downloadVertical": "Download PDF (Portrait)",
+      "downloadHorizontal": "Download PDF (Landscape)",
+      "squadTitle": "Squad Report in PDF (A4 Landscape)",
+      "squadSub": "Squad Statistics",
+      "squadSubDetails": "{{count}} players · {{mode}}",
+      "sections": {
+        "summary": "Summary & Main KPIs",
+        "summarySub": "Matches, starts, minutes, goals, assists and performance",
+        "metrics": "Detailed Stats by Block",
+        "metricsSub": "Involvement, Passing, Attacking, Finishing, Defending and Goalkeeping (Total and Per 90)",
+        "heatmap": "Tactical Pitch & Heat Map",
+        "heatmapSub": "Touch density, average position and distribution by thirds and channels",
+        "passing": "Partners & Pass Network",
+        "passingSub": "Main pass receivers and passers of the player",
+        "matches": "Match-by-Match History",
+        "matchesSub": "Detailed breakdown of every match played",
+        "rankings": "Featured Performance Rankings",
+        "rankingsSub": "Top players in minutes, goals, assists, useful actions, passes and duels",
+        "table": "Squad Comparative Table",
+        "tableSub": "Full squad comparison with full-match statistics",
+        "positions": "Tactical Average Positions",
+        "positionsSub": "Full horizontal pitch with average position of each player",
+        "participation": "Minutes & Involvement",
+        "participationSub": "Distribution of starts, substitutions and playing time"
+      }
+    },
+    "report": {
+      "individualReport": "INDIVIDUAL REPORT",
+      "fullMatch": "Full Match",
+      "footer": "AC Milan Futuro · Analysis & Performance Department",
+      "tacticalPitchesTitle": "TACTICAL PITCHES & PERIOD EVOLUTION",
+      "noMatrixData": "No matrix data recorded",
+      "startPeriod": "Season Start",
+      "midPeriod": "Mid Season",
+      "recentPeriod": "Recent Phase"
+    },
+    "squadReport": {
+      "title": "SQUAD STATISTICAL REPORT",
+      "rankingsTitle": "FEATURED PERFORMANCE RANKINGS",
+      "playersAnalyzed": "Players analysed",
+      "tableTitle": "SQUAD COMPARATIVE TABLE",
+      "positionsTitle": "TACTICAL AVERAGE POSITIONS & INVOLVEMENT",
+      "roleLegend": "ROLE LEGEND",
+      "coordsNote1": "Average coordinates calculated",
+      "coordsNote2": "from Panini match reports",
+      "coordsNote3": "attacking to the right."
     }
   }
 }

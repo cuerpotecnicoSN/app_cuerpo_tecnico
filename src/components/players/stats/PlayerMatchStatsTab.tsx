@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { Bar, CartesianGrid, Cell, ComposedChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Info, Loader2, ArrowRight, Footprints, FileDown } from 'lucide-react';
 import { usePlayerPaniniLines } from '../../../hooks/usePlayerPaniniLines';
+import { useSupabaseData } from '../../../hooks/useSupabaseData';
+import type { Player } from '../../types';
 import {
   METRIC_GROUPS,
   PLAYER_METRICS,
@@ -16,6 +18,7 @@ import {
   lineValue,
   metricDef,
   normalize,
+  partitionPlayerTramos,
   passPartners,
   rankPlayers,
   touchZones,
@@ -26,13 +29,15 @@ import {
   type Role,
 } from '../../../utils/playerPaniniStats';
 import { isLeagueMatch, opponentLogo } from '../../../utils/teamPaniniMetrics';
-import PitchHeatmap, { HEAT_GRADIENT_CSS } from './PitchHeatmap';
+import PitchHeatmap from './PitchHeatmap';
 import PlayerReportPdfModal from './PlayerReportPdfModal';
+import type { PaniniMapEvent } from '../../../types/paniniReport';
 
 interface Props {
   playerId: string;
   /** Nombre en BD, para encontrar al jugador si el informe no está vinculado */
   playerName?: string;
+  playerDbInfo?: Player;
 }
 
 export const card = 'bg-white dark:bg-neutral-900 rounded-3xl ring-1 ring-gray-200/80 dark:ring-white/10 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_12px_32px_-16px_rgba(0,0,0,0.15)]';
@@ -101,10 +106,120 @@ const linesForPlayer = (lines: PlayerMatchLine[], playerId: string, playerName?:
   return lines.filter((l) => !l.playerId && tokens.length > 0 && tokens.every((t) => normalize(l.stats?.nombre ?? l.name).includes(t)));
 };
 
-const PlayerMatchStatsTab: React.FC<Props> = ({ playerId, playerName }) => {
+
+
+interface PlayerPitchCardProps {
+  touches: PaniniMapEvent[];
+  avgPos: { x: number; y: number } | null;
+  title: string;
+  subtitle: string;
+  badge: string;
+  isGeneral?: boolean;
+  matches: number;
+  showTouches: boolean;
+  period: 'all' | '1T' | '2T';
+}
+
+const PlayerPitchCard: React.FC<PlayerPitchCardProps> = ({
+  touches,
+  avgPos,
+  title,
+  subtitle,
+  badge,
+  isGeneral,
+  matches,
+  showTouches,
+  period,
+}) => {
+  const { t } = useTranslation();
+  return (
+    <div
+      className={`relative flex flex-col justify-between rounded-2xl p-3 transition-all ${
+        isGeneral
+          ? 'bg-red-50/40 dark:bg-neutral-800/90 ring-2 ring-[#db0030]/60 dark:ring-[#db0030]/70 shadow-md'
+          : 'bg-white dark:bg-neutral-900 ring-1 ring-gray-200/80 dark:ring-white/10 shadow-xs'
+      }`}
+    >
+      <div className="flex items-start justify-between gap-1 mb-2.5">
+        <div>
+          <div className="flex items-center gap-1.5">
+            <span
+              className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md ${
+                isGeneral
+                  ? 'bg-[#db0030] text-white shadow-xs'
+                  : 'bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-gray-300'
+              }`}
+            >
+              {badge}
+            </span>
+            <span className="text-xs font-black text-gray-900 dark:text-white truncate">{title}</span>
+          </div>
+          <div className="text-[10px] font-bold text-gray-400 mt-0.5">{subtitle}</div>
+        </div>
+        <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-gray-100 dark:bg-white/5 text-gray-500 tabular-nums shrink-0">
+          {matches} PJ
+        </span>
+      </div>
+
+      <div className="w-full my-0.5">
+        {touches.length && matches > 0 ? (
+          <PitchHeatmap
+            touches={touches}
+            avgPosition={period === 'all' ? avgPos : null}
+            showTouches={showTouches}
+            label={title}
+          />
+        ) : (
+          <div className="aspect-[105/68] rounded-2xl bg-gray-100 dark:bg-neutral-800/60 flex flex-col items-center justify-center p-3 text-center">
+            <Footprints size={20} className="text-gray-400 mb-1" />
+            <span className="text-[11px] font-bold text-gray-400">{t('playerStats.heatmap.noTouches', 'Sin toques registrados')}</span>
+          </div>
+        )}
+      </div>
+
+      <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100 dark:border-white/5 text-[10px] font-bold text-gray-500">
+        <span className="tabular-nums">
+          {t('playerStats.heatmap.touches', { count: touches.length })}
+        </span>
+        {avgPos && period === 'all' && (
+          <span className="flex items-center gap-1 text-[10px] text-gray-400">
+            <span className="w-2 h-2 rounded-full bg-white ring-1 ring-gray-900 shadow-2xs" />
+            {t('playerStats.tramos.avgPositionShort', 'Pos. media')}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const PlayerMatchStatsTab: React.FC<Props> = ({ playerId, playerName, playerDbInfo }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { data: dbPlayers } = useSupabaseData<any>('players');
   const { lines, loading, error } = usePlayerPaniniLines();
+
+  const resolvedDbPlayer = useMemo<Player | undefined>(() => {
+    if (playerDbInfo) return playerDbInfo;
+    const p = dbPlayers?.find((x: any) => x.id === playerId);
+    if (!p) return undefined;
+    return {
+      id: p.id,
+      name: `${p.first_name || ''} ${p.last_name || ''}`.trim() || p.nombre || '',
+      position: p.main_position || p.posicion || 'Sin definir',
+      age: p.birth_date ? new Date().getFullYear() - new Date(p.birth_date).getFullYear() : 0,
+      weight: p.weight_kg || 0,
+      height: p.height_cm || 0,
+      bodyFat: 0,
+      history: p.history || '',
+      strengths: [],
+      weaknesses: [],
+      goals: [],
+      status: p.medical_status || 'Apto',
+      nationality: p.nationality || '',
+      dominantFoot: p.dominant_foot,
+      avatar: p.photo_url || 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=200',
+    };
+  }, [playerDbInfo, dbPlayers, playerId]);
   const [competition, setCompetition] = useState<CompetitionFilter>('all');
   const [matchFilter, setMatchFilter] = useState<string>('all');
   const [period, setPeriod] = useState<'all' | '1T' | '2T'>('all');
@@ -128,6 +243,7 @@ const PlayerMatchStatsTab: React.FC<Props> = ({ playerId, playerName }) => {
   );
   const zones = useMemo(() => touchZones(touches), [touches]);
   const avgPos = useMemo(() => averagePosition(heatLines), [heatLines]);
+  const playerTramos = useMemo(() => partitionPlayerTramos(mine, period, t), [mine, period, t]);
 
   if (loading) {
     return (
@@ -203,7 +319,7 @@ const PlayerMatchStatsTab: React.FC<Props> = ({ playerId, playerName }) => {
             className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#db0030] hover:bg-red-700 text-white text-xs font-black uppercase tracking-wider transition-all shadow-sm"
           >
             <FileDown size={14} />
-            <span>Exportar PDF</span>
+            <span>{t('playerStats.exportPdf', 'Exportar PDF')}</span>
           </button>
         </div>
       </div>
@@ -227,21 +343,25 @@ const PlayerMatchStatsTab: React.FC<Props> = ({ playerId, playerName }) => {
         <Kpi label={t('playerStats.kpi.cards')} value={`${cards} / ${reds}`} sub={`${t('playerStats.metrics.yellow')} / ${t('playerStats.metrics.red')}`} />
       </div>
 
-      {/* Mapa de calor + zonas + socios */}
-      <div ref={heatRef} className="grid grid-cols-1 xl:grid-cols-12 gap-4 scroll-mt-24 items-start">
-        <div className={`${card} p-5 xl:col-span-7 flex flex-col justify-between`}>
-          <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
+      {/* Mapa de calor + Evolución por Tramos + Zonas + Socios */}
+      <div ref={heatRef} className="space-y-4 scroll-mt-24">
+        <div className={`${card} p-5 space-y-4`}>
+          <div className="flex flex-wrap items-start justify-between gap-3 border-b border-gray-100 dark:border-white/5 pb-3">
             <div>
-              <h3 className="text-base font-black text-gray-900 dark:text-white tracking-tight">{t('playerStats.heatmap.title')}</h3>
-              <p className="text-xs text-gray-500">{t('playerStats.heatmap.subtitle')}</p>
+              <h3 className="text-base font-black text-gray-900 dark:text-white tracking-tight">
+                {t('playerStats.heatmap.title', 'Mapa de calor y Evolución por Tramos')}
+              </h3>
+              <p className="text-xs text-gray-500">
+                {t('playerStats.heatmap.subtitle', 'Densidad de toques del jugador (ataque hacia la derecha) · Comparativa general y evolución en 3 tramos de la temporada')}
+              </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <select
                 value={matchFilter}
                 onChange={(e) => setMatchFilter(e.target.value)}
-                className="!rounded-xl !py-1.5 !px-3 text-xs font-bold dark:!bg-neutral-800 dark:!text-white dark:!border-white/10"
+                className="!rounded-xl !py-1.5 !px-3 text-xs font-bold dark:!bg-neutral-800 dark:!text-white dark:!border-white/10 shadow-xs"
               >
-                <option value="all">{t('playerStats.allMatches')}</option>
+                <option value="all">{t('playerStats.allMatches', 'Todos los partidos')}</option>
                 {mine.map((l) => (
                   <option key={l.entry.match.id} value={l.entry.match.id}>
                     {lineLabel(l)} · {l.entry.rival.nombre || l.entry.match.opponent} ({l.minutes}')
@@ -251,66 +371,96 @@ const PlayerMatchStatsTab: React.FC<Props> = ({ playerId, playerName }) => {
               <Segmented<'all' | '1T' | '2T'>
                 value={period}
                 onChange={setPeriod}
-                options={[['all', t('playerStats.period.all')], ['1T', t('playerStats.period.1T')], ['2T', t('playerStats.period.2T')]]}
+                options={[
+                  ['all', t('playerStats.period.all', 'Partido')],
+                  ['1T', t('playerStats.period.1T', '1ª parte')],
+                  ['2T', t('playerStats.period.2T', '2ª parte')],
+                ]}
+              />
+              <label className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-gray-50 dark:bg-neutral-800 text-xs font-bold text-gray-600 dark:text-gray-300 ring-1 ring-gray-200/60 dark:ring-white/10 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={showTouches}
+                  onChange={(e) => setShowTouches(e.target.checked)}
+                  className="accent-[#db0030]"
+                />
+                <span>{t('playerStats.heatmap.showTouches', 'Ver toques')}</span>
+              </label>
+            </div>
+          </div>
+
+          {matchFilter === 'all' ? (
+            /* Vista General + 3 Tramos de la temporada */
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+              {/* 1. Campograma General */}
+              <PlayerPitchCard
+                touches={touches}
+                avgPos={avgPos}
+                title={t('playerStats.tramos.general', 'General')}
+                subtitle={t('playerStats.tramos.allSeason', 'Toda la temporada')}
+                badge={t('playerStats.tramos.global', 'Global')}
+                isGeneral={true}
+                matches={mine.length}
+                showTouches={showTouches}
+                period={period}
+              />
+
+              {/* 2, 3, 4. Campogramas de los 3 Tramos */}
+              {playerTramos.map((tr) => (
+                <PlayerPitchCard
+                  key={tr.index}
+                  touches={tr.touches}
+                  avgPos={tr.avgPos}
+                  title={tr.name}
+                  subtitle={tr.label}
+                  badge={t('playerStats.tramos.tramoBadge', { n: tr.index })}
+                  isGeneral={false}
+                  matches={tr.matchCount}
+                  showTouches={showTouches}
+                  period={period}
+                />
+              ))}
+            </div>
+          ) : (
+            /* Vista de partido individual */
+            <div className="max-w-[500px] mx-auto py-2">
+              <PlayerPitchCard
+                touches={touches}
+                avgPos={avgPos}
+                title={mine.find((l) => l.entry.match.id === matchFilter) ? lineLabel(mine.find((l) => l.entry.match.id === matchFilter)!) : t('playerStats.tramos.singleMatch', 'Partido seleccionado')}
+                subtitle={mine.find((l) => l.entry.match.id === matchFilter)?.entry.rival.nombre || t('playerStats.tramos.singleMatchSub', 'Partido individual')}
+                badge={t('playerStats.tramos.badgeMatch', 'Partido')}
+                isGeneral={true}
+                matches={1}
+                showTouches={showTouches}
+                period={period}
               />
             </div>
-          </div>
-
-          <div className="w-full max-w-[450px] mx-auto my-1">
-            {touches.length ? (
-              <PitchHeatmap touches={touches} avgPosition={period === 'all' ? avgPos : null} showTouches={showTouches} label={t('playerStats.heatmap.title')} />
-            ) : (
-              <div className="aspect-[105/68] rounded-2xl bg-gray-100 dark:bg-white/5 flex items-center justify-center text-xs font-bold text-gray-400">
-                {t('playerStats.heatmap.noTouches')}
-              </div>
-            )}
-          </div>
-
-          <div className="flex flex-wrap items-center justify-between gap-3 mt-3 pt-3 border-t border-gray-100 dark:border-white/10 text-[11px] font-bold text-gray-500">
-            <div className="flex items-center gap-4">
-              <span className="flex items-center gap-2">
-                <span className="w-16 h-2 rounded-full" style={{ background: HEAT_GRADIENT_CSS }} />
-                {t('playerStats.heatmap.touches', { count: touches.length })}
-              </span>
-              {period === 'all' && avgPos && (
-                <span className="flex items-center gap-1.5">
-                  <span className="w-3 h-3 rounded-full bg-white ring-2 ring-gray-900 shadow-xs" /> {t('playerStats.heatmap.avgPosition')}
-                </span>
-              )}
-              {showTouches && (
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-amber-200 ring-1 ring-black/30" /> {t('playerStats.heatmap.setPiece')}
-                </span>
-              )}
-            </div>
-            <label className="flex items-center gap-2 cursor-pointer select-none">
-              <input type="checkbox" checked={showTouches} onChange={(e) => setShowTouches(e.target.checked)} className="accent-[#db0030]" />
-              {t('playerStats.heatmap.showTouches')}
-            </label>
-          </div>
+          )}
         </div>
 
-        <div className="xl:col-span-5 space-y-4">
+        {/* Zonas (Dónde actúa) y Socios habituales */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className={`${card} p-5`}>
-            <h3 className="text-base font-black text-gray-900 dark:text-white tracking-tight mb-3">{t('playerStats.zones.title')}</h3>
+            <h3 className="text-base font-black text-gray-900 dark:text-white tracking-tight mb-3">{t('playerStats.zones.title', 'Dónde actúa')}</h3>
             <div className="grid grid-cols-2 gap-5">
               <div>
-                <div className="text-[10px] font-black uppercase tracking-wider text-gray-400 mb-2">{t('playerStats.zones.thirds')}</div>
+                <div className="text-[10px] font-black uppercase tracking-wider text-gray-400 mb-2">{t('playerStats.zones.thirds', 'Por tercios')}</div>
                 <Bars
                   items={[
-                    [t('playerStats.zones.defense'), zones.thirds[0]],
-                    [t('playerStats.zones.middle'), zones.thirds[1]],
-                    [t('playerStats.zones.attack'), zones.thirds[2]],
+                    [t('playerStats.zones.defense', 'Defensa'), zones.thirds[0]],
+                    [t('playerStats.zones.middle', 'Medio'), zones.thirds[1]],
+                    [t('playerStats.zones.attack', 'Ataque'), zones.thirds[2]],
                   ]}
                 />
               </div>
               <div>
-                <div className="text-[10px] font-black uppercase tracking-wider text-gray-400 mb-2">{t('playerStats.zones.lanes')}</div>
+                <div className="text-[10px] font-black uppercase tracking-wider text-gray-400 mb-2">{t('playerStats.zones.lanes', 'Por carriles')}</div>
                 <Bars
                   items={[
-                    [t('playerStats.zones.left'), zones.lanes[0]],
-                    [t('playerStats.zones.center'), zones.lanes[1]],
-                    [t('playerStats.zones.right'), zones.lanes[2]],
+                    [t('playerStats.zones.left', 'Izquierda'), zones.lanes[0]],
+                    [t('playerStats.zones.center', 'Centro'), zones.lanes[1]],
+                    [t('playerStats.zones.right', 'Derecha'), zones.lanes[2]],
                   ]}
                 />
               </div>
@@ -318,7 +468,7 @@ const PlayerMatchStatsTab: React.FC<Props> = ({ playerId, playerName }) => {
           </div>
 
           <div className={`${card} p-5`}>
-            <h3 className="text-base font-black text-gray-900 dark:text-white tracking-tight mb-3">{t('playerStats.partners.title')}</h3>
+            <h3 className="text-base font-black text-gray-900 dark:text-white tracking-tight mb-3">{t('playerStats.partners.title', 'Socios habituales')}</h3>
             <div className="grid grid-cols-2 gap-5">
               {(['to', 'from'] as const).map((dir) => {
                 const list = passPartners(heatLines, dir, 5);
@@ -512,6 +662,7 @@ const PlayerMatchStatsTab: React.FC<Props> = ({ playerId, playerName }) => {
         isOpen={pdfModalOpen}
         onClose={() => setPdfModalOpen(false)}
         player={me}
+        playerDbInfo={resolvedDbPlayer}
         lines={mine}
         competitionFilter={competition}
       />

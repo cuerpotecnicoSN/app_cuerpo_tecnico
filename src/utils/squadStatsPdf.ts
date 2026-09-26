@@ -80,8 +80,8 @@ export async function exportSquadStatsPdf({
   let pageNum = 1;
 
   const compLabel =
-    competitionFilter === 'league' ? 'Liga' : competitionFilter === 'cup' ? 'Copa' : 'Todas las competiciones';
-  const modeLabel = valueMode === 'per90' ? 'Valores por 90 min' : 'Valores totales';
+    competitionFilter === 'league' ? t('playerStats.competition.league', 'Liga') : competitionFilter === 'cup' ? t('playerStats.competition.cup', 'Copa') : t('playerStats.competition.all', 'Todas las competiciones');
+  const modeLabel = valueMode === 'per90' ? t('playerStats.mode.per90') : t('playerStats.mode.total');
 
   const drawPageHeader = (title: string, subtitle?: string) => {
     // Fondo superior rossonero
@@ -99,17 +99,17 @@ export async function exportSquadStatsPdf({
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10.5);
     doc.setTextColor(WHITE[0], WHITE[1], WHITE[2]);
-    doc.text('AC MILAN FUTURO · INFORME ESTADÍSTICO DE LA PLANTILLA', M + (logoImg ? 17 : 0), 9);
+    doc.text(`AC MILAN FUTURO · ${t('playerStats.squadReport.title', 'INFORME ESTADÍSTICO DE LA PLANTILLA')}`, M + (logoImg ? 17 : 0), 9);
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.5);
     doc.setTextColor(200, 205, 215);
-    doc.text(`${title} · ${compLabel} · ${modeLabel} (Partido Completo)`, M + (logoImg ? 17 : 0), 14.5);
+    doc.text(`${title} · ${compLabel} · ${modeLabel} (${t('playerStats.report.fullMatch', 'Partido Completo')})`, M + (logoImg ? 17 : 0), 14.5);
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(7.5);
     doc.setTextColor(RED[0], RED[1], RED[2]);
-    doc.text('TEMPORADA 2026/27', PAGE_W - M, 10, { align: 'right' });
+    doc.text(t('dashboard.season', 'TEMPORADA 2026/27').toUpperCase(), PAGE_W - M, 10, { align: 'right' });
 
     if (subtitle) {
       doc.setFont('helvetica', 'normal');
@@ -127,15 +127,15 @@ export async function exportSquadStatsPdf({
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(7);
     doc.setTextColor(GREY[0], GREY[1], GREY[2]);
-    doc.text('AC Milan Futuro · Departamento de Rendimiento & Scouting', M, PAGE_H - 5.5);
-    doc.text(`Página ${curPage}`, PAGE_W - M, PAGE_H - 5.5, { align: 'right' });
+    doc.text(t('playerStats.report.footer', 'AC Milan Futuro · Departamento de Rendimiento & Scouting'), M, PAGE_H - 5.5);
+    doc.text(`${t('common.page', 'Página')} ${curPage}`, PAGE_W - M, PAGE_H - 5.5, { align: 'right' });
   };
 
   // ==========================================
   // SECCIÓN 1: RANKINGS DE RENDIMIENTO POR MÉTRICA
   // ==========================================
   if (sections.includes('rankings')) {
-    drawPageHeader('RANKINGS DE RENDIMIENTO DESTACADO', `${squad.length} Jugadores analizados`);
+    drawPageHeader(t('playerStats.squadReport.rankingsTitle', 'RANKINGS DE RENDIMIENTO DESTACADO'), `${squad.length} ${t('playerStats.squadReport.playersAnalyzed', 'Jugadores analizados')}`);
 
     let curY = 26;
 
@@ -208,7 +208,7 @@ export async function exportSquadStatsPdf({
       pageNum++;
     }
 
-    drawPageHeader('TABLA COMPARATIVA DE LA PLANTILLA', 'Métricas de Partido Completo');
+    drawPageHeader(t('playerStats.squadReport.tableTitle', 'TABLA COMPARATIVA DE LA PLANTILLA'), `${t('playerStats.report.fullMatch', 'Métricas de Partido Completo')}`);
 
     let curY = 26;
 
@@ -225,10 +225,10 @@ export async function exportSquadStatsPdf({
     doc.setFontSize(6.2);
     doc.setTextColor(WHITE[0], WHITE[1], WHITE[2]);
 
-    doc.text('DORSAL / JUGADOR', M + 3, curY + 4.5);
+    doc.text(`${t('playerProfile.fields.dorsal', 'DORSAL').toUpperCase()} / ${t('playerStats.hub.player', 'JUGADOR').toUpperCase()}`, M + 3, curY + 4.5);
     doc.text('POS', M + 50, curY + 4.5);
-    doc.text('PJ', M + 62, curY + 4.5, { align: 'center' });
-    doc.text('MIN', M + 74, curY + 4.5, { align: 'center' });
+    doc.text(t('playerProfile.matchesAbbr', 'PJ'), M + 62, curY + 4.5, { align: 'center' });
+    doc.text(t('playerStats.matchTable.min', 'MIN').toUpperCase(), M + 74, curY + 4.5, { align: 'center' });
 
     const colStep = (USABLE_W - 84) / tableMetrics.length;
     tableMetrics.forEach((m, idx) => {
@@ -258,7 +258,7 @@ export async function exportSquadStatsPdf({
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(6);
       doc.setTextColor(GREY[0], GREY[1], GREY[2]);
-      doc.text(p.role, M + 50, curY + 4);
+      doc.text(t(`playerStats.roleShort.${p.role}`), M + 50, curY + 4);
 
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(INK[0], INK[1], INK[2]);
@@ -291,7 +291,7 @@ export async function exportSquadStatsPdf({
     doc.addPage();
     pageNum++;
 
-    drawPageHeader('POSICIONES MEDIAS TÁCTICAS Y PARTICIPACIÓN', 'Distribución sobre el terreno de juego');
+    drawPageHeader(t('playerStats.squadReport.positionsTitle', 'POSICIONES MEDIAS TÁCTICAS Y PARTICIPACIÓN'), t('playerStats.hub.positionsSubtitle', 'Distribución sobre el terreno de juego'));
 
     let curY = 26;
 
@@ -367,13 +367,13 @@ export async function exportSquadStatsPdf({
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(8);
       doc.setTextColor(BLACK[0], BLACK[1], BLACK[2]);
-      doc.text('LEYENDA DE ROLES', legX + 5, pitchY + 8);
+      doc.text(t('playerStats.squadReport.roleLegend', 'LEYENDA DE ROLES'), legX + 5, pitchY + 8);
 
       const rolesList = [
-        { code: 'P', label: 'Porteros', color: [245, 158, 11] as RGB },
-        { code: 'D', label: 'Defensas', color: [37, 99, 235] as RGB },
-        { code: 'C', label: 'Centrocampistas', color: [16, 185, 129] as RGB },
-        { code: 'A', label: 'Atacantes', color: [219, 0, 48] as RGB },
+        { code: 'P', label: t('playerStats.roles.P', 'Porteros'), color: [245, 158, 11] as RGB },
+        { code: 'D', label: t('playerStats.roles.D', 'Defensas'), color: [37, 99, 235] as RGB },
+        { code: 'C', label: t('playerStats.roles.C', 'Centrocampistas'), color: [16, 185, 129] as RGB },
+        { code: 'A', label: t('playerStats.roles.A', 'Delanteros'), color: [219, 0, 48] as RGB },
       ];
 
       rolesList.forEach((r, rIdx) => {
@@ -389,9 +389,9 @@ export async function exportSquadStatsPdf({
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(6.5);
       doc.setTextColor(GREY[0], GREY[1], GREY[2]);
-      doc.text('Coordenadas medias calculadas', legX + 5, pitchY + 68);
-      doc.text('a partir de los informes Panini', legX + 5, pitchY + 73);
-      doc.text('con sentido de ataque hacia la derecha.', legX + 5, pitchY + 78);
+      doc.text(t('playerStats.squadReport.coordsNote1', 'Coordenadas medias calculadas'), legX + 5, pitchY + 68);
+      doc.text(t('playerStats.squadReport.coordsNote2', 'a partir de los informes Panini'), legX + 5, pitchY + 73);
+      doc.text(t('playerStats.squadReport.coordsNote3', 'con sentido de ataque hacia la derecha.'), legX + 5, pitchY + 78);
     }
 
     drawFooter(pageNum);

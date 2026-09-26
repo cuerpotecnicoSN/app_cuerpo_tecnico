@@ -69,7 +69,6 @@ const YELLOW: RGB = [250, 204, 21];
 const FEATURED = ['pos', 'pass_acc', 'press_h', 'barycenter', 'shots', 'r_chances'];
 
 const HEATMAP_ACTIONS: CoverageKey[] = [
-  'bloque',
   'cobertura_recuperaciones',
   'cobertura_acciones_utiles',
   'cobertura_pases_largos',
