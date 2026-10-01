@@ -128,63 +128,212 @@ function readVarint(buf: Uint8Array, startPos: number): [number, number] {
 
 const textDecoder = new TextDecoder('utf-8');
 
-/**
- * Extracts Table DataList protobuf entries: Map of string keys to string values
- */
-export function extractDataListEntries(buf: Uint8Array): Map<number, string> {
-  const entries = new Map<number, string>();
-  let p = 0;
-  while (p < buf.length - 4) {
-    if (buf[p] === 0x1a) {
-      // potential field 3 entry (tag 0x1a)
-      try {
-        const [entryLen, afterTag] = readVarint(buf, p + 1);
-        if (entryLen > 0 && afterTag + entryLen <= buf.length) {
-          const sub = buf.subarray(afterTag, afterTag + entryLen);
-          let sp = 0;
-          let k: number | null = null;
-          let strVal: string | null = null;
-          while (sp < sub.length) {
-            const [stag, nsp] = readVarint(sub, sp);
-            sp = nsp;
-            const swire = stag & 7;
-            const sfield = stag >> 3;
-            if (sfield === 0) break;
-            if (swire === 0) {
-              const [v, np] = readVarint(sub, sp);
-              sp = np;
-              if (sfield === 1) k = v;
-            } else if (swire === 2) {
-              const [slen, np] = readVarint(sub, sp);
-              sp = np;
-              if (sp + slen <= sub.length) {
-                const sbytes = sub.subarray(sp, sp + slen);
-                sp += slen;
-                if (sfield === 3) {
-                  strVal = textDecoder.decode(sbytes).trim();
-                }
-              }
-            } else if (swire === 1) {
-              sp += 8;
-            } else if (swire === 5) {
-              sp += 4;
-            } else {
-              break;
+interface ArchiveRecord {
+  id: number;
+  type: number;
+  data: Uint8Array;
+}
+
+// Parses all TSP archives from decompressed IWA bytes
+function parseIwaArchives(decompressed: Uint8Array): ArchiveRecord[] {
+  const archives: ArchiveRecord[] = [];
+  let pos = 0;
+  while (pos < decompressed.length) {
+    const [headerLen, afterHeaderLen] = readVarint(decompressed, pos);
+    if (headerLen <= 0 || afterHeaderLen + headerLen > decompressed.length) break;
+    const headerBytes = decompressed.subarray(afterHeaderLen, afterHeaderLen + headerLen);
+
+    let hp = 0;
+    let archId = 0;
+    const payloads: { type: number; length: number }[] = [];
+    while (hp < headerBytes.length) {
+      const [tag, nhp] = readVarint(headerBytes, hp);
+      hp = nhp;
+      const f = tag >> 3, w = tag & 7;
+      if (w === 0) {
+        const [v, np] = readVarint(headerBytes, hp);
+        hp = np;
+        if (f === 1) archId = v;
+      } else if (w === 2) {
+        const [mlen, np] = readVarint(headerBytes, hp);
+        hp = np;
+        const msgSub = headerBytes.subarray(hp, hp + mlen);
+        hp += mlen;
+        if (f === 2) {
+          let mp = 0, mtype = 0, mlength = 0;
+          while (mp < msgSub.length) {
+            const [mtag, nmp] = readVarint(msgSub, mp);
+            mp = nmp;
+            const mf = mtag >> 3, mw = mtag & 7;
+            if (mw === 0) {
+              const [mv, nmp2] = readVarint(msgSub, mp);
+              mp = nmp2;
+              if (mf === 1) mtype = mv;
+              if (mf === 3) mlength = mv;
+            } else if (mw === 2) {
+              const [slen, nmp2] = readVarint(msgSub, mp);
+              mp = nmp2 + slen;
             }
           }
-          if (k !== null && strVal !== null && strVal.length > 0) {
-            entries.set(k, strVal);
-            p = afterTag + entryLen;
-            continue;
-          }
+          payloads.push({ type: mtype, length: mlength });
         }
-      } catch {
-        // continue scan
       }
     }
-    p++;
+
+    let curPayloadPos = afterHeaderLen + headerLen;
+    for (const pl of payloads) {
+      if (curPayloadPos + pl.length <= decompressed.length) {
+        archives.push({
+          id: archId,
+          type: pl.type,
+          data: decompressed.subarray(curPayloadPos, curPayloadPos + pl.length),
+        });
+      }
+      curPayloadPos += pl.length;
+    }
+    pos = curPayloadPos;
   }
-  return entries;
+  return archives;
+}
+
+// Extracts strings from a TSWP.StorageArchive (Type 2001)
+function extractStorageText(data: Uint8Array): string {
+  let p = 0;
+  const paragraphs: string[] = [];
+  while (p < data.length) {
+    const [tag, np] = readVarint(data, p);
+    p = np;
+    const f = tag >> 3, w = tag & 7;
+    if (w === 0) {
+      const [, np2] = readVarint(data, p);
+      p = np2;
+    } else if (w === 2) {
+      const [len, np2] = readVarint(data, p);
+      p = np2;
+      if (p + len <= data.length) {
+        if (f === 3) {
+          const strBytes = data.subarray(p, p + len);
+          try {
+            const str = textDecoder.decode(strBytes);
+            if (str.trim()) paragraphs.push(str.trim());
+          } catch {}
+        }
+      }
+      p += len;
+    } else if (w === 1) {
+      p += 8;
+    } else if (w === 5) {
+      p += 4;
+    }
+  }
+  return paragraphs.join('\n');
+}
+
+// Extracts target storage ID from TST.WPStorageListArchive (Type 6218)
+function extractStoragePointer(data: Uint8Array): number | null {
+  let p = 0;
+  while (p < data.length) {
+    const [tag, np] = readVarint(data, p);
+    p = np;
+    const f = tag >> 3, w = tag & 7;
+    if (w === 0) {
+      const [, np2] = readVarint(data, p);
+      p = np2;
+    } else if (w === 2) {
+      const [len, np2] = readVarint(data, p);
+      p = np2;
+      const sub = data.subarray(p, p + len);
+      p += len;
+      if (f === 1) {
+        let sp = 0;
+        while (sp < sub.length) {
+          const [stag, nsp] = readVarint(sub, sp);
+          sp = nsp;
+          if ((stag >> 3) === 1 && (stag & 7) === 0) {
+            const [refId] = readVarint(sub, sp);
+            return refId;
+          }
+        }
+      }
+    } else if (w === 1) {
+      p += 8;
+    } else if (w === 5) {
+      p += 4;
+    }
+  }
+  return null;
+}
+
+// Extracts TableDataList entries (Type 6005)
+export function extractTableDataList(data: Uint8Array): Map<number, { stringVal?: string; storageRefId?: number }> {
+  const map = new Map<number, { stringVal?: string; storageRefId?: number }>();
+  let p = 0;
+  while (p < data.length) {
+    const [tag, np] = readVarint(data, p);
+    p = np;
+    const f = tag >> 3, w = tag & 7;
+    if (w === 2 && f === 3) {
+      const [len, np2] = readVarint(data, p);
+      p = np2;
+      const entryBuf = data.subarray(p, p + len);
+      p += len;
+
+      let ep = 0;
+      let key: number | null = null;
+      let strVal: string | null = null;
+      let refId: number | null = null;
+      while (ep < entryBuf.length) {
+        const [etag, nep] = readVarint(entryBuf, ep);
+        ep = nep;
+        const ef = etag >> 3, ew = etag & 7;
+        if (ew === 0) {
+          const [ev, nep2] = readVarint(entryBuf, ep);
+          ep = nep2;
+          if (ef === 1) key = ev;
+        } else if (ew === 2) {
+          const [elen, nep2] = readVarint(entryBuf, ep);
+          ep = nep2;
+          const sub = entryBuf.subarray(ep, ep + elen);
+          ep += elen;
+          if (ef === 3) {
+            try {
+              strVal = textDecoder.decode(sub).trim();
+            } catch {}
+          } else if (ef === 9) {
+            let rp = 0;
+            while (rp < sub.length) {
+              const [rtag, nrp] = readVarint(sub, rp);
+              rp = nrp;
+              const rf = rtag >> 3, rw = rtag & 7;
+              if (rw === 0 && rf === 1) {
+                const [rv, nrp2] = readVarint(sub, rp);
+                rp = nrp2;
+                refId = rv;
+              }
+            }
+          }
+        } else if (ew === 1) {
+          ep += 8;
+        } else if (ew === 5) {
+          ep += 4;
+        }
+      }
+      if (key !== null) {
+        map.set(key, { stringVal: strVal || undefined, storageRefId: refId || undefined });
+      }
+    } else if (w === 0) {
+      const [, np2] = readVarint(data, p);
+      p = np2;
+    } else if (w === 2) {
+      const [len, np2] = readVarint(data, p);
+      p = np2 + len;
+    } else if (w === 1) {
+      p += 8;
+    } else if (w === 5) {
+      p += 4;
+    }
+  }
+  return map;
 }
 
 export interface ExtractedFocusItem {
@@ -242,10 +391,34 @@ const KNOWN_COACHES = new Set([
   'FRANCESCO',
   'FEDERICO',
   'GABRIELE',
+  'FRANK',
 ]);
 
+function isCoachName(str: string): boolean {
+  const upper = str.trim().toUpperCase();
+  if (
+    upper === 'ALLENATORE' ||
+    upper === 'FOCUS' ||
+    upper === 'CONTEGGIO E CONCLUSIONI' ||
+    upper === 'CONTEGGIO' ||
+    upper === 'CONCLUSIONI'
+  ) {
+    return false;
+  }
+  if (KNOWN_COACHES.has(upper)) return true;
+  if (
+    str.trim().split(/\s+/).length <= 2 &&
+    str.trim().length <= 25 &&
+    !/[;\.!\?0-9]/.test(str) &&
+    /^[A-Za-zÁÉÍÓÚáéíóúÀÈÌÒÙàèìòù\s]+$/.test(str.trim())
+  ) {
+    return true;
+  }
+  return false;
+}
+
 /**
- * Main parser: accepts File or ArrayBuffer and returns structured, translated and classified focus data
+ * Main parser: accepts File, ArrayBuffer or Uint8Array and returns structured, translated and classified focus data
  */
 export async function parseKeynoteFile(
   input: File | ArrayBuffer | Uint8Array,
@@ -263,31 +436,36 @@ export async function parseKeynoteFile(
     fileName = input.name;
   }
 
-  const rawTables: { name: string; entries: Map<number, string> }[] = [];
+  const storageTexts = new Map<number, string>();
+  const storagePointers = new Map<number, number>();
+  const allDataLists: { name: string; dl: Map<number, { stringVal?: string; storageRefId?: number }> }[] = [];
   let matchTitle = '';
   let dateDetected = '';
 
-  // Process all files inside zip
-  for (const [relativePath, zipEntry] of Object.entries(zipData.files)) {
-    if (zipEntry.dir) continue;
+  for (const [filename, file] of Object.entries(zipData.files)) {
+    if (file.dir) continue;
+    if (filename.endsWith('.iwa')) {
+      const bytes = await file.async('uint8array');
+      const decompressed = unpackIwaChunks(bytes);
+      const archives = parseIwaArchives(decompressed);
 
-    if (relativePath.endsWith('.iwa')) {
-      const fileBytes = await zipEntry.async('uint8array');
-      const decompressed = unpackIwaChunks(fileBytes);
-
-      // 1. Table DataLists
-      if (relativePath.includes('Tables/DataList')) {
-        const entries = extractDataListEntries(decompressed);
-        if (entries.size > 0) {
-          rawTables.push({ name: relativePath, entries });
+      for (const a of archives) {
+        if (a.type === 2001) {
+          const txt = extractStorageText(a.data);
+          if (txt) storageTexts.set(a.id, txt);
+        } else if (a.type === 6218) {
+          const targetId = extractStoragePointer(a.data);
+          if (targetId) storagePointers.set(a.id, targetId);
+        } else if (a.type === 6005) {
+          const dl = extractTableDataList(a.data);
+          if (dl.size > 0) allDataLists.push({ name: filename, dl });
         }
       }
 
-      // 2. Slide text extraction for Match title / Date
-      if (relativePath.includes('Slide')) {
+      if (filename.includes('Slide')) {
         try {
           const rawStr = textDecoder.decode(decompressed);
-          const lines = rawStr.match(/[\w\s\.,;:!?\'\(\)\/\-\+%=#@€\$áéíóúÁÉÍÓÚñÑüÜàèìòùÀÈÌÒÙ]{4,}/g) || [];
+          const lines = rawStr.match(/[\w\s\.,;:!?\'\(\)\/\-\+%=#@€\$áéíóúÁÉÍÓÚñÑüÜàèìòùÀÈÌÒÙ\u201c\u201d\u2026]{4,}/g) || [];
           for (const l of lines) {
             const clean = l.trim();
             if (clean.length > 3 && !clean.startsWith('$') && !clean.startsWith('Index/')) {
@@ -295,7 +473,7 @@ export async function parseKeynoteFile(
                 clean.includes(' - ') ||
                 clean.toLowerCase().includes(' vs ') ||
                 clean.toLowerCase().includes('piano gara') ||
-                clean.toLowerCase().includes('milan futuro')
+                clean.toLowerCase().includes('milan')
               ) {
                 if (!matchTitle || matchTitle.length < clean.length) {
                   matchTitle = clean.replace(/piano gara/i, '').replace(/focus della partita/i, '').trim();
@@ -313,78 +491,127 @@ export async function parseKeynoteFile(
     }
   }
 
-  // Find the focus table
-  let focusEntries: Map<number, string> | null = null;
+  // Resolve storage references in DataLists
+  const rawTables: { name: string; entries: Map<number, string> }[] = [];
+  for (const item of allDataLists) {
+    const resolved = new Map<number, string>();
+    for (const [k, v] of item.dl.entries()) {
+      if (v.stringVal) resolved.set(k, v.stringVal);
+      if (v.storageRefId) {
+        let target = v.storageRefId;
+        if (storagePointers.has(target)) target = storagePointers.get(target)!;
+        if (storageTexts.has(target)) resolved.set(k, storageTexts.get(target)!);
+      }
+    }
+    if (resolved.size > 0) {
+      rawTables.push({ name: item.name, entries: resolved });
+    }
+  }
+
+  // Find coach list table
+  let mainTable: Map<number, string> | null = null;
   for (const t of rawTables) {
     const vals = Array.from(t.entries.values()).map((v) => v.toUpperCase());
-    if (vals.includes('ALLENATORE') || (vals.includes('FOCUS') && vals.some((v) => KNOWN_COACHES.has(v)))) {
-      focusEntries = t.entries;
+    if (vals.includes('ALLENATORE') && vals.includes('FOCUS')) {
+      mainTable = t.entries;
       break;
     }
   }
 
-  if (!focusEntries) {
+  if (!mainTable) {
     for (const t of rawTables) {
       const vals = Array.from(t.entries.values()).map((v) => v.toUpperCase());
-      const coachMatches = vals.filter((v) => KNOWN_COACHES.has(v));
+      const coachMatches = vals.filter((v) => isCoachName(v));
       if (coachMatches.length >= 2) {
-        focusEntries = t.entries;
+        mainTable = t.entries;
         break;
       }
     }
   }
 
   const coaches: string[] = [];
-  const focusItems: ExtractedFocusItem[] = [];
+  let focusTexts: string[] = [];
 
-  if (focusEntries) {
-    const values = Array.from(focusEntries.entries());
-    const foundCoaches: { key: number; name: string }[] = [];
-    const foundTexts: { key: number; text: string }[] = [];
+  if (mainTable) {
+    const values = Array.from(mainTable.entries());
+    const coachesInTable: { key: number; name: string }[] = [];
+    const textsInTable: { key: number; text: string }[] = [];
 
     for (const [k, v] of values) {
       const trimmed = v.trim();
       const upper = trimmed.toUpperCase();
-      if (upper === 'ALLENATORE' || upper === 'FOCUS' || upper === 'CONTEGGIO E CONCLUSIONI') {
+      if (
+        upper === 'ALLENATORE' ||
+        upper === 'FOCUS' ||
+        upper === 'CONTEGGIO E CONCLUSIONI' ||
+        upper === 'CONTEGGIO' ||
+        upper === 'CONCLUSIONI'
+      ) {
         continue;
       }
-      if (
-        KNOWN_COACHES.has(upper) ||
-        (trimmed.split(/\s+/).length <= 2 &&
-          trimmed.length <= 20 &&
-          !/[;\.!\?]/.test(trimmed) &&
-          /^[A-Za-zÁÉÍÓÚáéíóúÀÈÌÒÙàèìòù\s]+$/.test(trimmed))
-      ) {
-        foundCoaches.push({ key: k, name: trimmed });
-      } else {
-        foundTexts.push({ key: k, text: trimmed });
+      if (isCoachName(trimmed)) {
+        coachesInTable.push({ key: k, name: trimmed });
+      } else if (trimmed.length > 3) {
+        textsInTable.push({ key: k, text: trimmed });
       }
     }
 
-    foundCoaches.forEach((c) => coaches.push(c.name));
+    coachesInTable.forEach((c) => coaches.push(c.name));
 
-    // Map coach to focus text
-    for (let i = 0; i < foundCoaches.length; i++) {
-      const coach = foundCoaches[i];
-      const matchingText = foundTexts[i];
+    if (textsInTable.length >= coachesInTable.length) {
+      // Texts are in the same table
+      focusTexts = textsInTable.map((t) => t.text);
+    } else {
+      // Texts are partially or fully in companion DataLists (Storage DataLists)
+      const otherTexts: string[] = [];
+      textsInTable.forEach((t) => otherTexts.push(t.text));
 
-      if (matchingText && matchingText.text.trim()) {
-        const sentences = splitFocusSentences(matchingText.text);
-        for (const sentence of sentences) {
-          const translated = await translateTacticalText(sentence, targetLang);
-          const classification = classifyFocus(sentence, coach.name);
-
-          focusItems.push({
-            id: `focus_${coach.name}_${Math.random().toString(36).substr(2, 7)}`,
-            coach: coach.name,
-            rawItalian: sentence,
-            translatedText: translated,
-            suggestedPhase: classification.phase,
-            suggestedType: classification.focusType,
-            confidence: classification.confidence,
-            selected: true,
+      for (const t of rawTables) {
+        if (t.entries === mainTable) continue;
+        const vals = Array.from(t.entries.values())
+          .map((v) => v.trim())
+          .filter((v) => {
+            const upper = v.toUpperCase();
+            return (
+              !isCoachName(v) &&
+              upper !== 'ALLENATORE' &&
+              upper !== 'FOCUS' &&
+              upper !== 'CONTEGGIO E CONCLUSIONI' &&
+              upper !== 'CONTEGGIO' &&
+              upper !== 'CONCLUSIONI' &&
+              v.length > 3
+            );
           });
+        if (vals.length > 0) {
+          otherTexts.push(...vals);
         }
+      }
+      focusTexts = otherTexts;
+    }
+  }
+
+  const focusItems: ExtractedFocusItem[] = [];
+
+  for (let i = 0; i < coaches.length; i++) {
+    const coachName = coaches[i];
+    const text = focusTexts[i];
+
+    if (text && text.trim()) {
+      const sentences = splitFocusSentences(text);
+      for (const sentence of sentences) {
+        const translated = await translateTacticalText(sentence, targetLang);
+        const classification = classifyFocus(sentence, coachName);
+
+        focusItems.push({
+          id: `focus_${coachName}_${Math.random().toString(36).substr(2, 7)}`,
+          coach: coachName,
+          rawItalian: sentence,
+          translatedText: translated,
+          suggestedPhase: classification.phase,
+          suggestedType: classification.focusType,
+          confidence: classification.confidence,
+          selected: true,
+        });
       }
     }
   }
