@@ -22,24 +22,43 @@ interface Props {
   emptyMessage?: string;
   /** Resalta la tarjeta (por ejemplo, partidos que ya tienen focos). */
   highlight?: (m: MatchDB) => boolean;
+  /** Muestra un selector para ver también los partidos ya jugados. */
+  allowPlayed?: boolean;
 }
 
 /** Rejilla de partidos por jugar con el mismo diseño de tarjeta que la página de Partidos. */
-export default function UpcomingMatchPicker({ matches, onSelect, renderBadge, emptyMessage = 'No hay partidos por jugar.', highlight }: Props) {
+export default function UpcomingMatchPicker({ matches, onSelect, renderBadge, emptyMessage = 'No hay partidos por jugar.', highlight, allowPlayed = false }: Props) {
   const [search, setSearch] = useState('');
+  const [tab, setTab] = useState<'upcoming' | 'played'>('upcoming');
 
   const upcoming = useMemo(() => {
     const today = new Date().toISOString().split('T')[0];
     const term = search.trim().toLowerCase();
+    const isUpcoming = (m: MatchDB) => !!m.timer_is_running || (m.date >= today && m.status !== 'Finished');
+    const showPlayed = allowPlayed && tab === 'played';
     return matches
-      .filter(m => m.timer_is_running || (m.date >= today && m.status !== 'Finished'))
+      .filter(m => (showPlayed ? !isUpcoming(m) : isUpcoming(m)))
       .filter(m => !term || (m.opponent || '').toLowerCase().includes(term) || (m.competition || '').toLowerCase().includes(term))
       .slice()
-      .sort((a, b) => a.date.localeCompare(b.date));
-  }, [matches, search]);
+      .sort((a, b) => (showPlayed ? b.date.localeCompare(a.date) : a.date.localeCompare(b.date)));
+  }, [matches, search, tab, allowPlayed]);
 
   return (
     <div className="space-y-5">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+      {allowPlayed && (
+        <div className="inline-flex bg-gray-100 rounded-xl p-1 shrink-0 self-start">
+          {([['upcoming', 'Por jugar'], ['played', 'Jugados']] as const).map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => setTab(key)}
+              className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${tab === key ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
       <div className="relative w-full sm:max-w-sm">
         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
         <input
@@ -48,6 +67,7 @@ export default function UpcomingMatchPicker({ matches, onSelect, renderBadge, em
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
+      </div>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
@@ -100,7 +120,9 @@ export default function UpcomingMatchPicker({ matches, onSelect, renderBadge, em
                   </div>
 
                   <div className="flex flex-col items-center justify-center px-1 sm:px-4">
-                    <span className="text-xl font-black text-gray-300 uppercase tracking-widest">vs</span>
+                    {m.result_home != null && m.result_away != null && !m.timer_is_running && m.status === 'Finished'
+                      ? <span className="text-2xl sm:text-3xl font-black text-gray-800 tabular-nums">{m.result_home} - {m.result_away}</span>
+                      : <span className="text-xl font-black text-gray-300 uppercase tracking-widest">vs</span>}
                   </div>
 
                   <div className="flex flex-col items-center flex-1">
@@ -117,7 +139,7 @@ export default function UpcomingMatchPicker({ matches, onSelect, renderBadge, em
 
         {upcoming.length === 0 && (
           <p className="text-sm text-gray-400 font-bold col-span-full text-center py-10">
-            {search.trim() ? 'No hay partidos que coincidan con la búsqueda.' : emptyMessage}
+            {search.trim() ? 'No hay partidos que coincidan con la búsqueda.' : (allowPlayed && tab === 'played' ? 'No hay partidos jugados.' : emptyMessage)}
           </p>
         )}
       </div>

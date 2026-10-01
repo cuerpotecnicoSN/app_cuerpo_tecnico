@@ -5,6 +5,7 @@ import { getMatchFocuses, getAllMatchFocuses, createMatchFocus, updateMatchFocus
 import { useSupabaseData } from '../../hooks/useSupabaseData';
 import UpcomingMatchPicker, { matchLabel, MY_TEAM_NAME } from './UpcomingMatchPicker';
 import { getFocusRole, getFocusDetails } from './MatchLiveRegistrationView';
+import KeynoteImportModal from './KeynoteImportModal';
 
 type FocusType = 'Colectivo' | 'Grupal' | 'Individual' | 'Rival';
 type Phase = 'Ofensivo' | 'Defensivo' | 'ABP';
@@ -67,6 +68,8 @@ export default function FocusPlanningFlow({ matches, onBack }: Props) {
   const [newRole, setNewRole] = useState('');
   const [loading, setLoading] = useState(false);
   const [editorFocus, setEditorFocus] = useState<MatchFocus | 'new' | null>(null);
+  const [showKeynoteModal, setShowKeynoteModal] = useState(false);
+  const [keynoteTargetMatch, setKeynoteTargetMatch] = useState<MatchDB | null>(null);
 
   const { data: dbPlayers } = useSupabaseData<any>('players');
   const { data: profiles } = useSupabaseData<any>('profiles');
@@ -163,17 +166,33 @@ export default function FocusPlanningFlow({ matches, onBack }: Props) {
           <ChevronLeft size={16} /> Volver a Partidos
         </button>
 
-        <div className="flex items-center gap-3">
-          <div className="p-3 bg-indigo-100 text-indigo-600 rounded-xl shadow-inner"><Target size={24} /></div>
-          <div>
-            <h2 className="text-2xl font-black text-gray-900 tracking-tight">Planificar Focos</h2>
-            <p className="text-sm text-gray-500 font-bold">Paso 1 de 2 · Elige el partido por jugar</p>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-indigo-100 text-indigo-600 rounded-xl shadow-inner"><Target size={24} /></div>
+            <div>
+              <h2 className="text-2xl font-black text-gray-900 tracking-tight">Planificar Focos</h2>
+              <p className="text-sm text-gray-500 font-bold">Paso 1 de 2 · Elige el partido o importa desde Keynote</p>
+            </div>
           </div>
+
+          {matches.length > 0 && (
+            <button
+              onClick={() => {
+                setKeynoteTargetMatch(matches[0]);
+                setShowKeynoteModal(true);
+              }}
+              className="flex items-center gap-2 px-5 py-3 rounded-2xl text-xs sm:text-sm font-black text-white bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-md shadow-indigo-200 transition-all active:scale-95 group"
+            >
+              <Sparkles size={18} className="text-indigo-200 group-hover:rotate-12 transition-transform" />
+              Importar desde Keynote (.key)
+            </button>
+          )}
         </div>
 
         <UpcomingMatchPicker
           matches={matches}
           onSelect={selectMatch}
+          allowPlayed
           highlight={(m) => (focusCountByMatch.get(m.id) || 0) > 0}
           renderBadge={(m) => {
             const n = focusCountByMatch.get(m.id) || 0;
@@ -188,6 +207,20 @@ export default function FocusPlanningFlow({ matches, onBack }: Props) {
             );
           }}
         />
+
+        {showKeynoteModal && keynoteTargetMatch && (
+          <KeynoteImportModal
+            match={keynoteTargetMatch}
+            isOpen={showKeynoteModal}
+            onClose={() => {
+              setShowKeynoteModal(false);
+              setKeynoteTargetMatch(null);
+            }}
+            onSuccess={async () => {
+              getAllMatchFocuses().then(setAllFocuses).catch(() => {});
+            }}
+          />
+        )}
       </div>
     );
   }
@@ -207,13 +240,41 @@ export default function FocusPlanningFlow({ matches, onBack }: Props) {
           <ChevronLeft size={16} /> Cambiar de partido
         </button>
 
-        <div className="flex items-center gap-3">
-          <div className="p-3 bg-indigo-100 text-indigo-600 rounded-xl shadow-inner"><Target size={24} /></div>
-          <div>
-            <h2 className="text-2xl font-black text-gray-900 tracking-tight">{matchLabel(match)}</h2>
-            <p className="text-sm text-gray-500 font-bold">Paso 2 de 2 · ¿Para qué entrenador planificas?</p>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-indigo-100 text-indigo-600 rounded-xl shadow-inner"><Target size={24} /></div>
+            <div>
+              <h2 className="text-2xl font-black text-gray-900 tracking-tight">{matchLabel(match)}</h2>
+              <p className="text-sm text-gray-500 font-bold">Paso 2 de 2 · ¿Para qué entrenador planificas?</p>
+            </div>
           </div>
+
+          <button
+            onClick={() => {
+              setKeynoteTargetMatch(match);
+              setShowKeynoteModal(true);
+            }}
+            className="flex items-center gap-2 px-5 py-3 rounded-2xl text-xs sm:text-sm font-black text-white bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-md shadow-indigo-200 transition-all active:scale-95 group"
+          >
+            <Sparkles size={18} className="text-indigo-200 group-hover:rotate-12 transition-transform" />
+            Importar Focos (.key)
+          </button>
         </div>
+
+        {showKeynoteModal && keynoteTargetMatch && (
+          <KeynoteImportModal
+            match={keynoteTargetMatch}
+            isOpen={showKeynoteModal}
+            onClose={() => {
+              setShowKeynoteModal(false);
+              setKeynoteTargetMatch(null);
+            }}
+            onSuccess={async () => {
+              await loadFocuses(match.id);
+              getAllMatchFocuses().then(setAllFocuses).catch(() => {});
+            }}
+          />
+        )}
 
         {loading ? (
           <p className="text-sm text-gray-400 font-bold py-10 text-center">Cargando focos...</p>
@@ -350,11 +411,21 @@ export default function FocusPlanningFlow({ matches, onBack }: Props) {
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
               <div className="bg-white/10 backdrop-blur-sm border border-white/15 rounded-2xl px-5 py-3">
                 <p className="text-[11px] font-black uppercase tracking-widest text-indigo-300">Entrenador</p>
                 <p className="text-lg font-black text-white leading-tight">{role}</p>
               </div>
+              <button
+                onClick={() => {
+                  setKeynoteTargetMatch(match);
+                  setShowKeynoteModal(true);
+                }}
+                className="px-4 py-3 bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-2xl text-sm font-black transition-all flex items-center justify-center gap-2"
+                title="Importar focos desde Keynote para este partido"
+              >
+                <Sparkles size={16} className="text-indigo-300" /> Importar .key
+              </button>
               <button
                 onClick={() => setEditorFocus('new')}
                 className="px-5 py-3 bg-white text-gray-900 rounded-2xl text-sm font-black shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
@@ -476,6 +547,21 @@ export default function FocusPlanningFlow({ matches, onBack }: Props) {
               <span className="font-black text-sm uppercase tracking-wider">Nuevo foco</span>
             </button>
           </div>
+        )}
+
+        {showKeynoteModal && keynoteTargetMatch && (
+          <KeynoteImportModal
+            match={keynoteTargetMatch}
+            isOpen={showKeynoteModal}
+            onClose={() => {
+              setShowKeynoteModal(false);
+              setKeynoteTargetMatch(null);
+            }}
+            onSuccess={async () => {
+              await loadFocuses(match.id);
+              getAllMatchFocuses().then(setAllFocuses).catch(() => {});
+            }}
+          />
         )}
 
         {editorFocus && (

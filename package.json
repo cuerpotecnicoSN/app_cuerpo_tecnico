@@ -20,6 +20,7 @@
     "i18next": "^26.3.6",
     "jsdom": "^30.0.0",
     "jspdf": "^4.2.1",
+    "jszip": "^3.10.2",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.27.0",
     "motion": "^12.42.2",
@@ -37,6 +38,7 @@
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",
+    "@types/jszip": "^3.4.1",
     "@types/leaflet": "^1.9.21",
     "@types/node": "^24.13.2",
     "@types/react": "^19.2.17",
