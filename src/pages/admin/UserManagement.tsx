@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabase';
 import { UserCog, Edit, Save, X } from 'lucide-react';
+import PlayerAccessPanel from '../../components/admin/PlayerAccessPanel';
 
 const UserManagement: React.FC = () => {
   const { t } = useTranslation();
@@ -144,9 +145,11 @@ const UserManagement: React.FC = () => {
                             <option value="Entrenador">{t('admin.users.roles.coach')}</option>
                             <option value="Preparador Físico">{t('admin.users.roles.fitnessCoach')}</option>
                             <option value="Analista">{t('admin.users.roles.analyst')}</option>
+                            <option value="Jugador">Jugador</option>
+                            <option value="Pendiente">Pendiente (sin acceso)</option>
                           </select>
                         ) : (
-                          <span className={`badge ${user.role === 'Admin' ? 'badge-danger' : 'badge-neutral'}`}>
+                          <span className={`badge ${user.role === 'Admin' ? 'badge-danger' : user.role === 'Pendiente' ? 'badge-warning' : 'badge-neutral'}`}>
                             {user.role || t('admin.users.roles.coach')}
                           </span>
                         )}
@@ -176,6 +179,8 @@ const UserManagement: React.FC = () => {
           </div>
         )}
       </div>
+
+      <PlayerAccessPanel />
     </div>
   );
 };

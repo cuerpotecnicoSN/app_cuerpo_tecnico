@@ -3,13 +3,14 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { User, Weight, Stethoscope, ArrowLeft, Edit2, Target, Users2, FileText, Plus, Trash2, CalendarDays, MapPin, BarChart2, Sparkles, Loader2, Activity } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import type { Player, PlayerObjective, MeetingDB, SeasonReport, MeetingInsightCategory } from '../../components/types';
+import type { Player, MeetingDB, SeasonReport, MeetingInsightCategory } from '../../components/types';
 import { MEETING_INSIGHT_CATEGORIES } from '../../components/types';
 import { analyzeMeetingWithGemini } from '../../lib/geminiClient';
 import PlayerWeightTab from '../../components/pro/PlayerWeightTab';
 import PlayerInjuriesTab from '../../components/pro/PlayerInjuriesTab';
 import { useSupabaseData } from '../../hooks/useSupabaseData';
-import { getPlayerObjectives, createPlayerObjective, updatePlayerObjective, deletePlayerObjective, getSeasonReports, createSeasonReport, deleteSeasonReport } from '../../services/playerObjectives';
+import { getSeasonReports, createSeasonReport, deleteSeasonReport } from '../../services/playerObjectives';
+import PlayerDevelopmentPlan from '../../components/players/development/PlayerDevelopmentPlan';
 import { getMeetingsForPlayer, createMeeting, deleteMeeting, addMeetingPlayer, updateMeeting } from '../../services/meetings';
 import { getFlagEmoji } from '../../components/pro/PlayersManagementView';
 import RichTextEditor from '../../components/common/RichTextEditor';
@@ -344,7 +345,7 @@ export default function PlayerProfilePage() {
           <PlayerInjuriesTab playerId={activePlayer.id} />
         )}
 
-        {activeTab === 'plan' && <PlayerObjectivesTab playerId={activePlayer.id} />}
+        {activeTab === 'plan' && activeDbPlayer && <PlayerDevelopmentPlan player={activeDbPlayer} mode="staff" />}
         {activeTab === 'reuniones' && <PlayerMeetingsTab playerId={activePlayer.id} />}
         {activeTab === 'informes' && <PlayerReportsTab playerId={activePlayer.id} />}
         {activeTab === 'feedback' && <PlayerFeedbackTab playerId={activePlayer.id} />}
@@ -360,71 +361,6 @@ export default function PlayerProfilePage() {
           }}
         />
       )}
-    </div>
-  );
-}
-
-function PlayerObjectivesTab({ playerId }: { playerId: string }) {
-  const { t } = useTranslation();
-  const [objectives, setObjectives] = useState<PlayerObjective[]>([]);
-  const [showForm, setShowForm] = useState(false);
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [targetDate, setTargetDate] = useState('');
-
-  const load = () => getPlayerObjectives(playerId).then(setObjectives).catch(() => setObjectives([]));
-  useEffect(() => { load(); }, [playerId]);
-
-  const handleAdd = async () => {
-    if (!title.trim()) return;
-    await createPlayerObjective({ player_id: playerId, title, description, status: 'En progreso', target_date: targetDate || undefined });
-    setTitle(''); setDescription(''); setTargetDate(''); setShowForm(false);
-    load();
-  };
-
-  const statusColor = (s: string) => s === 'Cumplido' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : s === 'No cumplido' ? 'bg-red-100 text-red-700 border-red-200' : 'bg-amber-100 text-amber-700 border-amber-200';
-
-  return (
-    <div className="space-y-4 animate-fade-in">
-      <div className="flex justify-end">
-        <button onClick={() => setShowForm((v) => !v)} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold flex items-center gap-2">
-          <Plus size={16} /> {t('playerTabs.newObjective')}
-        </button>
-      </div>
-      {showForm && (
-        <div className="bg-white border border-gray-100 rounded-xl p-4 space-y-3 shadow-sm">
-          <input className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" placeholder={t('common.title') as string} value={title} onChange={(e) => setTitle(e.target.value)} />
-          <textarea className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" placeholder={t('common.description') as string} value={description} onChange={(e) => setDescription(e.target.value)} />
-          <input type="date" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" value={targetDate} onChange={(e) => setTargetDate(e.target.value)} />
-          <button onClick={handleAdd} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold">{t('common.save')}</button>
-        </div>
-      )}
-      {objectives.length === 0 && !showForm && <p className="text-sm text-gray-400">{t('playerTabs.noObjectives')}</p>}
-      <div className="space-y-2">
-        {objectives.map((o) => (
-          <div key={o.id} className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm flex items-start justify-between gap-3">
-            <div className="flex-1">
-              <p className="font-bold text-gray-800">{o.title}</p>
-              {o.description && <p className="text-sm text-gray-500 mt-1">{o.description}</p>}
-              {o.target_date && <p className="text-xs text-gray-400 mt-1">{t('playerTabs.targetDate')}: {o.target_date}</p>}
-            </div>
-            <div className="flex flex-col items-end gap-2">
-              <select
-                className={`text-xs font-bold rounded-lg px-2 py-1 border ${statusColor(o.status)}`}
-                value={o.status}
-                onChange={async (e) => { await updatePlayerObjective(o.id, { status: e.target.value as PlayerObjective['status'] }); load(); }}
-              >
-                <option value="En progreso">{t('playerTabs.inProgress')}</option>
-                <option value="Cumplido">{t('playerTabs.achieved')}</option>
-                <option value="No cumplido">{t('playerTabs.notAchieved')}</option>
-              </select>
-              <button onClick={async () => { await deletePlayerObjective(o.id); load(); }} className="text-gray-300 hover:text-red-500">
-                <Trash2 size={16} />
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
     </div>
   );
 }

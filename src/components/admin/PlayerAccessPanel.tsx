@@ -1,0 +1,189 @@
+import { useEffect, useMemo, useState } from 'react';
+import { Mail, Send, RotateCw, CheckCircle2, Clock, Search, Loader2, Save, User } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
+import { ensureContext } from '../../lib/dataService';
+import { getPlayerAccessStatus, invitePlayer, savePlayerEmail, type PlayerAccessRow } from '../../services/playerDevelopment';
+
+interface Row {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  photo_url: string | null;
+  main_position: string | null;
+  email: string | null;
+  user_id: string | null;
+  invited_at: string | null;
+}
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const fmt = (d: string) => new Date(d).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
+
+type Status = 'sin_email' | 'sin_invitar' | 'invitado' | 'activo';
+
+const STATUS_UI: Record<Status, { label: string; cls: string }> = {
+  sin_email: { label: 'Sin email', cls: 'bg-gray-100 text-gray-500 border-gray-200' },
+  sin_invitar: { label: 'Sin invitar', cls: 'bg-blue-50 text-blue-600 border-blue-100' },
+  invitado: { label: 'Invitación enviada', cls: 'bg-amber-50 text-amber-700 border-amber-200' },
+  activo: { label: 'Activo', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+};
+
+export default function PlayerAccessPanel() {
+  const [rows, setRows] = useState<Row[]>([]);
+  const [access, setAccess] = useState<Record<string, PlayerAccessRow>>({});
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [busy, setBusy] = useState<string | null>(null);
+  const [msg, setMsg] = useState<{ id: string; ok: boolean; text: string } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [q, setQ] = useState('');
+
+  const load = async () => {
+    const seasonId = await ensureContext();
+    const [{ data }, acc] = await Promise.all([
+      supabase.from('players').select('id, first_name, last_name, photo_url, main_position, email, user_id, invited_at').eq('season_id', seasonId).order('last_name'),
+      getPlayerAccessStatus().catch(() => [] as PlayerAccessRow[]),
+    ]);
+    setRows((data as Row[]) ?? []);
+    setAccess(Object.fromEntries(acc.map((a) => [a.player_id, a])));
+    setLoading(false);
+  };
+  useEffect(() => { load(); }, []);
+
+  const statusOf = (r: Row): Status => {
+    if (r.user_id && access[r.id]?.last_sign_in_at) return 'activo';
+    if (r.user_id) return 'invitado';
+    return r.email ? 'sin_invitar' : 'sin_email';
+  };
+
+  const filtered = useMemo(() => {
+    const n = q.trim().toLowerCase();
+    return n ? rows.filter((r) => `${r.first_name} ${r.last_name} ${r.email ?? ''}`.toLowerCase().includes(n)) : rows;
+  }, [rows, q]);
+
+  const counts = useMemo(() => {
+    const c: Record<Status, number> = { sin_email: 0, sin_invitar: 0, invitado: 0, activo: 0 };
+    rows.forEach((r) => c[statusOf(r)]++);
+    return c;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows, access]);
+
+  const act = async (r: Row, kind: 'save' | 'invite') => {
+    const email = (drafts[r.id] ?? r.email ?? '').trim().toLowerCase();
+    if (email && !EMAIL_RE.test(email)) { setMsg({ id: r.id, ok: false, text: 'Email no válido' }); return; }
+    setBusy(r.id); setMsg(null);
+    try {
+      if (kind === 'save') {
+        await savePlayerEmail(r.id, email || null);
+        setMsg({ id: r.id, ok: true, text: 'Email guardado' });
+      } else {
+        if (!email) throw new Error('Añade un email primero');
+        if (statusOf(r) === 'invitado' && !confirm(`¿Reenviar la invitación a ${email}? El enlace anterior dejará de funcionar.`)) return;
+        await invitePlayer(r.id, email);
+        setMsg({ id: r.id, ok: true, text: `Invitación enviada a ${email}` });
+      }
+      const { [r.id]: _omit, ...rest } = drafts; void _omit; setDrafts(rest);
+      await load();
+    } catch (e) {
+      setMsg({ id: r.id, ok: false, text: e instanceof Error ? e.message : 'Error' });
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <div className="card mt-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+        <div>
+          <h2 className="text-lg font-extrabold flex items-center gap-2"><Mail size={20} className="text-primary" /> Acceso de jugadores</h2>
+          <p className="text-sm text-muted">Registra el email de cada jugador y envíale la invitación a su portal.</p>
+        </div>
+        <div className="relative">
+          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input className="pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg w-full sm:w-56" placeholder="Buscar jugador" value={q} onChange={(e) => setQ(e.target.value)} />
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-2 mb-4">
+        {(Object.keys(STATUS_UI) as Status[]).map((s) => (
+          <span key={s} className={`text-xs font-bold px-2.5 py-1 rounded-lg border ${STATUS_UI[s].cls}`}>{STATUS_UI[s].label}: {counts[s]}</span>
+        ))}
+      </div>
+
+      {loading ? <p className="text-muted">Cargando…</p> : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse min-w-[720px]">
+            <thead>
+              <tr className="border-b border-border">
+                <th className="p-3 text-sm font-semibold text-secondary">Jugador</th>
+                <th className="p-3 text-sm font-semibold text-secondary">Email</th>
+                <th className="p-3 text-sm font-semibold text-secondary">Estado</th>
+                <th className="p-3 text-sm font-semibold text-secondary text-right">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((r) => {
+                const st = statusOf(r);
+                const draft = drafts[r.id] ?? r.email ?? '';
+                const dirty = draft.trim().toLowerCase() !== (r.email ?? '');
+                const linked = !!r.user_id;
+                return (
+                  <tr key={r.id} className="border-b border-border hover:bg-bg-hover align-top">
+                    <td className="p-3">
+                      <div className="flex items-center gap-3">
+                        {r.photo_url
+                          ? <img src={r.photo_url} alt="" className="w-9 h-9 rounded-full object-cover" />
+                          : <span className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center"><User size={16} className="text-gray-400" /></span>}
+                        <div>
+                          <p className="font-semibold text-sm">{`${r.first_name ?? ''} ${r.last_name ?? ''}`.trim()}</p>
+                          <p className="text-xs text-muted">{r.main_position}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-3">
+                      <input
+                        type="email"
+                        className="text-sm px-2 py-1.5 border border-gray-200 rounded-lg w-full max-w-[260px] disabled:bg-gray-50 disabled:text-gray-500"
+                        placeholder="jugador@email.com"
+                        value={draft}
+                        disabled={st === 'activo'}
+                        onChange={(e) => setDrafts({ ...drafts, [r.id]: e.target.value })}
+                      />
+                      {msg?.id === r.id && <p className={`text-xs mt-1 ${msg.ok ? 'text-emerald-600' : 'text-red-600'}`}>{msg.text}</p>}
+                    </td>
+                    <td className="p-3">
+                      <span className={`inline-flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-lg border ${STATUS_UI[st].cls}`}>
+                        {st === 'activo' ? <CheckCircle2 size={12} /> : st === 'invitado' ? <Clock size={12} /> : null}
+                        {STATUS_UI[st].label}
+                      </span>
+                      {st === 'invitado' && r.invited_at && <p className="text-[11px] text-muted mt-1">el {fmt(r.invited_at)}</p>}
+                      {st === 'activo' && access[r.id]?.last_sign_in_at && <p className="text-[11px] text-muted mt-1">último acceso {fmt(access[r.id].last_sign_in_at!)}</p>}
+                    </td>
+                    <td className="p-3">
+                      <div className="flex justify-end gap-2">
+                        {dirty && !linked && (
+                          <button className="btn btn-outline text-xs" style={{ padding: '0.4rem 0.6rem' }} disabled={busy === r.id} onClick={() => act(r, 'save')}>
+                            <Save size={14} />
+                          </button>
+                        )}
+                        {st !== 'activo' && (
+                          <button
+                            className="btn btn-primary text-xs flex items-center gap-1.5"
+                            style={{ padding: '0.4rem 0.75rem' }}
+                            disabled={busy === r.id || !draft.trim()}
+                            onClick={() => act(r, 'invite')}
+                          >
+                            {busy === r.id ? <Loader2 size={14} className="animate-spin" /> : st === 'invitado' ? <RotateCw size={14} /> : <Send size={14} />}
+                            {st === 'invitado' ? 'Reenviar' : 'Invitar'}
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}

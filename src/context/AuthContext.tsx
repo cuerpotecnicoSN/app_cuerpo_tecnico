@@ -18,6 +18,12 @@ type AuthContextType = {
   loading: boolean;
   signOut: () => Promise<void>;
   isAdmin: boolean;
+  /** Cuenta de jugador (portal /me) */
+  isPlayer: boolean;
+  /** Alta sin rol asignado todavía por un admin */
+  isPending: boolean;
+  /** players.id vinculado a esta cuenta (solo jugadores) */
+  playerId: string | null;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -27,6 +33,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [playerId, setPlayerId] = useState<string | null>(null);
 
   useEffect(() => {
     // 1. Get initial session
@@ -48,6 +55,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         fetchProfile(session.user);
       } else {
         setProfile(null);
+        setPlayerId(null);
         setLoading(false);
       }
     });
@@ -66,6 +74,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (data && !error) {
         setProfile(data);
+        if (data.role === 'Jugador') {
+          const { data: link } = await supabase.from('players').select('id').eq('user_id', userObj.id).maybeSingle();
+          setPlayerId(link?.id ?? null);
+        } else {
+          setPlayerId(null);
+        }
       } else {
         // Fallback: usar los metadatos de Supabase Auth
         const meta = userObj.user_metadata || {};
@@ -97,9 +111,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const isAdmin = profile?.role === 'Administrador' || profile?.role === 'Admin' || profile?.email === 'cuerpotecnico.sn@gmail.com';
+  const isPlayer = profile?.role === 'Jugador';
+  const isPending = profile?.role === 'Pendiente';
 
   return (
-    <AuthContext.Provider value={{ session, user, profile, loading, signOut, isAdmin }}>
+    <AuthContext.Provider value={{ session, user, profile, loading, signOut, isAdmin, isPlayer, isPending, playerId }}>
       {children}
     </AuthContext.Provider>
   );

@@ -6,7 +6,7 @@ import { Stethoscope, Plus, AlertTriangle, Edit2, Trash2, Calendar, Activity } f
 
 import BodyMap, { BodyZoneMarker, BODY_ZONES_FRONT, BODY_ZONES_BACK } from './BodyMap';
 
-export default function PlayerInjuriesTab({ playerId }: { playerId: string }) {
+export default function PlayerInjuriesTab({ playerId, readOnly = false }: { playerId: string; readOnly?: boolean }) {
   const { t, i18n } = useTranslation();
   const [injuries, setInjuries] = useState<PlayerInjury[]>([]);
   const [loading, setLoading] = useState(true);
@@ -162,12 +162,12 @@ export default function PlayerInjuriesTab({ playerId }: { playerId: string }) {
           <Stethoscope className="text-blue-600 w-8 h-8" />
           {t('injuriesTab.title')}
         </h2>
-        <button
+        {!readOnly && <button
           className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-colors shadow-sm"
           onClick={() => handleOpenModal()}
         >
           <Plus size={18} /> {t('injuriesTab.newInjury')}
-        </button>
+        </button>}
       </div>
 
       {loading ? (
@@ -233,14 +233,14 @@ export default function PlayerInjuriesTab({ playerId }: { playerId: string }) {
                         </div>
                       )}
                     </div>
-                    <div className="flex flex-row sm:flex-col gap-2 justify-end sm:justify-start">
+                    {!readOnly && <div className="flex flex-row sm:flex-col gap-2 justify-end sm:justify-start">
                       <button onClick={() => handleOpenModal(injury)} className="p-3 bg-white hover:bg-gray-50 border border-gray-200 text-gray-600 rounded-xl transition-colors shadow-sm" title={t('common.edit', 'Editar')}>
                         <Edit2 size={18} />
                       </button>
                       <button onClick={() => handleDelete(injury.id)} className="p-3 bg-white hover:bg-red-50 border border-gray-200 hover:border-red-200 text-gray-600 hover:text-red-500 rounded-xl transition-colors shadow-sm" title={t('common.delete', 'Eliminar')}>
                         <Trash2 size={18} />
                       </button>
-                    </div>
+                    </div>}
                   </div>
                 ))}
               </div>

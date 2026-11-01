@@ -22,6 +22,21 @@ const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [resetSent, setResetSent] = useState(false);
+
+  const handleForgot = async () => {
+    setError(null);
+    if (!email) {
+      setError('Escribe tu email y vuelve a pulsar «¿Olvidaste tu contraseña?»');
+      return;
+    }
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/set-password`,
+    });
+    if (error) setError(error.message);
+    else setResetSent(true);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -142,6 +157,18 @@ const Login: React.FC = () => {
               {loading ? t('auth.loginPage.loadingButton') : (isLogin ? t('auth.loginPage.loginButton') : t('auth.loginPage.signupButton'))}
             </button>
           </form>
+
+          {isLogin && (
+            <div className="mt-4 text-center">
+              {resetSent ? (
+                <p className="text-sm text-secondary">Te hemos enviado un email para restablecer la contraseña.</p>
+              ) : (
+                <button type="button" className="text-sm text-secondary hover:text-primary transition-colors" onClick={handleForgot}>
+                  ¿Olvidaste tu contraseña?
+                </button>
+              )}
+            </div>
+          )}
 
           <div className="mt-6 text-center login-toggle">
             <button

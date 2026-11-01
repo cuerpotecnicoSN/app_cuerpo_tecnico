@@ -13,7 +13,7 @@ import {
   ResponsiveContainer
 } from 'recharts';
 
-export default function PlayerWeightTab({ playerId }: { playerId: string }) {
+export default function PlayerWeightTab({ playerId, readOnly = false }: { playerId: string; readOnly?: boolean }) {
   const { t, i18n } = useTranslation();
   const [weights, setWeights] = useState<PlayerWeight[]>([]);
   const [loading, setLoading] = useState(true);
@@ -107,7 +107,7 @@ export default function PlayerWeightTab({ playerId }: { playerId: string }) {
           <Weight className="text-blue-600 w-8 h-8" />
           {t('weightTab.title')}
         </h2>
-        <button
+        {!readOnly && <button
           className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-colors shadow-sm"
           onClick={() => {
             setEditingId(null);
@@ -117,7 +117,7 @@ export default function PlayerWeightTab({ playerId }: { playerId: string }) {
           }}
         >
           <Plus size={18} /> {t('weightTab.addWeight')}
-        </button>
+        </button>}
       </div>
 
       {loading ? (
@@ -254,12 +254,14 @@ export default function PlayerWeightTab({ playerId }: { playerId: string }) {
                               {Math.abs(wDiff).toFixed(1)}
                             </span>
                           )}
+{!readOnly && <>
                           <button onClick={() => handleEditClick(w)} className="p-2 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title={t('common.edit', 'Editar')}>
                             <Pencil size={18} />
                           </button>
                           <button onClick={() => handleDelete(w.id)} className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title={t('common.delete', 'Eliminar')}>
                             <Trash2 size={18} />
                           </button>
+                          </>}
                         </div>
                       </div>
                     );

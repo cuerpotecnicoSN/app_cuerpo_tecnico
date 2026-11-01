@@ -357,6 +357,11 @@ export interface PlayerObjective {
   status: 'En progreso' | 'Cumplido' | 'No cumplido';
   target_date?: string;
   created_at?: string;
+  dimension?: 'futbolistico' | 'fisico' | 'personal';
+  success_criteria?: string | null;
+  indicators?: string | null;
+  tasks?: string | null;
+  start_date?: string | null;
 }
 
 export interface SeasonReport {

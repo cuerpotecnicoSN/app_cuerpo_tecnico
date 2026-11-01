@@ -6,6 +6,8 @@ import { PrintProvider } from './components/reports/PrintContext';
 import MainLayout from './layouts/MainLayout';
 import Dashboard from './pages/Dashboard';
 import Login from './pages/auth/Login';
+import SetPassword from './pages/auth/SetPassword';
+import PlayerPortal from './pages/player/PlayerPortal';
 
 import PlayersPage from './pages/pro/PlayersPage';
 import PlayerProfilePage from './pages/pro/PlayerProfilePage';
@@ -25,6 +27,8 @@ function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/set-password" element={<SetPassword />} />
+            <Route path="/me" element={<AuthGuard playerOnly><PlayerPortal /></AuthGuard>} />
 
             <Route path="/" element={<AuthGuard><MainLayout /></AuthGuard>}>
               <Route index element={<Dashboard />} />
