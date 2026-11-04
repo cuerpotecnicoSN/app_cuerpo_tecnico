@@ -14,6 +14,7 @@ import {
   type PlayerFocus, type VideoNote, type SelfAssessment, type FocusContext, type ObjectiveDimension,
 } from '../../../services/playerDevelopment';
 import { usePlayerSeasonStats } from '../../../hooks/usePlayerSeasonStats';
+import { useTranslation } from 'react-i18next';
 
 type Mode = 'staff' | 'player';
 
@@ -190,6 +191,125 @@ export default function PlayerDevelopmentPlan({ player, mode }: { player: DbPlay
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playerId]);
 
+  const { i18n } = useTranslation();
+  const lang = i18n.language?.startsWith('en') ? 'en' : i18n.language?.startsWith('it') ? 'it' : 'es';
+
+  const I18N = {
+    es: {
+      planBadge: 'Plan individual de desarrollo',
+      tutor: 'Tutor',
+      unassigned: 'Sin asignar',
+      noPosition: 'Posición sin definir',
+      player: 'Jugador',
+      matches: 'Partidos',
+      minutes: 'Minutos',
+      goals: 'Goles',
+      assists: 'Asist.',
+      block1Title: 'Objetivos & Focos',
+      block1Sub: 'El qué',
+      block: 'Bloque',
+      btnObj: 'Objetivo',
+      btnFocus: 'Foco',
+      noObjectives: 'Sin objetivos',
+      individualFocuses: 'Focos individuales',
+      block2Title: 'Acción & Criterios',
+      block2Sub: 'El cómo y cuándo',
+      emptyBlock2: 'Cuando haya objetivos, aquí aparecerán sus criterios, indicadores, tareas y plazos.',
+      successCriteria: 'Criterios de éxito',
+      indicators: 'Indicadores',
+      tasks: 'Tareas',
+      block3Title: 'Feedback & Reflexión',
+      block3Sub: 'La voz del jugador',
+      videoSessions: 'Video-sesiones',
+      btnSession: 'Sesión',
+      noVideos: 'Aún no hay video-sesiones.',
+      watchVideo: 'Ver vídeo',
+      playerNotesPlaceholder: 'Tus anotaciones sobre esta sesión…',
+      selfAssessmentTitle: 'Autoevaluación del jugador',
+      selfAssessmentPlaceholder: '¿Cómo te has visto estas semanas? ¿Qué te ha salido bien, qué te cuesta y qué necesitas del staff?',
+      publish: 'Publicar',
+      noAssessmentsPlayer: 'Todavía no has escrito ninguna autoevaluación.',
+      noAssessmentsStaff: 'El jugador todavía no ha escrito ninguna autoevaluación.',
+      dims: { futbolistico: 'Futbolísticos', fisico: 'Físicos', personal: 'Personales' },
+      contexts: { partido: 'Partido', entreno: 'Entreno', fuera: 'Fuera del campo' },
+    },
+    it: {
+      planBadge: 'Piano individuale di sviluppo',
+      tutor: 'Tutor',
+      unassigned: 'Non assegnato',
+      noPosition: 'Ruolo non definito',
+      player: 'Giocatore',
+      matches: 'Partite',
+      minutes: 'Minuti',
+      goals: 'Gol',
+      assists: 'Assist',
+      block1Title: 'Obiettivi & Focus',
+      block1Sub: 'Cosa',
+      block: 'Blocco',
+      btnObj: 'Obiettivo',
+      btnFocus: 'Focus',
+      noObjectives: 'Nessun obiettivo',
+      individualFocuses: 'Focus individuali',
+      block2Title: 'Azione & Criteri',
+      block2Sub: 'Come e quando',
+      emptyBlock2: 'Quando ci saranno obiettivi, qui appariranno criteri, indicatori, compiti e scadenze.',
+      successCriteria: 'Criteri di successo',
+      indicators: 'Indicatori',
+      tasks: 'Compiti',
+      block3Title: 'Feedback & Riflessione',
+      block3Sub: 'La voce del giocatore',
+      videoSessions: 'Sessioni video',
+      btnSession: 'Sessione',
+      noVideos: 'Nessuna sessione video registrata.',
+      watchVideo: 'Guarda video',
+      playerNotesPlaceholder: 'Le tue note su questa sessione…',
+      selfAssessmentTitle: 'Autovalutazione del giocatore',
+      selfAssessmentPlaceholder: 'Come ti sei visto in queste settimane? Cosa è andato bene, cosa trovi difficile e di cosa hai bisogno dallo staff?',
+      publish: 'Pubblica',
+      noAssessmentsPlayer: 'Non hai ancora scritto alcuna autovalutazione.',
+      noAssessmentsStaff: 'Il giocatore non ha ancora scritto alcuna autovalutazione.',
+      dims: { futbolistico: 'Calcistici', fisico: 'Fisici', personal: 'Personali' },
+      contexts: { partido: 'Partita', entreno: 'Allenamento', fuera: 'Fuori dal campo' },
+    },
+    en: {
+      planBadge: 'Individual Development Plan',
+      tutor: 'Mentor',
+      unassigned: 'Unassigned',
+      noPosition: 'Position undefined',
+      player: 'Player',
+      matches: 'Matches',
+      minutes: 'Minutes',
+      goals: 'Goals',
+      assists: 'Assists',
+      block1Title: 'Goals & Focus Areas',
+      block1Sub: 'What',
+      block: 'Block',
+      btnObj: 'Goal',
+      btnFocus: 'Focus',
+      noObjectives: 'No goals yet',
+      individualFocuses: 'Individual focus areas',
+      block2Title: 'Action & Criteria',
+      block2Sub: 'How and when',
+      emptyBlock2: 'Once goals are created, success criteria, milestones, tasks and deadlines will appear here.',
+      successCriteria: 'Success criteria',
+      indicators: 'Key indicators',
+      tasks: 'Action tasks',
+      block3Title: 'Feedback & Reflection',
+      block3Sub: 'Player Voice',
+      videoSessions: 'Video Analysis',
+      btnSession: 'Session',
+      noVideos: 'No video sessions recorded yet.',
+      watchVideo: 'Watch video',
+      playerNotesPlaceholder: 'Your personal notes on this session…',
+      selfAssessmentTitle: 'Player Self-Assessment',
+      selfAssessmentPlaceholder: 'How do you feel about recent performances? What went well, what are you struggling with, and how can the staff help?',
+      publish: 'Submit',
+      noAssessmentsPlayer: 'You haven’t written any self-assessments yet.',
+      noAssessmentsStaff: 'The player has not written any self-assessment yet.',
+      dims: { futbolistico: 'Football', fisico: 'Physical', personal: 'Personal' },
+      contexts: { partido: 'Match', entreno: 'Training', fuera: 'Off-pitch' },
+    },
+  }[lang];
   const tutorName = staff.find((s) => s.id === tutorId)?.full_name;
   const name = `${player.first_name ?? ''} ${player.last_name ?? ''}`.trim();
   const dorsal = player.dorsal ?? (player.kit_number || undefined);
@@ -240,15 +360,15 @@ export default function PlayerDevelopmentPlan({ player, mode }: { player: DbPlay
             {player.photo_url ? <img src={player.photo_url} alt={name} className="w-full h-full object-cover" /> : <User size={40} className="text-white/40" />}
           </div>
           <div className="flex-1 min-w-0 text-center sm:text-left flex flex-col justify-center">
-            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#ff4d6d]">Plan individual de desarrollo</p>
+            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#ff4d6d]">{I18N.planBadge}</p>
             <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight truncate">
-              {dorsal ? <span className="text-white/40 mr-2">#{dorsal}</span> : null}{name || 'Jugador'}
+              {dorsal ? <span className="text-white/40 mr-2">#{dorsal}</span> : null}{name || I18N.player}
             </h2>
             <div className="mt-3 flex flex-wrap justify-center sm:justify-start gap-2 text-xs">
-              <span className="px-2.5 py-1 rounded-lg bg-white/10 font-bold">{player.main_position || 'Posición sin definir'}</span>
+              <span className="px-2.5 py-1 rounded-lg bg-white/10 font-bold">{player.main_position || I18N.noPosition}</span>
               {player.category && <span className="px-2.5 py-1 rounded-lg bg-white/10 font-bold">{player.category}</span>}
               <span className="px-2.5 py-1 rounded-lg bg-white/10 font-bold flex items-center gap-1.5">
-                Tutor:
+                {I18N.tutor}:
                 {isStaff ? (
                   <select
                     className="bg-transparent font-bold outline-none cursor-pointer [&>option]:text-gray-900"
@@ -260,21 +380,21 @@ export default function PlayerDevelopmentPlan({ player, mode }: { player: DbPlay
                       setTutorId(v);
                     })}
                   >
-                    <option value="">Sin asignar</option>
+                    <option value="">{I18N.unassigned}</option>
                     {staff.map((s) => <option key={s.id} value={s.id}>{s.full_name || 'Sin nombre'}</option>)}
                   </select>
                 ) : (
-                  <span>{tutorName || 'Sin asignar'}</span>
+                  <span>{tutorName || I18N.unassigned}</span>
                 )}
               </span>
             </div>
           </div>
           <div className="grid grid-cols-4 sm:grid-cols-2 gap-2 shrink-0 w-full sm:w-auto">
             {[
-              { l: 'Partidos', v: stats?.matches ?? 0 },
-              { l: 'Minutos', v: stats ? `${stats.minutes}'` : "0'" },
-              { l: 'Goles', v: stats?.total.goals ?? 0 },
-              { l: 'Asist.', v: stats?.total.assists ?? 0 },
+              { l: I18N.matches, v: stats?.matches ?? 0 },
+              { l: I18N.minutes, v: stats ? `${stats.minutes}'` : "0'" },
+              { l: I18N.goals, v: stats?.total.goals ?? 0 },
+              { l: I18N.assists, v: stats?.total.assists ?? 0 },
             ].map((k) => (
               <div key={k.l} className="rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-center sm:min-w-[84px]">
                 <p className="text-lg font-extrabold tabular-nums leading-none">{k.v}</p>
@@ -287,20 +407,21 @@ export default function PlayerDevelopmentPlan({ player, mode }: { player: DbPlay
 
       {/* ===================== BLOQUE 1 ===================== */}
       <Block
-        n={1} title="Objetivos & Focos" subtitle="El qué" icon={Target}
-        action={isStaff && !objForm && <button className={btnPrimary} onClick={() => setObjForm({ draft: emptyObjective() })}><Plus size={14} /> Objetivo</button>}
+        n={1} title={I18N.block1Title} subtitle={I18N.block1Sub} icon={Target}
+        action={isStaff && !objForm && <button className={btnPrimary} onClick={() => setObjForm({ draft: emptyObjective() })}><Plus size={14} /> {I18N.btnObj}</button>}
       >
         {objForm && !objForm.id && <div className="mb-4"><ObjectiveForm initial={objForm.draft} onSave={saveObjective} onCancel={() => setObjForm(null)} /></div>}
 
         <div className="grid md:grid-cols-3 gap-3">
-          {DIMENSIONS.map(({ id, label, icon: Icon, tone }) => {
+          {DIMENSIONS.map(({ id, icon: Icon, tone }) => {
             const list = objectives.filter((o) => (o.dimension ?? 'futbolistico') === id);
+            const label = I18N.dims[id] || id;
             return (
               <div key={id} className="rounded-xl border border-gray-100 bg-gray-50/50 p-3">
                 <div className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border text-[11px] font-black uppercase tracking-wider mb-2 ${tone}`}>
                   <Icon size={13} /> {label}
                 </div>
-                {list.length === 0 ? <Empty>Sin objetivos</Empty> : (
+                {list.length === 0 ? <Empty>{I18N.noObjectives}</Empty> : (
                   <ul className="space-y-2">
                     {list.map((o) => (
                       <li key={o.id} className="bg-white rounded-lg border border-gray-100 p-2.5">
@@ -331,13 +452,13 @@ export default function PlayerDevelopmentPlan({ player, mode }: { player: DbPlay
         {/* Focos */}
         <div className="mt-6">
           <div className="flex items-center justify-between mb-3">
-            <h4 className="text-sm font-extrabold text-gray-800 flex items-center gap-2"><Crosshair size={16} className="text-[#db0030]" /> Focos individuales</h4>
-            {isStaff && !focusForm && <button className={btnGhost} onClick={() => setFocusForm({ context: 'partido', title: '', description: '' })}><Plus size={14} /> Foco</button>}
+            <h4 className="text-sm font-extrabold text-gray-800 flex items-center gap-2"><Crosshair size={16} className="text-[#db0030]" /> {I18N.individualFocuses}</h4>
+            {isStaff && !focusForm && <button className={btnGhost} onClick={() => setFocusForm({ context: 'partido', title: '', description: '' })}><Plus size={14} /> {I18N.btnFocus}</button>}
           </div>
           {focusForm && (
             <div className="border border-gray-200 rounded-xl p-3 mb-3 grid sm:grid-cols-[160px_1fr_auto] gap-2 bg-gray-50/60">
               <select className={input} value={focusForm.context} onChange={(e) => setFocusForm({ ...focusForm, context: e.target.value as FocusContext })}>
-                {CONTEXTS.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
+                {CONTEXTS.map((c) => <option key={c.id} value={c.id}>{I18N.contexts[c.id] || c.label}</option>)}
               </select>
               <input className={input} placeholder="Foco (p. ej. perfilarme antes de recibir)" value={focusForm.title} onChange={(e) => setFocusForm({ ...focusForm, title: e.target.value })} autoFocus />
               <div className="flex gap-2">
@@ -352,9 +473,10 @@ export default function PlayerDevelopmentPlan({ player, mode }: { player: DbPlay
           <div className="grid md:grid-cols-3 gap-3">
             {CONTEXTS.map((c) => {
               const list = focuses.filter((f) => f.context === c.id && (isStaff || f.active));
+              const label = I18N.contexts[c.id] || c.label;
               return (
                 <div key={c.id} className="rounded-xl border border-gray-100 p-3">
-                  <p className="text-[11px] font-black uppercase tracking-wider text-gray-400 mb-2">{c.label}</p>
+                  <p className="text-[11px] font-black uppercase tracking-wider text-gray-400 mb-2">{label}</p>
                   {list.length === 0 ? <Empty>—</Empty> : (
                     <ul className="space-y-1.5">
                       {list.map((f) => (
@@ -379,8 +501,8 @@ export default function PlayerDevelopmentPlan({ player, mode }: { player: DbPlay
       </Block>
 
       {/* ===================== BLOQUE 2 ===================== */}
-      <Block n={2} title="Acción & Criterios" subtitle="El cómo y cuándo" icon={ListChecks}>
-        {objectives.length === 0 ? <Empty>Cuando haya objetivos, aquí aparecerán sus criterios, indicadores, tareas y plazos.</Empty> : (
+      <Block n={2} title={I18N.block2Title} subtitle={I18N.block2Sub} icon={ListChecks}>
+        {objectives.length === 0 ? <Empty>{I18N.emptyBlock2}</Empty> : (
           <div className="space-y-3">
             {objectives.map((o) => objForm?.id === o.id ? (
               <ObjectiveForm key={o.id} initial={objForm.draft} onSave={saveObjective} onCancel={() => setObjForm(null)} />
@@ -388,7 +510,7 @@ export default function PlayerDevelopmentPlan({ player, mode }: { player: DbPlay
               <article key={o.id} className="rounded-xl border border-gray-100 p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-[10px] font-black uppercase tracking-wider text-gray-400">{DIMENSIONS.find((d) => d.id === (o.dimension ?? 'futbolistico'))?.label}</p>
+                    <p className="text-[10px] font-black uppercase tracking-wider text-gray-400">{I18N.dims[o.dimension as ObjectiveDimension] || o.dimension}</p>
                     <h4 className="font-extrabold text-gray-900">{o.title}</h4>
                   </div>
                   {isStaff && (
@@ -402,10 +524,10 @@ export default function PlayerDevelopmentPlan({ player, mode }: { player: DbPlay
                   )}
                 </div>
                 <div className="grid sm:grid-cols-3 gap-3 mt-3 text-sm">
-                  <div><p className="text-[10px] font-black uppercase tracking-wider text-gray-400 mb-1">Criterios de éxito</p><p className="text-gray-700 whitespace-pre-line">{o.success_criteria || '—'}</p></div>
-                  <div><p className="text-[10px] font-black uppercase tracking-wider text-gray-400 mb-1">Indicadores</p><p className="text-gray-700 whitespace-pre-line">{o.indicators || '—'}</p></div>
+                  <div><p className="text-[10px] font-black uppercase tracking-wider text-gray-400 mb-1">{I18N.successCriteria}</p><p className="text-gray-700 whitespace-pre-line">{o.success_criteria || '—'}</p></div>
+                  <div><p className="text-[10px] font-black uppercase tracking-wider text-gray-400 mb-1">{I18N.indicators}</p><p className="text-gray-700 whitespace-pre-line">{o.indicators || '—'}</p></div>
                   <div>
-                    <p className="text-[10px] font-black uppercase tracking-wider text-gray-400 mb-1">Tareas</p>
+                    <p className="text-[10px] font-black uppercase tracking-wider text-gray-400 mb-1">{I18N.tasks}</p>
                     {o.tasks ? (
                       <ul className="space-y-0.5">{o.tasks.split('\n').filter(Boolean).map((t, i) => <li key={i} className="text-gray-700 flex gap-1.5"><span className="text-[#db0030]">›</span>{t}</li>)}</ul>
                     ) : <p className="text-gray-700">—</p>}
@@ -419,13 +541,13 @@ export default function PlayerDevelopmentPlan({ player, mode }: { player: DbPlay
       </Block>
 
       {/* ===================== BLOQUE 3 ===================== */}
-      <Block n={3} title="Feedback & Reflexión" subtitle="La voz del jugador" icon={MessageSquareText}>
+      <Block n={3} title={I18N.block3Title} subtitle={I18N.block3Sub} icon={MessageSquareText}>
         <div className="grid lg:grid-cols-2 gap-5">
           {/* Video-sesiones */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <h4 className="text-sm font-extrabold text-gray-800 flex items-center gap-2"><Video size={16} className="text-[#db0030]" /> Video-sesiones</h4>
-              {isStaff && !videoForm && <button className={btnGhost} onClick={() => setVideoForm({ session_date: today, title: '', video_url: '', staff_notes: '' })}><Plus size={14} /> Sesión</button>}
+              <h4 className="text-sm font-extrabold text-gray-800 flex items-center gap-2"><Video size={16} className="text-[#db0030]" /> {I18N.videoSessions}</h4>
+              {isStaff && !videoForm && <button className={btnGhost} onClick={() => setVideoForm({ session_date: today, title: '', video_url: '', staff_notes: '' })}><Plus size={14} /> {I18N.btnSession}</button>}
             </div>
             {videoForm && (
               <div className="border border-gray-200 rounded-xl p-3 mb-3 space-y-2 bg-gray-50/60">
@@ -444,7 +566,7 @@ export default function PlayerDevelopmentPlan({ player, mode }: { player: DbPlay
                 </div>
               </div>
             )}
-            {videos.length === 0 ? <Empty>Aún no hay video-sesiones.</Empty> : (
+            {videos.length === 0 ? <Empty>{I18N.noVideos}</Empty> : (
               <ul className="space-y-3">
                 {videos.map((v) => (
                   <li key={v.id} className="rounded-xl border border-gray-100 p-3">
@@ -454,17 +576,17 @@ export default function PlayerDevelopmentPlan({ player, mode }: { player: DbPlay
                         <p className="font-bold text-gray-800 text-sm">{v.title}</p>
                       </div>
                       <div className="flex gap-1 shrink-0">
-                        {v.video_url && <a href={v.video_url} target="_blank" rel="noreferrer" className="p-1.5 text-gray-400 hover:text-blue-600" title="Ver vídeo"><ExternalLink size={15} /></a>}
+                        {v.video_url && <a href={v.video_url} target="_blank" rel="noreferrer" className="p-1.5 text-gray-400 hover:text-blue-600" title={I18N.watchVideo}><ExternalLink size={15} /></a>}
                         {isStaff && <button className="p-1.5 text-gray-400 hover:text-red-500" onClick={() => { if (confirm('¿Eliminar esta sesión?')) run(async () => { await deleteVideoNote(v.id); await loadVideos(); }); }}><Trash2 size={15} /></button>}
                       </div>
                     </div>
                     {v.staff_notes && <p className="text-sm text-gray-600 mt-2 whitespace-pre-line"><span className="font-bold text-gray-800">Staff: </span>{v.staff_notes}</p>}
                     {isStaff ? (
-                      v.player_notes && <p className="text-sm text-gray-600 mt-2 pl-3 border-l-2 border-[#db0030] whitespace-pre-line"><span className="font-bold text-gray-800">Jugador: </span>{v.player_notes}</p>
+                      v.player_notes && <p className="text-sm text-gray-600 mt-2 pl-3 border-l-2 border-[#db0030] whitespace-pre-line"><span className="font-bold text-gray-800">{I18N.player}: </span>{v.player_notes}</p>
                     ) : (
                       <div className="mt-2 flex gap-2 items-start">
                         <textarea
-                          className={input} rows={2} placeholder="Tus anotaciones sobre esta sesión…"
+                          className={input} rows={2} placeholder={I18N.playerNotesPlaceholder}
                           value={replyDrafts[v.id] ?? v.player_notes ?? ''}
                           onChange={(e) => setReplyDrafts({ ...replyDrafts, [v.id]: e.target.value })}
                         />
@@ -485,22 +607,22 @@ export default function PlayerDevelopmentPlan({ player, mode }: { player: DbPlay
 
           {/* Autoevaluación */}
           <div>
-            <h4 className="text-sm font-extrabold text-gray-800 flex items-center gap-2 mb-3"><MessageSquareText size={16} className="text-[#db0030]" /> Autoevaluación del jugador</h4>
+            <h4 className="text-sm font-extrabold text-gray-800 flex items-center gap-2 mb-3"><MessageSquareText size={16} className="text-[#db0030]" /> {I18N.selfAssessmentTitle}</h4>
             {!isStaff && (
               <div className="rounded-xl border-2 border-dashed border-gray-200 p-3 mb-3 focus-within:border-[#db0030]/40">
                 <textarea
                   className="w-full text-sm outline-none resize-none bg-transparent" rows={4}
-                  placeholder="¿Cómo te has visto estas semanas? ¿Qué te ha salido bien, qué te cuesta y qué necesitas del staff?"
+                  placeholder={I18N.selfAssessmentPlaceholder}
                   value={newAssessment} onChange={(e) => setNewAssessment(e.target.value)}
                 />
                 <div className="flex justify-end">
                   <button className={btnPrimary} disabled={!newAssessment.trim()} onClick={() => run(async () => {
                     await createSelfAssessment(playerId, newAssessment.trim()); setNewAssessment(''); await loadAssessments();
-                  })}><Save size={14} /> Publicar</button>
+                  })}><Save size={14} /> {I18N.publish}</button>
                 </div>
               </div>
             )}
-            {assessments.length === 0 ? <Empty>{isStaff ? 'El jugador todavía no ha escrito ninguna autoevaluación.' : 'Todavía no has escrito ninguna autoevaluación.'}</Empty> : (
+            {assessments.length === 0 ? <Empty>{isStaff ? I18N.noAssessmentsStaff : I18N.noAssessmentsPlayer}</Empty> : (
               <ul className="space-y-3">
                 {assessments.map((a) => (
                   <li key={a.id} className="rounded-xl bg-gray-50 border border-gray-100 p-3">
