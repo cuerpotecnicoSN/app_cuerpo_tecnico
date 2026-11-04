@@ -1434,5 +1434,133 @@
       "coordsNote2": "a partir de los informes Panini",
       "coordsNote3": "con sentido de ataque hacia la derecha."
     }
+  },
+  "playerPlan": {
+    "badge": "Plan individual de desarrollo",
+    "player": "Jugador",
+    "tutor": "Tutor",
+    "unassigned": "Sin asignar",
+    "unnamed": "Sin nombre",
+    "noPosition": "Posición sin definir",
+    "matches": "Partidos",
+    "minutes": "Minutos",
+    "goals": "Goles",
+    "assists": "Asistencias",
+    "viewStats": "Ver estadísticas",
+    "addObjective": "Añadir objetivo",
+    "addFocus": "Añadir foco",
+    "addSession": "Añadir sesión",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "archive": "Archivar",
+    "reactivate": "Reactivar",
+    "saveError": "No se ha podido guardar. Revisa la conexión e inténtalo de nuevo.",
+    "confirmDeleteObjective": "¿Eliminar este objetivo?",
+    "confirmDeleteSession": "¿Eliminar esta sesión?",
+    "confirmDeleteAssessment": "¿Eliminar esta autoevaluación?",
+    "noDeadline": "Sin fecha",
+    "daysLeft": "Quedan {{count}} d",
+    "overdue": "Vencido hace {{count}} d",
+    "meetingIndividual": "Reunión individual",
+    "meetingGroup": "Reunión grupal",
+    "followUp": "Seguimiento acordado",
+    "dimensions": {
+      "futbolistico": "Futbolísticos",
+      "fisico": "Físicos",
+      "personal": "Personales"
+    },
+    "contexts": {
+      "partido": "Partido",
+      "entreno": "Entreno",
+      "fuera": "Fuera del campo"
+    },
+    "status": {
+      "inProgress": "En progreso",
+      "done": "Cumplido",
+      "missed": "No cumplido"
+    },
+    "what": {
+      "title": "El qué",
+      "subtitle": "Objetivos y focos",
+      "progress": "{{done}} de {{total}} objetivos cumplidos",
+      "noObjectives": "Sin objetivos todavía",
+      "focuses": "Focos individuales",
+      "noFocus": "Sin focos activos"
+    },
+    "how": {
+      "title": "El cómo y el cuándo",
+      "subtitle": "Criterios, indicadores, tareas y plazos de cada objetivo",
+      "empty": "Cuando haya objetivos, aquí verás sus criterios, indicadores, tareas y plazos.",
+      "today": "Hoy",
+      "criteria": "Criterios de éxito",
+      "indicators": "Indicadores clave",
+      "tasks": "Tareas"
+    },
+    "voice": {
+      "title": "La voz del jugador",
+      "subtitle": "Video-sesiones y autoevaluación",
+      "videoSessions": "Video-sesiones",
+      "noVideos": "Aún no hay video-sesiones.",
+      "watchVideo": "Ver vídeo",
+      "staff": "Staff",
+      "notesPlaceholder": "Tus anotaciones sobre esta sesión…",
+      "selfAssessment": "Autoevaluación",
+      "selfAssessmentPlaceholder": "¿Cómo te has visto estas semanas? ¿Qué te ha salido bien, qué te cuesta y qué necesitas del staff?",
+      "publish": "Publicar",
+      "edited": "editada",
+      "noAssessmentsPlayer": "Escribe tu primera autoevaluación para compartirla con el staff.",
+      "noAssessmentsStaff": "El jugador todavía no ha escrito ninguna autoevaluación."
+    },
+    "calendar": {
+      "title": "Calendario",
+      "subtitle": "Reuniones y próximo check-in",
+      "next": "Próximo check-in",
+      "noDate": "Sin fecha programada",
+      "noMeetings": "Sin reuniones registradas."
+    },
+    "form": {
+      "title": "Objetivo",
+      "description": "Descripción",
+      "criteria": "Criterios de éxito (¿cuándo está cumplido?)",
+      "indicators": "Indicadores clave (qué medimos)",
+      "tasks": "Tareas a desarrollar (una por línea)",
+      "start": "Inicio",
+      "target": "Fecha objetivo",
+      "focus": "Foco (p. ej. perfilarme antes de recibir)",
+      "sessionTitle": "Título (p. ej. Duelos defensivos vs X)",
+      "videoUrl": "Enlace al vídeo (opcional)",
+      "staffNotes": "Anotaciones del staff"
+    }
+  },
+  "playerPortal": {
+    "title": "Portal del jugador",
+    "exit": "Salir",
+    "noMeetings": "Todavía no hay reuniones registradas.",
+    "noReports": "Todavía no hay informes disponibles.",
+    "viewDocument": "Ver documento",
+    "notLinked": "Tu cuenta aún no está vinculada a la ficha de un jugador. Contacta con el cuerpo técnico.",
+    "group": "Grupal",
+    "individual": "Individual",
+    "followUp": "Seguimiento",
+    "tabs": {
+      "what": "Objetivos y focos",
+      "how": "Acción y criterios",
+      "voice": "Feedback y reflexión",
+      "calendar": "Reuniones",
+      "partidos": "Estadísticas",
+      "peso": "Peso",
+      "lesiones": "Lesiones",
+      "informes": "Informes"
+    },
+    "meetingSections": {
+      "objective": "Objetivo",
+      "development": "Desarrollo",
+      "positive_points": "Puntos positivos",
+      "improvements": "A mejorar",
+      "agreements": "Acuerdos",
+      "next_steps": "Próximos pasos"
+    }
   }
 }

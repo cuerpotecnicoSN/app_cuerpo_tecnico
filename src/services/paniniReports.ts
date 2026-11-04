@@ -2,6 +2,7 @@ import { supabase } from '../lib/supabase';
 import type { PaniniMatchReport, PaniniTeamData } from '../types/paniniReport';
 import type { MatchDB } from '../components/types';
 import { getMatches } from './matches';
+import { ensureContext } from '../lib/dataService';
 
 const PANINI_PREFIX = '__PANINI_REPORT_JSON__';
 /** Bucket privado de Supabase Storage donde se guarda el PDF original de cada partido */
@@ -324,4 +325,18 @@ export async function getSeasonPaniniReports(): Promise<SeasonPaniniEntry[]> {
   }
 
   return entries.sort((a, b) => (a.match.date < b.match.date ? -1 : a.match.date > b.match.date ? 1 : 0));
+}
+
+/**
+ * Versión para el jugador autenticado: el servidor devuelve cada informe recortado
+ * a sus propios datos (migración 20261104120000_player_stats_privacy).
+ */
+export async function getMyPaniniReports(): Promise<SeasonPaniniEntry[]> {
+  const seasonId = await ensureContext();
+  const { data, error } = await supabase.rpc('my_panini_reports', { p_season_id: seasonId });
+  if (error) throw error;
+  return ((data ?? []) as { match: MatchDB; report: PaniniMatchReport }[]).map(({ match, report }) => {
+    const { isHome, our, rival } = splitTeams(report, match.is_home);
+    return { match, report, isHome, our, rival };
+  });
 }

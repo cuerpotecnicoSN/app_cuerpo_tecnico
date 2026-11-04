@@ -144,8 +144,8 @@ export default function PlayerProfilePage() {
         }
       />
 
-      {/* Header Info (Ficha) */}
-      <div className="bg-white p-6 border border-gray-100 shadow-sm rounded-2xl mb-6 flex flex-col">
+      {/* Header Info (Ficha): el plan individual trae su propia cabecera */}
+      <div className={`bg-white p-6 border border-gray-100 shadow-sm rounded-2xl mb-6 flex-col ${activeTab === 'plan' ? 'hidden' : 'flex'}`}>
         {/* Name centered at the top */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-6 pb-6 border-b border-gray-100 w-full text-center">
           {activeDbPlayer?.dorsal && (
@@ -345,7 +345,7 @@ export default function PlayerProfilePage() {
           <PlayerInjuriesTab playerId={activePlayer.id} />
         )}
 
-        {activeTab === 'plan' && activeDbPlayer && <PlayerDevelopmentPlan player={activeDbPlayer} mode="staff" />}
+        {activeTab === 'plan' && activeDbPlayer && <PlayerDevelopmentPlan player={activeDbPlayer} mode="staff" onViewStats={() => handleTabChange('partidos')} />}
         {activeTab === 'reuniones' && <PlayerMeetingsTab playerId={activePlayer.id} />}
         {activeTab === 'informes' && <PlayerReportsTab playerId={activePlayer.id} />}
         {activeTab === 'feedback' && <PlayerFeedbackTab playerId={activePlayer.id} />}

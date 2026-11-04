@@ -1434,5 +1434,133 @@
       "coordsNote2": "from Panini match reports",
       "coordsNote3": "attacking to the right."
     }
+  },
+  "playerPlan": {
+    "badge": "Individual development plan",
+    "player": "Player",
+    "tutor": "Mentor",
+    "unassigned": "Unassigned",
+    "unnamed": "No name",
+    "noPosition": "Position not set",
+    "matches": "Matches",
+    "minutes": "Minutes",
+    "goals": "Goals",
+    "assists": "Assists",
+    "viewStats": "View stats",
+    "addObjective": "Add goal",
+    "addFocus": "Add focus",
+    "addSession": "Add session",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "archive": "Archive",
+    "reactivate": "Reactivate",
+    "saveError": "Couldn’t save. Check your connection and try again.",
+    "confirmDeleteObjective": "Delete this goal?",
+    "confirmDeleteSession": "Delete this session?",
+    "confirmDeleteAssessment": "Delete this self-assessment?",
+    "noDeadline": "No date",
+    "daysLeft": "{{count}} d left",
+    "overdue": "{{count}} d overdue",
+    "meetingIndividual": "Individual meeting",
+    "meetingGroup": "Group meeting",
+    "followUp": "Agreed follow-up",
+    "dimensions": {
+      "futbolistico": "Football",
+      "fisico": "Physical",
+      "personal": "Personal"
+    },
+    "contexts": {
+      "partido": "Match",
+      "entreno": "Training",
+      "fuera": "Off the pitch"
+    },
+    "status": {
+      "inProgress": "In progress",
+      "done": "Achieved",
+      "missed": "Not achieved"
+    },
+    "what": {
+      "title": "The what",
+      "subtitle": "Goals and focus areas",
+      "progress": "{{done}} of {{total}} goals achieved",
+      "noObjectives": "No goals yet",
+      "focuses": "Individual focus areas",
+      "noFocus": "No active focus"
+    },
+    "how": {
+      "title": "The how and when",
+      "subtitle": "Criteria, indicators, tasks and deadlines for each goal",
+      "empty": "Once goals are set, you’ll see their criteria, indicators, tasks and deadlines here.",
+      "today": "Today",
+      "criteria": "Success criteria",
+      "indicators": "Key indicators",
+      "tasks": "Tasks"
+    },
+    "voice": {
+      "title": "The player’s voice",
+      "subtitle": "Video sessions and self-assessment",
+      "videoSessions": "Video sessions",
+      "noVideos": "No video sessions yet.",
+      "watchVideo": "Watch video",
+      "staff": "Staff",
+      "notesPlaceholder": "Your notes on this session…",
+      "selfAssessment": "Self-assessment",
+      "selfAssessmentPlaceholder": "How have you felt in recent weeks? What went well, what are you finding hard, and what do you need from the staff?",
+      "publish": "Publish",
+      "edited": "edited",
+      "noAssessmentsPlayer": "Write your first self-assessment to share it with the staff.",
+      "noAssessmentsStaff": "The player hasn’t written a self-assessment yet."
+    },
+    "calendar": {
+      "title": "Calendar",
+      "subtitle": "Meetings and next check-in",
+      "next": "Next check-in",
+      "noDate": "No date scheduled",
+      "noMeetings": "No meetings recorded."
+    },
+    "form": {
+      "title": "Goal",
+      "description": "Description",
+      "criteria": "Success criteria (when is it achieved?)",
+      "indicators": "Key indicators (what we measure)",
+      "tasks": "Tasks to work on (one per line)",
+      "start": "Start",
+      "target": "Target date",
+      "focus": "Focus (e.g. open my body before receiving)",
+      "sessionTitle": "Title (e.g. Defensive duels vs X)",
+      "videoUrl": "Video link (optional)",
+      "staffNotes": "Staff notes"
+    }
+  },
+  "playerPortal": {
+    "title": "Player portal",
+    "exit": "Log out",
+    "noMeetings": "No meetings recorded yet.",
+    "noReports": "No reports available yet.",
+    "viewDocument": "View document",
+    "notLinked": "Your account isn’t linked to a player profile yet. Contact the coaching staff.",
+    "group": "Group",
+    "individual": "Individual",
+    "followUp": "Follow-up",
+    "tabs": {
+      "what": "Goals & focus",
+      "how": "Action & criteria",
+      "voice": "Feedback & reflection",
+      "calendar": "Meetings",
+      "partidos": "Stats",
+      "peso": "Weight",
+      "lesiones": "Injuries",
+      "informes": "Reports"
+    },
+    "meetingSections": {
+      "objective": "Objective",
+      "development": "Development",
+      "positive_points": "Key strengths",
+      "improvements": "Areas to improve",
+      "agreements": "Agreements",
+      "next_steps": "Next steps"
+    }
   }
 }

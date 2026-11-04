@@ -7,8 +7,9 @@ import { useSearchParams } from 'react-router-dom';
 
 import { useSupabaseData } from '../../hooks/useSupabaseData';
 import PlayerImportModal from '../../components/pro/PlayerImportModal';
+import { DeletePlayerModal } from '../../components/pro/DeletePlayerModal';
+import { useAuth } from '../../context/AuthContext';
 import { Plus, Users as UsersIcon, Grid, List, Filter, Globe, Search, Download, Edit2, UsersRound, MessageSquareText, Activity } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
 import SubNavTabs from '../../components/common/SubNavTabs';
 import PlayerStatsHub from '../../components/players/stats/PlayerStatsHub';
 import './players-grid.css';
@@ -24,6 +25,7 @@ const getPositionOrder = (pos: string) => {
 
 export default function PlayersPage() {
   const { t } = useTranslation();
+  const { isAdmin } = useAuth();
   const [showImportModal, setShowImportModal] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [positionFilter, setPositionFilter] = useState('');
@@ -112,18 +114,15 @@ export default function PlayersPage() {
   const [tasks, setTasks] = useState<DevTask[]>([]);
 
   const [playerToEdit, setPlayerToEdit] = useState<any>(null);
+  const [playerToDelete, setPlayerToDelete] = useState<{ id: string; name: string } | null>(null);
 
-  const handleDeletePlayer = async (id: string) => {
-    if (window.confirm('¿Estás seguro de que quieres eliminar a este jugador?')) {
-      try {
-        const { error } = await supabase.from('players').delete().eq('id', id);
-        if (error) throw error;
-        window.location.reload();
-      } catch (err) {
-        console.error('Error al eliminar jugador:', err);
-        alert('Hubo un error al eliminar el jugador.');
-      }
+  const handleDeletePlayer = (id: string) => {
+    if (!isAdmin) {
+      alert('Solo un administrador puede eliminar jugadores de la base de datos.');
+      return;
     }
+    const target = players.find(p => p.id === id);
+    setPlayerToDelete({ id, name: target?.footballName || target?.name || 'este jugador' });
   };
 
   const handleAddPlayer = () => {
@@ -336,12 +335,12 @@ export default function PlayersPage() {
               onClick={() => setIsEditMode(!isEditMode)} 
               className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all border ${
                 isEditMode 
-                  ? 'bg-red-50 text-[var(--color-primary,#db0030)] border-red-200 shadow-xs' 
+                  ? 'bg-red-600 text-white border-red-600 shadow-md shadow-red-600/25 ring-2 ring-red-400' 
                   : 'bg-white dark:bg-neutral-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 border-gray-200 dark:border-white/10'
               }`}
             >
               <Edit2 size={14} />
-              {t('players.management.editPlayerTooltip', 'Modo Edición')}
+              {isEditMode ? 'Salir de Edición' : 'Editar plantilla'}
             </button>
 
             <button 
@@ -549,6 +548,18 @@ export default function PlayersPage() {
           onSuccess={() => {
             setShowImportModal(false);
             setPlayerToEdit(null);
+            window.location.reload();
+          }}
+        />
+      )}
+
+      {playerToDelete && (
+        <DeletePlayerModal
+          player={playerToDelete}
+          isOpen={!!playerToDelete}
+          onClose={() => setPlayerToDelete(null)}
+          onSuccess={() => {
+            setPlayerToDelete(null);
             window.location.reload();
           }}
         />

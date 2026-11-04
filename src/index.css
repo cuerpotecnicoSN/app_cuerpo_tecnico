@@ -1,6 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;700;900&display=swap');
 @import "tailwindcss";
 
+/* La app no tiene tema oscuro: sin esto, los dark: de algunos componentes siguen al sistema y dejan texto blanco sobre fondo claro */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --font-sans: 'Inter', system-ui, sans-serif;
   --font-display: 'Outfit', system-ui, sans-serif;
