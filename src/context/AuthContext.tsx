@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import type { Session, User } from '@supabase/supabase-js';
+import i18n from '../i18n';
 
 type Profile = {
   id: string;
@@ -77,6 +78,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (data.role === 'Jugador') {
           const { data: link } = await supabase.from('players').select('id').eq('user_id', userObj.id).maybeSingle();
           setPlayerId(link?.id ?? null);
+          // Si es jugador y el idioma actual es español, cambiar por defecto a italiano
+          const currentLng = localStorage.getItem('language');
+          if (!currentLng || currentLng === 'es') {
+            i18n.changeLanguage('it');
+            localStorage.setItem('language', 'it');
+          }
         } else {
           setPlayerId(null);
         }

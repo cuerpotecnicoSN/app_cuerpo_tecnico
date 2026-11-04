@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ChevronDown, LogOut, Check, ArrowUpRight } from 'lucide-react';
+import { ChevronDown, LogOut, Check, ArrowUpRight, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { navigation, type NavSection, type NavChild } from '../config/navigation';
 import EditProfileModal from '../components/auth/EditProfileModal';
@@ -16,7 +16,7 @@ const LANGS = [
 const MainLayout: React.FC = () => {
   const { t, i18n } = useTranslation();
   const location = useLocation();
-  const { profile, signOut } = useAuth();
+  const { profile, signOut, isAdmin } = useAuth();
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [langOpen, setLangOpen] = useState(false);
@@ -271,6 +271,18 @@ const MainLayout: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            {/* Admin button */}
+            {isAdmin && (
+              <Link
+                to="/admin/users"
+                className="flex items-center gap-1.5 h-10 px-3 rounded-full bg-red-600/10 border border-red-500/30 text-red-400 hover:bg-red-600/20 hover:text-white transition-all text-xs font-bold"
+                title="Gestión de usuarios y acceso de jugadores"
+              >
+                <ShieldCheck size={16} />
+                <span className="hidden md:inline">Admin</span>
+              </Link>
+            )}
 
             {/* Profile chip */}
             <button

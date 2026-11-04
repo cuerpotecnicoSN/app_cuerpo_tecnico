@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Mail, Send, RotateCw, CheckCircle2, Clock, Search, Loader2, Save, User } from 'lucide-react';
+import { Mail, Send, RotateCw, CheckCircle2, Clock, Search, Loader2, Save, User, Trash2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { ensureContext } from '../../lib/dataService';
 import { getPlayerAccessStatus, invitePlayer, savePlayerEmail, type PlayerAccessRow } from '../../services/playerDevelopment';
@@ -66,14 +66,34 @@ export default function PlayerAccessPanel() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rows, access]);
 
-  const act = async (r: Row, kind: 'save' | 'invite') => {
+  const act = async (r: Row, kind: 'save' | 'invite' | 'clear') => {
+    if (kind === 'clear') {
+      if (!confirm(`¿Borrar el email y desvincular el acceso de ${r.first_name ?? 'este jugador'}?`)) return;
+      setBusy(r.id); setMsg(null);
+      try {
+        await supabase.from('players').update({ email: null, user_id: null, invited_at: null }).eq('id', r.id);
+        const { [r.id]: _omit, ...rest } = drafts; void _omit; setDrafts(rest);
+        setMsg({ id: r.id, ok: true, text: 'Email y acceso borrados' });
+        await load();
+      } catch (e) {
+        setMsg({ id: r.id, ok: false, text: e instanceof Error ? e.message : 'Error' });
+      } finally {
+        setBusy(null);
+      }
+      return;
+    }
+
     const email = (drafts[r.id] ?? r.email ?? '').trim().toLowerCase();
     if (email && !EMAIL_RE.test(email)) { setMsg({ id: r.id, ok: false, text: 'Email no válido' }); return; }
     setBusy(r.id); setMsg(null);
     try {
       if (kind === 'save') {
         await savePlayerEmail(r.id, email || null);
-        setMsg({ id: r.id, ok: true, text: 'Email guardado' });
+        if (!email) {
+          // Si guardó en blanco, limpiar también user_id e invited_at
+          await supabase.from('players').update({ user_id: null, invited_at: null }).eq('id', r.id);
+        }
+        setMsg({ id: r.id, ok: true, text: email ? 'Email guardado' : 'Email borrado' });
       } else {
         if (!email) throw new Error('Añade un email primero');
         if (statusOf(r) === 'invitado' && !confirm(`¿Reenviar la invitación a ${email}? El enlace anterior dejará de funcionar.`)) return;
@@ -158,10 +178,27 @@ export default function PlayerAccessPanel() {
                       {st === 'activo' && access[r.id]?.last_sign_in_at && <p className="text-[11px] text-muted mt-1">último acceso {fmt(access[r.id].last_sign_in_at!)}</p>}
                     </td>
                     <td className="p-3">
-                      <div className="flex justify-end gap-2">
+                      <div className="flex justify-end gap-1.5 items-center">
                         {dirty && !linked && (
-                          <button className="btn btn-outline text-xs" style={{ padding: '0.4rem 0.6rem' }} disabled={busy === r.id} onClick={() => act(r, 'save')}>
+                          <button
+                            className="btn btn-outline text-xs text-blue-600 hover:text-blue-700"
+                            style={{ padding: '0.4rem 0.6rem' }}
+                            title="Guardar cambios de email"
+                            disabled={busy === r.id}
+                            onClick={() => act(r, 'save')}
+                          >
                             <Save size={14} />
+                          </button>
+                        )}
+                        {(r.email || r.user_id) && (
+                          <button
+                            className="btn btn-outline text-xs text-red-500 hover:text-red-700 hover:bg-red-50 border-gray-200"
+                            style={{ padding: '0.4rem 0.6rem' }}
+                            title="Borrar email y quitar acceso"
+                            disabled={busy === r.id}
+                            onClick={() => act(r, 'clear')}
+                          >
+                            <Trash2 size={14} />
                           </button>
                         )}
                         {st !== 'activo' && (
