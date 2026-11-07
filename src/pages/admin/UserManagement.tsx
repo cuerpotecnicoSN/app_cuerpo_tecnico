@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabase';
-import { UserCog, Edit, Save, X, Plus, UserPlus, Trash2, Loader2, Send } from 'lucide-react';
+import { UserCog, Edit, Save, X, UserPlus, Trash2, Loader2, Send } from 'lucide-react';
 import PlayerAccessPanel from '../../components/admin/PlayerAccessPanel';
 import { inviteStaffMember, deleteUserAccount } from '../../services/playerDevelopment';
 

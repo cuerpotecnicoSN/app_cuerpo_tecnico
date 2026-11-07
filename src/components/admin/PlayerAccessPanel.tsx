@@ -150,7 +150,6 @@ export default function PlayerAccessPanel() {
                 const st = statusOf(r);
                 const draft = drafts[r.id] ?? r.email ?? '';
                 const dirty = draft.trim().toLowerCase() !== (r.email ?? '');
-                const linked = !!r.user_id;
                 return (
                   <tr key={r.id} className="border-b border-border hover:bg-bg-hover align-top">
                     <td className="p-3">
