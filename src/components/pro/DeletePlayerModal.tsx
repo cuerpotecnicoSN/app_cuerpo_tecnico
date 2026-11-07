@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { AlertTriangle, Trash2, X, Loader2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { deleteUserAccount } from '../../services/playerDevelopment';
 
 interface DeletePlayerModalProps {
   player: { id: string; name: string };
@@ -25,7 +26,7 @@ export const DeletePlayerModal: React.FC<DeletePlayerModalProps> = ({
     setError(null);
 
     try {
-      // 1. Si tenía cuenta de usuario vinculada, desvincular el perfil
+      // 1. Si tenía cuenta de usuario vinculada o email, eliminarla de Auth y de perfiles
       const { data: playerData } = await supabase
         .from('players')
         .select('user_id')
@@ -33,10 +34,13 @@ export const DeletePlayerModal: React.FC<DeletePlayerModalProps> = ({
         .single();
 
       if (playerData?.user_id) {
-        await supabase
-          .from('profiles')
-          .update({ role: 'Pendiente' })
-          .eq('id', playerData.user_id);
+        try {
+          await deleteUserAccount({ userId: playerData.user_id, playerId: player.id });
+        } catch (authDelErr) {
+          console.warn('No se pudo borrar el usuario de Auth por Edge Function:', authDelErr);
+          // Fallback a nivel de DB por si acaso
+          await supabase.from('profiles').delete().eq('id', playerData.user_id);
+        }
       }
 
       // 2. Eliminar definitivamente el jugador de la base de datos

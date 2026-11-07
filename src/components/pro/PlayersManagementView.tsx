@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { Player, DevTask, MedicalRecord, SportsStats } from '../types';
 import { useNavigate } from 'react-router-dom';
 import { Edit2, Trash2 } from 'lucide-react';
+import { translatePosition } from '../../utils/positionTranslations';
 
 export interface PlayersManagementViewProps {
   players: Player[];
@@ -93,7 +94,7 @@ export const getPositionColor = (position?: string) => {
 
 export default function PlayersManagementView({ players, onUpdatePlayer, onDeletePlayer, viewMode = 'grid', isEditMode = false }: PlayersManagementViewProps) {
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   if (viewMode === 'list') {
     return (
@@ -145,7 +146,7 @@ export default function PlayersManagementView({ players, onUpdatePlayer, onDelet
                   </td>
                   <td className="px-6 py-3 whitespace-nowrap text-gray-600">
                     <span className={`px-2.5 py-1 text-xs rounded-lg font-medium border ${getPositionColor(player.position)}`}>
-                      {player.position}
+                      {translatePosition(player.position, i18n.language)}
                     </span>
                   </td>
                   <td className="px-6 py-3 whitespace-nowrap text-gray-600">
@@ -253,7 +254,7 @@ export default function PlayersManagementView({ players, onUpdatePlayer, onDelet
             </div>
             <div className="mt-1">
               <span className={`px-1.5 py-0.5 text-[9px] rounded border font-bold ${getPositionColor(player.position)}`}>
-                {player.position}
+                {translatePosition(player.position, i18n.language)}
               </span>
             </div>
             <div className="flex items-center justify-center mt-1 gap-1.5">

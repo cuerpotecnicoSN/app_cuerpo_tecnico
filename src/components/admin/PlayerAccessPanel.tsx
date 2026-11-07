@@ -2,7 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { Mail, Send, RotateCw, CheckCircle2, Clock, Search, Loader2, Save, User, Trash2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { ensureContext } from '../../lib/dataService';
-import { getPlayerAccessStatus, invitePlayer, savePlayerEmail, type PlayerAccessRow } from '../../services/playerDevelopment';
+import { getPlayerAccessStatus, invitePlayer, savePlayerEmail, deleteUserAccount, type PlayerAccessRow } from '../../services/playerDevelopment';
+import { translatePosition } from '../../utils/positionTranslations';
+import { useTranslation } from 'react-i18next';
 
 interface Row {
   id: string;
@@ -28,6 +30,7 @@ const STATUS_UI: Record<Status, { label: string; cls: string }> = {
 };
 
 export default function PlayerAccessPanel() {
+  const { i18n } = useTranslation();
   const [rows, setRows] = useState<Row[]>([]);
   const [access, setAccess] = useState<Record<string, PlayerAccessRow>>({});
   const [drafts, setDrafts] = useState<Record<string, string>>({});
@@ -68,12 +71,13 @@ export default function PlayerAccessPanel() {
 
   const act = async (r: Row, kind: 'save' | 'invite' | 'clear') => {
     if (kind === 'clear') {
-      if (!confirm(`¿Borrar el email y desvincular el acceso de ${r.first_name ?? 'este jugador'}?`)) return;
+      if (!confirm(`¿Borrar el email y eliminar el usuario y acceso de ${r.first_name ?? 'este jugador'}?`)) return;
       setBusy(r.id); setMsg(null);
       try {
+        await deleteUserAccount({ playerId: r.id, userId: r.user_id || undefined });
         await supabase.from('players').update({ email: null, user_id: null, invited_at: null }).eq('id', r.id);
         const { [r.id]: _omit, ...rest } = drafts; void _omit; setDrafts(rest);
-        setMsg({ id: r.id, ok: true, text: 'Email y acceso borrados' });
+        setMsg({ id: r.id, ok: true, text: 'Cuenta y acceso eliminados' });
         await load();
       } catch (e) {
         setMsg({ id: r.id, ok: false, text: e instanceof Error ? e.message : 'Error' });
@@ -90,13 +94,15 @@ export default function PlayerAccessPanel() {
       if (kind === 'save') {
         await savePlayerEmail(r.id, email || null);
         if (!email) {
-          // Si guardó en blanco, limpiar también user_id e invited_at
+          // Si guardó en blanco, eliminar cuenta de usuario también
+          await deleteUserAccount({ playerId: r.id, userId: r.user_id || undefined });
           await supabase.from('players').update({ user_id: null, invited_at: null }).eq('id', r.id);
         }
         setMsg({ id: r.id, ok: true, text: email ? 'Email guardado' : 'Email borrado' });
       } else {
         if (!email) throw new Error('Añade un email primero');
-        if (statusOf(r) === 'invitado' && !confirm(`¿Reenviar la invitación a ${email}? El enlace anterior dejará de funcionar.`)) return;
+        const isReinvite = !!r.user_id || (r.email && r.email !== email);
+        if (isReinvite && !confirm(`¿Enviar la invitación a ${email}? Se actualizará el acceso del jugador a esta nueva dirección.`)) return;
         await invitePlayer(r.id, email);
         setMsg({ id: r.id, ok: true, text: `Invitación enviada a ${email}` });
       }
@@ -154,17 +160,16 @@ export default function PlayerAccessPanel() {
                           : <span className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center"><User size={16} className="text-gray-400" /></span>}
                         <div>
                           <p className="font-semibold text-sm">{`${r.first_name ?? ''} ${r.last_name ?? ''}`.trim()}</p>
-                          <p className="text-xs text-muted">{r.main_position}</p>
+                          <p className="text-xs text-muted">{r.main_position ? translatePosition(r.main_position, i18n.language) : ''}</p>
                         </div>
                       </div>
                     </td>
                     <td className="p-3">
                       <input
                         type="email"
-                        className="text-sm px-2 py-1.5 border border-gray-200 rounded-lg w-full max-w-[260px] disabled:bg-gray-50 disabled:text-gray-500"
+                        className="text-sm px-2 py-1.5 border border-gray-200 rounded-lg w-full max-w-[260px] bg-white focus:ring-1 focus:ring-primary focus:border-primary"
                         placeholder="jugador@email.com"
                         value={draft}
-                        disabled={st === 'activo'}
                         onChange={(e) => setDrafts({ ...drafts, [r.id]: e.target.value })}
                       />
                       {msg?.id === r.id && <p className={`text-xs mt-1 ${msg.ok ? 'text-emerald-600' : 'text-red-600'}`}>{msg.text}</p>}
@@ -179,39 +184,41 @@ export default function PlayerAccessPanel() {
                     </td>
                     <td className="p-3">
                       <div className="flex justify-end gap-1.5 items-center">
-                        {dirty && !linked && (
+                        {dirty ? (
                           <button
-                            className="btn btn-outline text-xs text-blue-600 hover:text-blue-700"
-                            style={{ padding: '0.4rem 0.6rem' }}
-                            title="Guardar cambios de email"
+                            className="btn btn-outline text-xs text-blue-600 hover:text-blue-700 bg-blue-50/50 border-blue-200 flex items-center gap-1"
+                            style={{ padding: '0.4rem 0.65rem' }}
+                            title="Guardar email en la ficha sin enviar invitación todavía"
                             disabled={busy === r.id}
                             onClick={() => act(r, 'save')}
                           >
                             <Save size={14} />
+                            <span className="font-semibold">Guardar email</span>
                           </button>
-                        )}
+                        ) : null}
+
                         {(r.email || r.user_id) && (
                           <button
                             className="btn btn-outline text-xs text-red-500 hover:text-red-700 hover:bg-red-50 border-gray-200"
                             style={{ padding: '0.4rem 0.6rem' }}
-                            title="Borrar email y quitar acceso"
+                            title="Borrar email y cuenta de usuario"
                             disabled={busy === r.id}
                             onClick={() => act(r, 'clear')}
                           >
                             <Trash2 size={14} />
                           </button>
                         )}
-                        {st !== 'activo' && (
-                          <button
-                            className="btn btn-primary text-xs flex items-center gap-1.5"
-                            style={{ padding: '0.4rem 0.75rem' }}
-                            disabled={busy === r.id || !draft.trim()}
-                            onClick={() => act(r, 'invite')}
-                          >
-                            {busy === r.id ? <Loader2 size={14} className="animate-spin" /> : st === 'invitado' ? <RotateCw size={14} /> : <Send size={14} />}
-                            {st === 'invitado' ? 'Reenviar' : 'Invitar'}
-                          </button>
-                        )}
+
+                        <button
+                          className={`btn text-xs flex items-center gap-1.5 ${st === 'sin_invitar' ? 'btn-primary' : dirty ? 'btn-primary' : 'btn-outline border-primary text-primary hover:bg-primary hover:text-white'}`}
+                          style={{ padding: '0.4rem 0.75rem' }}
+                          disabled={busy === r.id || !draft.trim()}
+                          onClick={() => act(r, 'invite')}
+                          title={st === 'activo' || st === 'invitado' || dirty ? 'Enviar o reenviar invitación con este email' : 'Enviar invitación'}
+                        >
+                          {busy === r.id ? <Loader2 size={14} className="animate-spin" /> : st === 'activo' || st === 'invitado' ? <RotateCw size={14} /> : <Send size={14} />}
+                          <span>{st === 'activo' ? 'Reenviar / Cambiar' : st === 'invitado' ? 'Reenviar invitación' : 'Invitar ahora'}</span>
+                        </button>
                       </div>
                     </td>
                   </tr>

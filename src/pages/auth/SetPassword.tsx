@@ -9,7 +9,7 @@ import './Login.css';
 const TEXTS = {
   it: {
     brandTitle: 'Portale del',
-    brandSpan: 'Giocatore',
+    brandSpan: 'Club',
     hello: 'Ciao,',
     createTitle: 'Crea la tua password',
     enterAs: 'Scegli la password con cui accederai come',
@@ -26,7 +26,7 @@ const TEXTS = {
     saveAndEnter: 'Salva ed entra',
   },
   en: {
-    brandTitle: 'Player',
+    brandTitle: 'Staff & Team',
     brandSpan: 'Portal',
     hello: 'Hello,',
     createTitle: 'Set your password',
@@ -43,6 +43,24 @@ const TEXTS = {
     saving: 'Saving…',
     saveAndEnter: 'Save and continue',
   },
+  es: {
+    brandTitle: 'Portal del',
+    brandSpan: 'Equipo',
+    hello: 'Hola,',
+    createTitle: 'Crea tu contraseña',
+    enterAs: 'Elige la contraseña con la que accederás como',
+    checking: 'Verificando enlace…',
+    invalidLink: 'El enlace no es válido o ha caducado.',
+    askResend: 'Solicita al administrador un nuevo enlace de invitación.',
+    toLogin: 'Ir a iniciar sesión',
+    ready: '¡Listo! Entrando a la plataforma…',
+    minLen: 'La contraseña debe tener al menos 8 caracteres.',
+    mismatch: 'Las contraseñas no coinciden.',
+    newPass: 'Nueva contraseña (mín. 8 caracteres)',
+    repeatPass: 'Repite la contraseña',
+    saving: 'Guardando…',
+    saveAndEnter: 'Guardar y entrar',
+  },
 };
 
 const SetPassword: React.FC = () => {
@@ -56,12 +74,12 @@ const SetPassword: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
 
-  // Por defecto para el jugador: Italiano o Inglés
-  const lang: 'it' | 'en' = i18n.language?.startsWith('en') ? 'en' : 'it';
+  const lang: 'es' | 'it' | 'en' = i18n.language?.startsWith('es') ? 'es' : i18n.language?.startsWith('en') ? 'en' : 'it';
   const t = TEXTS[lang];
 
   const toggleLanguage = () => {
-    const next = lang === 'it' ? 'en' : 'it';
+    const cycle: ('es' | 'it' | 'en')[] = ['es', 'it', 'en'];
+    const next = cycle[(cycle.indexOf(lang) + 1) % cycle.length];
     i18n.changeLanguage(next);
     localStorage.setItem('language', next);
   };
@@ -78,7 +96,10 @@ const SetPassword: React.FC = () => {
     setSaving(false);
     if (err) return setError(err.message);
     setDone(true);
-    setTimeout(() => navigate('/me', { replace: true }), 1200);
+    // Si el usuario es staff/entrenador va a la home / dashboard; si es jugador va a /me
+    const isStaff = profile?.role && profile.role !== 'Jugador';
+    const destination = isStaff ? '/' : '/me';
+    setTimeout(() => navigate(destination, { replace: true }), 1200);
   };
 
   const firstName = profile?.full_name?.split(' ')[0];
@@ -104,7 +125,7 @@ const SetPassword: React.FC = () => {
               className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-xs font-bold text-gray-300 transition-all border border-white/10"
             >
               <Globe size={13} className="text-red-500" />
-              <span>{lang === 'it' ? '🇮🇹 IT' : '🇬🇧 EN'}</span>
+              <span>{lang === 'es' ? '🇪🇸 ES' : lang === 'it' ? '🇮🇹 IT' : '🇬🇧 EN'}</span>
             </button>
           </div>
 

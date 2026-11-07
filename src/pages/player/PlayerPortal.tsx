@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import DOMPurify from 'dompurify';
-import { LogOut, Target, ListChecks, MessageSquareText, CalendarDays, BarChart2, Weight, Stethoscope, FileText, Loader2, Globe } from 'lucide-react';
+import { LogOut, Target, ListChecks, Film, MessageSquareText, CalendarDays, BarChart2, Weight, Stethoscope, FileText, Loader2, Globe } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { useTranslation } from 'react-i18next';
@@ -14,7 +14,7 @@ import PlayerInjuriesTab from '../../components/pro/PlayerInjuriesTab';
 
 type Tab = PlanSection | 'partidos' | 'peso' | 'lesiones' | 'informes';
 
-const PLAN_SECTIONS: PlanSection[] = ['what', 'how', 'voice', 'calendar'];
+const PLAN_SECTIONS: PlanSection[] = ['what', 'how', 'clips', 'voice', 'calendar'];
 const isPlanSection = (tab: Tab): tab is PlanSection => (PLAN_SECTIONS as Tab[]).includes(tab);
 
 const MEETING_SECTIONS: (keyof MeetingDB)[] = ['objective', 'development', 'positive_points', 'improvements', 'agreements', 'next_steps'];
@@ -119,6 +119,7 @@ export default function PlayerPortal() {
   const tabItems: { id: Tab; icon: typeof Target }[] = [
     { id: 'what', icon: Target },
     { id: 'how', icon: ListChecks },
+    { id: 'clips', icon: Film },
     { id: 'voice', icon: MessageSquareText },
     { id: 'calendar', icon: CalendarDays },
     { id: 'partidos', icon: BarChart2 },

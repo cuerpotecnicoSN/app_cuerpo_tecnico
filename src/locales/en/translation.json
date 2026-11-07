@@ -1532,6 +1532,48 @@
       "sessionTitle": "Title (e.g. Defensive duels vs X)",
       "videoUrl": "Video link (optional)",
       "staffNotes": "Staff notes"
+    },
+    "proposedByPlayer": "Proposed by the player",
+    "proposedByYou": "Proposed by you",
+    "links": {
+      "title": "Links (videos, documents)",
+      "url": "Paste the link (YouTube, Drive, PDF...)",
+      "label": "Name (optional)",
+      "add": "Add",
+      "attach": "Link",
+      "remove": "Remove link",
+      "invalid": "Invalid link (must start with http or https)"
+    },
+    "thread": {
+      "title": "Conversation with the coaching staff",
+      "empty": "No messages about this objective yet.",
+      "placeholder": "Write a message about this objective...",
+      "send": "Send",
+      "you": "You",
+      "confirmDelete": "Delete this message?"
+    },
+    "clips": {
+      "title": "My videos/documents",
+      "titleStaff": "Player's videos/documents",
+      "subtitle": "Match and training clips, documents or audio to review with the coaching staff",
+      "add": "Add video or document",
+      "type": "Video type",
+      "contexts": {
+        "partido": "Match",
+        "entreno": "Training",
+        "otro": "Other"
+      },
+      "titlePlaceholder": "Title (e.g. Counter-press vs Inter, min 23)",
+      "urlPlaceholder": "Link (YouTube, Drive, Vimeo, PDF, audio...)",
+      "date": "Date",
+      "notesPlaceholder": "What do you want the coach to look at? (optional)",
+      "all": "All",
+      "empty": "You haven't added any videos or documents yet. Add clips from your matches or training sessions, PDFs or audio to discuss with the coaching staff.",
+      "emptyStaff": "The player has no videos or documents yet.",
+      "uploadedBy": "uploaded by {{name}}",
+      "open": "Watch video",
+      "comments": "Comments",
+      "confirmDelete": "Delete this video/document and its comments?"
     }
   },
   "playerPortal": {
@@ -1552,7 +1594,8 @@
       "partidos": "Stats",
       "peso": "Weight",
       "lesiones": "Injuries",
-      "informes": "Reports"
+      "informes": "Reports",
+      "clips": "My videos/documents"
     },
     "meetingSections": {
       "objective": "Objective",
@@ -1562,5 +1605,11 @@
       "agreements": "Agreements",
       "next_steps": "Next steps"
     }
+  },
+  "media": {
+    "play": "Play",
+    "close": "Close",
+    "openExternal": "Open in a new tab",
+    "viewHere": "View here"
   }
 }

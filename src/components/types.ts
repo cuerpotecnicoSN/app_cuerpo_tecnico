@@ -362,6 +362,52 @@ export interface PlayerObjective {
   indicators?: string | null;
   tasks?: string | null;
   start_date?: string | null;
+  created_by?: string | null;
+  /** true si lo propuso el propio jugador desde su portal */
+  created_by_player?: boolean;
+  links?: PlanLink[];
+}
+
+/** Enlace a un vídeo o documento (YouTube, Drive, PDF...) */
+export interface PlanLink {
+  url: string;
+  label?: string;
+}
+
+export interface PlanAuthor { full_name: string | null; role: string | null }
+
+/** Mensaje de una conversación jugador <-> staff (objetivo o vídeo) */
+export interface PlanComment {
+  id: string;
+  author_id: string;
+  content: string;
+  links: PlanLink[];
+  created_at: string;
+  author?: PlanAuthor | null;
+}
+
+export interface ObjectiveComment extends PlanComment {
+  objective_id: string;
+}
+
+export type ClipContext = 'partido' | 'entreno' | 'otro';
+
+/** Corte de vídeo (partido / entreno) que sube el jugador o el staff */
+export interface PlayerClip {
+  id: string;
+  player_id: string;
+  author_id: string;
+  context: ClipContext;
+  title: string;
+  url: string;
+  clip_date?: string | null;
+  notes?: string | null;
+  created_at: string;
+  author?: PlanAuthor | null;
+}
+
+export interface ClipComment extends PlanComment {
+  clip_id: string;
 }
 
 export interface SeasonReport {

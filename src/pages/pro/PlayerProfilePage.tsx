@@ -22,13 +22,14 @@ import { usePlayerPaniniLines } from '../../hooks/usePlayerPaniniLines';
 import { aggregatePlayer, normalize } from '../../utils/playerPaniniStats';
 
 import PlayerImportModal from '../../components/pro/PlayerImportModal';
+import { translatePosition } from '../../utils/positionTranslations';
 
 type Tab = 'ficha' | 'partidos' | 'peso' | 'lesiones' | 'plan' | 'reuniones' | 'informes' | 'feedback';
 
 export default function PlayerProfilePage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const { data: dbPlayers, loading } = useSupabaseData<any>('players');
   const [showEditModal, setShowEditModal] = useState(false);
@@ -184,7 +185,7 @@ export default function PlayerProfilePage() {
               <p className="text-sm text-gray-800 font-bold mb-4">{activePlayer.name}</p>
 
               <p className="text-xs text-gray-400 uppercase font-bold tracking-wider mb-1">{t('playerProfile.position')}</p>
-              <p className="text-sm text-blue-600 uppercase font-black tracking-wider">{activePlayer.position}</p>
+              <p className="text-sm text-blue-600 uppercase font-black tracking-wider">{translatePosition(activePlayer.position, i18n.language)}</p>
             </div>
           </div>
 

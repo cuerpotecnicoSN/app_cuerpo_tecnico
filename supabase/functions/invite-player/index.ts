@@ -1,5 +1,5 @@
-// Edge Function: invita a un jugador al portal por email.
-// Solo la puede llamar un administrador. Usa la service key (nunca expuesta al cliente).
+// Edge Function: invita o re-invita a un jugador o miembro del staff al portal por email.
+// Solo la puede llamar un administrador. Usa la service key.
 //
 // Deploy:  npx supabase functions deploy invite-player
 // Secrets: npx supabase secrets set SITE_URL=https://app-cuerpo-tecnico.vercel.app CLUB_NAME="StaffControl"
@@ -33,54 +33,91 @@ Deno.serve(async (req) => {
   if (!caller?.user) return json({ error: 'No autenticado' }, 401);
   const { data: callerProfile } = await admin.from('profiles').select('role, email').eq('id', caller.user.id).single();
   const isAdmin = callerProfile && (['Admin', 'Administrador'].includes(callerProfile.role) || callerProfile.email === 'cuerpotecnico.sn@gmail.com');
-  if (!isAdmin) return json({ error: 'Solo un administrador puede invitar jugadores' }, 403);
+  if (!isAdmin) return json({ error: 'Solo un administrador puede invitar usuarios' }, 403);
 
   // 2. Datos
-  let body: { player_id?: string; email?: string };
+  let body: { player_id?: string; email?: string; full_name?: string; role?: string; is_staff?: boolean };
   try { body = await req.json(); } catch { return json({ error: 'JSON inválido' }, 400); }
+
   const playerId = body.player_id;
   const email = body.email?.trim().toLowerCase();
-  if (!playerId || !email || !EMAIL_RE.test(email)) return json({ error: 'Faltan player_id o un email válido' }, 400);
+  const isStaff = body.is_staff || !playerId;
+  const requestedRole = body.role || (isStaff ? 'Entrenador' : 'Jugador');
 
-  const { data: player, error: pErr } = await admin
-    .from('players').select('id, first_name, last_name, football_name, user_id').eq('id', playerId).single();
-  if (pErr || !player) return json({ error: 'Jugador no encontrado' }, 404);
+  if (!email || !EMAIL_RE.test(email)) return json({ error: 'Debes proporcionar un email válido' }, 400);
 
-  // 3. Si ya tenía cuenta: activa -> error; pendiente -> se borra para reenviar invitación limpia
-  if (player.user_id) {
-    const { data: existing } = await admin.auth.admin.getUserById(player.user_id);
-    if (existing?.user?.last_sign_in_at) {
-      return json({ error: 'Este jugador ya ha activado su cuenta' }, 409);
+  let player: any = null;
+  if (playerId) {
+    const { data: pData, error: pErr } = await admin
+      .from('players').select('id, first_name, last_name, football_name, user_id, email').eq('id', playerId).single();
+    if (pErr || !pData) return json({ error: 'Jugador no encontrado' }, 404);
+    player = pData;
+  }
+
+  // 3. Limpieza de cuentas previas del mismo jugador o del mismo email si no estaban activas
+  if (player?.user_id) {
+    try {
+      await admin.auth.admin.deleteUser(player.user_id);
+    } catch (e) {
+      console.warn('No se pudo borrar el usuario previo:', e);
     }
-    if (existing?.user) await admin.auth.admin.deleteUser(player.user_id);
+    await admin.from('profiles').delete().eq('id', player.user_id);
     await admin.from('players').update({ user_id: null }).eq('id', playerId);
   }
 
-  // 4. Invitación (Supabase envía el email con la plantilla "Invite user")
-  const fullName = `${player.first_name ?? ''} ${player.last_name ?? ''}`.trim();
+  try {
+    const { data: userList } = await admin.auth.admin.listUsers();
+    const existingWithSameEmail = userList?.users?.find((u: any) => u.email?.toLowerCase() === email);
+    if (existingWithSameEmail) {
+      if (existingWithSameEmail.last_sign_in_at && isStaff) {
+        await admin.from('profiles').update({ role: requestedRole, full_name: body.full_name || undefined }).eq('id', existingWithSameEmail.id);
+        return json({ ok: true, user_id: existingWithSameEmail.id });
+      }
+      await admin.auth.admin.deleteUser(existingWithSameEmail.id);
+      await admin.from('profiles').delete().eq('id', existingWithSameEmail.id);
+    }
+  } catch (e) {
+    console.warn('Error al verificar email existente:', e);
+  }
+
+  // 4. Preparar nombre y metadatos
+  const fullName = player 
+    ? `${player.first_name ?? ''} ${player.last_name ?? ''}`.trim()
+    : body.full_name?.trim() || 'Entrenador';
+
+  const firstName = player
+    ? (player.football_name || player.first_name || fullName)
+    : (body.full_name?.trim()?.split(' ')[0] || fullName);
+
+  // 5. Enviar invitación oficial
   const { data: invited, error: invErr } = await admin.auth.admin.inviteUserByEmail(email, {
     redirectTo: `${siteUrl}/set-password`,
     data: {
       full_name: fullName,
-      first_name: player.football_name || player.first_name || fullName,
+      first_name: firstName,
       club_name: clubName,
       logo_url: `${siteUrl}/escudo.png`,
     },
   });
+
   if (invErr || !invited?.user) {
     const msg = invErr?.message?.includes('already been registered')
-      ? 'Ese email ya pertenece a otra cuenta'
+      ? 'Ese email ya pertenece a una cuenta activa'
       : invErr?.message ?? 'No se pudo enviar la invitación';
     return json({ error: msg }, 400);
   }
 
-  // 5. Vincular cuenta <-> jugador y fijar rol (el trigger lo crea como 'Pendiente')
-  await admin.from('profiles').upsert({ id: invited.user.id, email, full_name: fullName, role: 'Jugador' });
-  const { error: linkErr } = await admin
-    .from('players')
-    .update({ email, user_id: invited.user.id, invited_at: new Date().toISOString() })
-    .eq('id', playerId);
-  if (linkErr) return json({ error: `Invitación enviada pero no se pudo vincular: ${linkErr.message}` }, 500);
+  // 6. Asignar perfil y rol
+  await admin.from('profiles').upsert({ id: invited.user.id, email, full_name: fullName, role: requestedRole });
+
+  // 7. Si es jugador, vincular su id en players
+  if (playerId) {
+    const { error: linkErr } = await admin
+      .from('players')
+      .update({ email, user_id: invited.user.id, invited_at: new Date().toISOString() })
+      .eq('id', playerId);
+    if (linkErr) return json({ error: `Invitación enviada pero no se pudo vincular: ${linkErr.message}` }, 500);
+  }
 
   return json({ ok: true, user_id: invited.user.id });
 });

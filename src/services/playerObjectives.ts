@@ -1,6 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { ensureContext } from '../lib/dataService';
-import type { PlayerObjective, SeasonReport } from '../components/types';
+import type { ObjectiveComment, PlanLink, PlayerObjective, SeasonReport } from '../components/types';
 
 export const getPlayerObjectives = async (playerId: string): Promise<PlayerObjective[]> => {
   const { data, error } = await supabase
@@ -46,5 +46,28 @@ export const createSeasonReport = async (report: Omit<SeasonReport, 'id' | 'crea
 
 export const deleteSeasonReport = async (id: string): Promise<void> => {
   const { error } = await supabase.from('season_reports').delete().eq('id', id);
+  if (error) throw error;
+};
+
+// --- Conversación por objetivo (jugador <-> staff) ---
+
+export const getObjectiveComments = async (objectiveIds: string[]): Promise<ObjectiveComment[]> => {
+  if (!objectiveIds.length) return [];
+  const { data, error } = await supabase
+    .from('objective_comments')
+    .select('*, author:profiles(full_name, role)')
+    .in('objective_id', objectiveIds)
+    .order('created_at', { ascending: true });
+  if (error) throw error;
+  return (data || []) as ObjectiveComment[];
+};
+
+export const createObjectiveComment = async (objectiveId: string, content: string, links: PlanLink[]): Promise<void> => {
+  const { error } = await supabase.from('objective_comments').insert([{ objective_id: objectiveId, content, links }]);
+  if (error) throw error;
+};
+
+export const deleteObjectiveComment = async (id: string): Promise<void> => {
+  const { error } = await supabase.from('objective_comments').delete().eq('id', id);
   if (error) throw error;
 };

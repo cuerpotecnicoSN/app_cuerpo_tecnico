@@ -1532,6 +1532,48 @@
       "sessionTitle": "Titolo (es. Duelli difensivi vs X)",
       "videoUrl": "Link al video (facoltativo)",
       "staffNotes": "Note dello staff"
+    },
+    "proposedByPlayer": "Proposto dal giocatore",
+    "proposedByYou": "Proposto da te",
+    "links": {
+      "title": "Link (video, documenti)",
+      "url": "Incolla il link (YouTube, Drive, PDF...)",
+      "label": "Nome (facoltativo)",
+      "add": "Aggiungi",
+      "attach": "Link",
+      "remove": "Rimuovi link",
+      "invalid": "Link non valido (deve iniziare con http o https)"
+    },
+    "thread": {
+      "title": "Conversazione con lo staff",
+      "empty": "Ancora nessun messaggio su questo obiettivo.",
+      "placeholder": "Scrivi un messaggio su questo obiettivo...",
+      "send": "Invia",
+      "you": "Tu",
+      "confirmDelete": "Eliminare questo messaggio?"
+    },
+    "clips": {
+      "title": "I miei video/documenti",
+      "titleStaff": "Video/documenti del giocatore",
+      "subtitle": "Clip di partite e allenamenti, documenti o audio da rivedere con lo staff",
+      "add": "Aggiungi video o documento",
+      "type": "Tipo di video",
+      "contexts": {
+        "partido": "Partita",
+        "entreno": "Allenamento",
+        "otro": "Altro"
+      },
+      "titlePlaceholder": "Titolo (es. Pressione dopo la perdita vs Inter, min 23)",
+      "urlPlaceholder": "Link (YouTube, Drive, Vimeo, PDF, audio...)",
+      "date": "Data",
+      "notesPlaceholder": "Cosa vuoi che guardi l'allenatore? (facoltativo)",
+      "all": "Tutti",
+      "empty": "Non hai ancora caricato video né documenti. Aggiungi clip delle tue partite o allenamenti, PDF o audio per commentarli con lo staff.",
+      "emptyStaff": "Il giocatore non ha ancora video né documenti.",
+      "uploadedBy": "caricato da {{name}}",
+      "open": "Guarda video",
+      "comments": "Commenti",
+      "confirmDelete": "Eliminare questo video/documento e i suoi commenti?"
     }
   },
   "playerPortal": {
@@ -1552,7 +1594,8 @@
       "partidos": "Statistiche",
       "peso": "Peso",
       "lesiones": "Infortuni",
-      "informes": "Rapporti"
+      "informes": "Rapporti",
+      "clips": "I miei video/documenti"
     },
     "meetingSections": {
       "objective": "Obiettivo",
@@ -1562,5 +1605,11 @@
       "agreements": "Accordi",
       "next_steps": "Prossimi passi"
     }
+  },
+  "media": {
+    "play": "Riproduci",
+    "close": "Chiudi",
+    "openExternal": "Apri in un’altra scheda",
+    "viewHere": "Visualizza qui"
   }
 }
