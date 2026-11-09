@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Users2, MapPin, Search, Trash2, CalendarDays, ChevronRight, BarChart2, List } from 'lucide-react';
+import { Plus, Users2, MapPin, Search, Trash2, CalendarDays, ChevronRight, BarChart2, List, Upload } from 'lucide-react';
 import type { MeetingDB, Player } from '../types';
 import TranslatedText from '../common/TranslatedText';
 import { getMeetings, createMeeting, updateMeeting, deleteMeeting, addMeetingPlayer } from '../../services/meetings';
@@ -8,6 +8,7 @@ import { supabase } from '../../lib/supabase';
 import RichTextEditor from '../common/RichTextEditor';
 import { extractFeedbackFromHtml } from '../../utils/feedbackExtractor';
 import SubNavTabs from '../common/SubNavTabs';
+import MeetingsExcelImportModal from './MeetingsExcelImportModal';
 
 interface GlobalIndividualMeetingsViewProps {
   players: Player[];
@@ -25,6 +26,7 @@ export default function GlobalIndividualMeetingsView({ players }: GlobalIndividu
   const [filterMonth, setFilterMonth] = useState('');
   const [filterDate, setFilterDate] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [showImportModal, setShowImportModal] = useState(false);
   
   const [activeTab, setActiveTab] = useState<'list' | 'summary'>('list');
   const [summaryPlayerId, setSummaryPlayerId] = useState<string>('');
@@ -37,12 +39,30 @@ export default function GlobalIndividualMeetingsView({ players }: GlobalIndividu
   const [coach, setCoach] = useState('');
   const [objective, setObjective] = useState('');
   const [development, setDevelopment] = useState('');
+  const [observations, setObservations] = useState('');
 
   const loadData = async () => {
     try {
       setLoading(true);
       const allMeetings = await getMeetings('individual');
-      setMeetings(allMeetings);
+
+      // Auto-corregir en base de datos si alguna reunión existente fue importada con 2027
+      const fixedMeetings = await Promise.all(
+        allMeetings.map(async (m) => {
+          if (m.date && m.date.startsWith('2027')) {
+            const correctedDate = '2026' + m.date.slice(4);
+            try {
+              await updateMeeting(m.id, { date: correctedDate });
+              return { ...m, date: correctedDate };
+            } catch (e) {
+              return { ...m, date: correctedDate };
+            }
+          }
+          return m;
+        })
+      );
+
+      setMeetings(fixedMeetings);
 
       const { data: mpData } = await supabase.from('meeting_players').select('*');
       if (mpData) {
@@ -73,6 +93,7 @@ export default function GlobalIndividualMeetingsView({ players }: GlobalIndividu
     setCoach(m.created_by || '');
     setObjective(m.objective || '');
     setDevelopment(m.development || '');
+    setObservations(m.agreements || '');
     
     setShowForm(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -86,6 +107,7 @@ export default function GlobalIndividualMeetingsView({ players }: GlobalIndividu
     setLocation('');
     setObjective('');
     setDevelopment('');
+    setObservations('');
     setCoach('');
     setShowForm(false);
   };
@@ -100,6 +122,7 @@ export default function GlobalIndividualMeetingsView({ players }: GlobalIndividu
           location,
           objective,
           development,
+          agreements: observations,
           created_by: coach
         });
         // We assume the player doesn't change during edit, or we would need to update meeting_players
@@ -111,6 +134,7 @@ export default function GlobalIndividualMeetingsView({ players }: GlobalIndividu
           location, 
           objective, 
           development,
+          agreements: observations,
           created_by: coach
         });
         await addMeetingPlayer(m.id, selectedPlayerId);
@@ -274,16 +298,27 @@ export default function GlobalIndividualMeetingsView({ players }: GlobalIndividu
               className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
             />
           </div>
-          <button 
-            onClick={() => {
-              if (showForm) resetForm();
-              else setShowForm(true);
-            }} 
-            className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-sm transition-all transform hover:scale-[1.02] shrink-0"
-          >
-            <Plus size={18} className={showForm ? 'rotate-45 transition-transform' : 'transition-transform'} /> 
-            {showForm ? t('common.cancel') : t('playerTabs.scheduleMeeting')}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowImportModal(true)}
+              className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-sm transition-all transform hover:scale-[1.02] shrink-0"
+              title={t('meetingsTab.importExcelTooltip')}
+            >
+              <Upload size={18} />
+              <span>{t('meetingsTab.importExcelBtn', 'Subir Excel')}</span>
+            </button>
+
+            <button 
+              onClick={() => {
+                if (showForm) resetForm();
+                else setShowForm(true);
+              }} 
+              className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-sm transition-all transform hover:scale-[1.02] shrink-0"
+            >
+              <Plus size={18} className={showForm ? 'rotate-45 transition-transform' : 'transition-transform'} /> 
+              {showForm ? t('common.cancel') : t('playerTabs.scheduleMeeting')}
+            </button>
+          </div>
         </div>
 
         {/* Filtros avanzados */}
@@ -426,26 +461,47 @@ export default function GlobalIndividualMeetingsView({ players }: GlobalIndividu
               </div>
             </div>
 
+            {/* Título de la intervención (Interventi) */}
+            <div className="flex flex-col gap-1.5 mb-4">
+              <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">
+                {t('meetingsTab.interventionTitle', 'Intervención / Motivo de Reunión')}
+              </label>
+              <input
+                type="text"
+                placeholder={t('meetingsTab.interventionPlaceholder', 'Ej: 1 riunione: presentazione modalita richiesta interpretazione')}
+                value={objective.replace(/<[^>]*>/g, '')}
+                onChange={(e) => setObjective(e.target.value ? `<p>${e.target.value}</p>` : '')}
+                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+              />
+            </div>
+
+            {/* Contenido y Observaciones como en el Excel */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               <div className="flex flex-col gap-1.5 h-full">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('playerTabs.mainTopic')}</label>
-                <div className="h-full min-h-[250px]">
+                <label className="text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center justify-between">
+                  <span>{t('meetingsTab.contentLabel', 'Contenido (Contenuto)')}</span>
+                  <span className="text-[10px] text-gray-400 font-normal">{t('meetingsTab.contentHint')}</span>
+                </label>
+                <div className="h-full min-h-[220px]">
                   <RichTextEditor 
-                    value={objective}
-                    onChange={setObjective}
-                    placeholder={t('playerTabs.meetingReasonPlaceholder') as string}
+                    value={development}
+                    onChange={setDevelopment}
+                    placeholder={t('meetingsTab.contentPlaceholder', 'Escribe o detalla el contenido tratado...') as string}
                     className="h-full"
                   />
                 </div>
               </div>
               
               <div className="flex flex-col gap-1.5 h-full">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('playerTabs.notes')}</label>
-                <div className="h-full min-h-[250px]">
+                <label className="text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center justify-between">
+                  <span>{t('meetingsTab.observationsLabel', 'Observaciones (Osservazioni)')}</span>
+                  <span className="text-[10px] text-gray-400 font-normal">{t('meetingsTab.observationsHint')}</span>
+                </label>
+                <div className="h-full min-h-[220px]">
                   <RichTextEditor 
-                    value={development}
-                    onChange={setDevelopment}
-                    placeholder={t('playerTabs.notesPlaceholder') as string}
+                    value={observations}
+                    onChange={setObservations}
+                    placeholder={t('meetingsTab.observationsPlaceholder', 'Escribe las observaciones del cuerpo técnico...') as string}
                     className="h-full"
                   />
                 </div>
@@ -507,38 +563,88 @@ export default function GlobalIndividualMeetingsView({ players }: GlobalIndividu
               return (
                 <div 
                   key={m.id} 
-                  onClick={() => handleEditClick(m, primaryPlayerId)}
-                  className={`bg-white border cursor-pointer ${editingId === m.id ? 'border-blue-400 shadow-md ring-2 ring-blue-50' : 'border-gray-100 hover:border-blue-300 hover:shadow-md'} rounded-2xl p-5 shadow-sm transition-all group relative flex items-center justify-between gap-5`}
+                  className={`bg-white border ${editingId === m.id ? 'border-blue-400 shadow-md ring-2 ring-blue-50' : 'border-gray-100 hover:border-blue-300 hover:shadow-md'} rounded-2xl p-5 shadow-sm transition-all group relative flex flex-col gap-3`}
                 >
-                  
-                  {/* Info Jugador */}
-                  <div className="flex items-center gap-4 flex-1">
-                    {pAvatar ? (
-                      <img src={pAvatar} alt={pName} className="w-12 h-12 rounded-full object-cover border border-gray-200 shadow-sm" />
-                    ) : (
-                      <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-lg border border-blue-100 shadow-sm">
-                        {pName.substring(0, 2).toUpperCase()}
+                  <div className="flex items-center justify-between gap-5">
+                    {/* Info Jugador */}
+                    <div 
+                      onClick={() => handleEditClick(m, primaryPlayerId)}
+                      className="flex items-center gap-4 flex-1 cursor-pointer"
+                    >
+                      {pAvatar ? (
+                        <img src={pAvatar} alt={pName} className="w-12 h-12 rounded-full object-cover border border-gray-200 shadow-sm" />
+                      ) : (
+                        <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-lg border border-blue-100 shadow-sm">
+                          {pName.substring(0, 2).toUpperCase()}
+                        </div>
+                      )}
+                      <div>
+                        <h4 className="font-bold text-gray-900 text-[15px] leading-tight hover:text-blue-600 transition-colors">{pName}</h4>
+                        {m.created_by && <span className="text-xs text-gray-500 mt-0.5 block">{t('meetingsTab.coach')}: {m.created_by}</span>}
                       </div>
-                    )}
-                    <div>
-                      <h4 className="font-bold text-gray-900 text-[15px] leading-tight">{pName}</h4>
-                      {m.created_by && <span className="text-xs text-gray-500 mt-0.5 block">{t('meetingsTab.coach')}: {m.created_by}</span>}
+                    </div>
+                    
+                    {/* Meta (Fecha, Hora, Lugar, Botón Borrar) */}
+                    <div className="flex items-center gap-3">
+                      <div className="flex flex-col items-end gap-1">
+                        <div className="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 px-3 py-1.5 rounded-lg">
+                          <CalendarDays size={14} className="text-blue-500" />
+                          <span className="font-medium">{m.date} {m.time ? <span className="text-gray-400 font-normal">| {m.time}</span> : ''}</span>
+                        </div>
+                        {m.location && (
+                          <div className="flex items-center gap-2 text-xs text-gray-500 px-1">
+                            <MapPin size={12} className="text-rose-500" />
+                            <TranslatedText text={m.location} as="span" />
+                          </div>
+                        )}
+                      </div>
+
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(m.id);
+                        }}
+                        title={t('common.delete')}
+                        className="p-2 text-gray-300 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                      >
+                        <Trash2 size={16} />
+                      </button>
                     </div>
                   </div>
-                  
-                  {/* Meta (Fecha, Hora, Lugar) */}
-                  <div className="flex flex-col items-end gap-2">
-                    <div className="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 px-3 py-1.5 rounded-lg">
-                      <CalendarDays size={14} className="text-blue-500" />
-                      <span className="font-medium">{m.date} {m.time ? <span className="text-gray-400 font-normal">| {m.time}</span> : ''}</span>
+
+                  {/* Contenido / Observaciones con Traducción Automática al idioma seleccionado */}
+                  {(m.objective || m.development || m.agreements) && (
+                    <div 
+                      onClick={() => handleEditClick(m, primaryPlayerId)}
+                      className="cursor-pointer bg-gray-50/70 hover:bg-gray-100/70 transition-colors rounded-xl p-3 text-xs text-gray-700 border border-gray-100/80 space-y-2"
+                    >
+                      {m.objective && (
+                        <div className="font-semibold text-gray-900 border-b border-gray-200/60 pb-1">
+                          <TranslatedText html={m.objective} />
+                        </div>
+                      )}
+                      {m.development && (
+                        <div>
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-blue-700 block mb-0.5">
+                            {t('meetingsTab.content', 'Contenido')}:
+                          </span>
+                          <div className="text-gray-700 line-clamp-3 prose prose-sm max-w-none prose-p:my-0.5">
+                            <TranslatedText html={m.development} />
+                          </div>
+                        </div>
+                      )}
+                      {m.agreements && (
+                        <div className="pt-1 border-t border-gray-200/40">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 block mb-0.5">
+                            {t('meetingsTab.observations', 'Observaciones')}:
+                          </span>
+                          <div className="text-gray-600 line-clamp-3 prose prose-sm max-w-none prose-p:my-0.5">
+                            <TranslatedText html={m.agreements} />
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    {m.location && (
-                      <div className="flex items-center gap-2 text-xs text-gray-500 px-1">
-                        <MapPin size={12} className="text-rose-500" />
-                        <span>{m.location}</span>
-                      </div>
-                    )}
-                  </div>
+                  )}
 
                 </div>
               );
@@ -623,6 +729,18 @@ export default function GlobalIndividualMeetingsView({ players }: GlobalIndividu
           setSummaryPlayerId={setSummaryPlayerId}
         />
       )}
+
+      {/* MODAL DE IMPORTACIÓN EXCEL DE COLOQUIOS */}
+      <MeetingsExcelImportModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        players={players}
+        existingMeetings={meetings}
+        existingMeetingPlayersMap={meetingPlayersMap}
+        onImportComplete={() => {
+          loadData();
+        }}
+      />
     </div>
   );
 }

@@ -7,6 +7,7 @@ import { getMeetings, createMeeting, updateMeeting, addMeetingPlayer, deleteMeet
 import { useSupabaseData } from '../../hooks/useSupabaseData';
 import { supabase } from '../../lib/supabase';
 import { exportCalendarPdf, type PdfEvent } from '../../utils/calendarPdf';
+import TranslatedText from '../../components/common/TranslatedText';
 
 interface CalEvent {
   id: string;
@@ -129,7 +130,7 @@ export default function CalendarPage() {
           date: s.date, 
           time: s.time, 
           type: 'training' as const, 
-          label: `ENTRENAMIENTO: ${s.title}`,
+          label: `${t('calendarPage.training').toUpperCase()}: ${s.title}`,
           location: s.location,
           objective: s.objective,
           title: s.title
@@ -140,7 +141,7 @@ export default function CalendarPage() {
           time: m.time, 
           type: (m.type === 'grupal' ? 'dynamics' : 'meeting') as CalEvent['type'],
           originalType: m.type,
-          label: m.type === 'grupal' ? 'DINÁMICA' : 'REUNIÓN',
+          label: m.type === 'grupal' ? t('dashboard.dynamic').toUpperCase() : t('calendarPage.meeting').toUpperCase(),
           location: m.location,
           objective: m.objective,
           coach: m.created_by,
@@ -235,9 +236,9 @@ export default function CalendarPage() {
     if (!isFormValid || saving) return;
     if (editingEvent) {
       setConfirmAction({
-        title: 'Guardar cambios',
-        message: `Se actualizará "${editingEvent.label}" con los nuevos datos. ¿Quieres continuar?`,
-        label: 'Guardar cambios',
+        title: t('calendarPage.saveChanges'),
+        message: t('calendarPage.confirmSaveMessage', { label: editingEvent.label }),
+        label: t('calendarPage.saveChanges'),
         tone: 'primary',
         run: handleSaveEvent
       });
@@ -326,7 +327,7 @@ export default function CalendarPage() {
       loadEvents();
     } catch (e) {
       console.error(e);
-      alert(editingEvent ? 'Error al actualizar evento' : 'Error al crear evento');
+      alert(editingEvent ? t('calendarPage.errorUpdate') : t('calendarPage.errorCreate'));
     } finally {
       setSaving(false);
     }
@@ -434,7 +435,7 @@ export default function CalendarPage() {
       setShowExport(false);
     } catch (err) {
       console.error(err);
-      alert('Error al generar el PDF');
+      alert(t('calendarPage.errorPdf'));
     } finally {
       setExporting(false);
     }
@@ -481,13 +482,19 @@ export default function CalendarPage() {
     }
   };
 
+  // El título del entrenamiento lo escribe el staff: se traduce automáticamente.
+  const renderLabel = (event: CalEvent): React.ReactNode =>
+    event.type === 'training' && event.title
+      ? <>{t('calendarPage.training').toUpperCase()}: <TranslatedText text={event.title} as="span" /></>
+      : event.label;
+
   const getEventTypeLabel = (event: CalEvent) => {
     switch (event.type) {
-      case 'match': return event.competition || 'Partido';
-      case 'training': return 'Entrenamiento';
-      case 'meeting': return 'Reunión individual';
-      case 'dynamics': return 'Dinámica de grupo';
-      case 'birthday': return 'Cumpleaños';
+      case 'match': return event.competition ? formatDynamicText(event.competition) : t('calendarPage.match');
+      case 'training': return t('calendarPage.training');
+      case 'meeting': return t('calendarPage.individualMeeting');
+      case 'dynamics': return t('calendarPage.groupDynamics');
+      case 'birthday': return t('calendarPage.birthday');
     }
   };
 
@@ -506,9 +513,9 @@ export default function CalendarPage() {
 
   const requestDeleteEvent = (event: CalEvent) => {
     setConfirmAction({
-      title: '¿Eliminar este evento?',
-      message: `"${event.label}" se eliminará de forma permanente. Esta acción no se puede deshacer.`,
-      label: 'Sí, eliminar',
+      title: t('calendarPage.confirmDeleteTitle'),
+      message: t('calendarPage.confirmDeleteMessage', { label: event.label }),
+      label: t('calendarPage.confirmDeleteBtn'),
       tone: 'danger',
       run: () => handleDeleteEvent(event)
     });
@@ -528,7 +535,7 @@ export default function CalendarPage() {
       setSelectedEvent(null);
     } catch (err) {
       console.error(err);
-      alert('Error al eliminar evento');
+      alert(t('calendarPage.errorDelete'));
     }
   };
 
@@ -540,14 +547,14 @@ export default function CalendarPage() {
           className="fixed z-[100] bg-gray-900 text-white text-xs rounded-xl p-4 shadow-xl pointer-events-none transform -translate-x-1/2 -translate-y-full min-w-[200px] max-w-[280px]"
           style={{ left: hoveredEvent.x, top: hoveredEvent.y - 8 }}
         >
-          <p className="font-extrabold text-sm border-b border-gray-700 pb-2 mb-2 break-words">{hoveredEvent.event.label}</p>
+          <p className="font-extrabold text-sm border-b border-gray-700 pb-2 mb-2 break-words">{renderLabel(hoveredEvent.event)}</p>
           <div className="space-y-1.5">
             {hoveredEvent.event.time && <p className="flex items-start gap-2"><span className="text-gray-400 w-16 shrink-0">{t('common.time', 'Hora')}:</span> <span>{hoveredEvent.event.time}</span></p>}
-            {hoveredEvent.event.location && <p className="flex items-start gap-2"><span className="text-gray-400 w-16 shrink-0">{t('dynamicsPage.location', 'Lugar')}:</span> <span>{hoveredEvent.event.location}</span></p>}
+            {hoveredEvent.event.location && <p className="flex items-start gap-2"><span className="text-gray-400 w-16 shrink-0">{t('dynamicsPage.location', 'Lugar')}:</span> <TranslatedText text={hoveredEvent.event.location} as="span" /></p>}
             {hoveredEvent.event.type === 'match' && hoveredEvent.event.competition && <p className="flex items-start gap-2"><span className="text-gray-400 w-16 shrink-0">{t('matchesPage.competition', 'Torneo')}:</span> <span>{formatDynamicText(hoveredEvent.event.competition)}</span></p>}
             {hoveredEvent.event.type === 'meeting' && hoveredEvent.event.playerName && <p className="flex items-start gap-2"><span className="text-gray-400 w-16 shrink-0">{t('trainingPage.players', 'Jugador')}:</span> <span className="font-bold text-blue-300">{hoveredEvent.event.playerName}</span></p>}
             {(hoveredEvent.event.type === 'meeting' || hoveredEvent.event.type === 'dynamics') && hoveredEvent.event.coach && <p className="flex items-start gap-2"><span className="text-gray-400 w-16 shrink-0">{t('playerTabs.coachInCharge', 'Entrenador')}:</span> <span>{hoveredEvent.event.coach}</span></p>}
-            {hoveredEvent.event.objective && <p className="flex items-start gap-2"><span className="text-gray-400 w-16 shrink-0">{t('trainingPage.objective', 'Objetivo')}:</span> <span className="italic">{hoveredEvent.event.objective}</span></p>}
+            {hoveredEvent.event.objective && <p className="flex items-start gap-2"><span className="text-gray-400 w-16 shrink-0">{t('trainingPage.objective', 'Objetivo')}:</span> <TranslatedText html={hoveredEvent.event.objective} className="italic" /></p>}
           </div>
 
           {hoveredEvent.event.type !== 'birthday' && (
@@ -859,7 +866,7 @@ export default function CalendarPage() {
                 <button
                   onClick={() => setShowExport(false)}
                   className="-mr-1 -mt-1 rounded-xl p-2 text-gray-400 transition-colors hover:bg-white/10 hover:text-white"
-                  aria-label="Cerrar"
+                  aria-label={t('common.close')}
                 >
                   <X size={19} />
                 </button>
@@ -922,7 +929,7 @@ export default function CalendarPage() {
               {rangeIsValid && eventsInRange.length > 150 && (
                 <div className="flex items-center gap-2.5 rounded-2xl bg-amber-50 p-4 text-xs font-bold text-amber-700 ring-1 ring-amber-100">
                   <AlertTriangle size={16} className="shrink-0" />
-                  Con tantos eventos el texto quedará muy pequeño. Prueba con un tramo más corto.
+                  {t('calendarPage.tooManyEvents')}
                 </div>
               )}
             </div>
@@ -933,7 +940,7 @@ export default function CalendarPage() {
                   onClick={() => setShowExport(false)}
                   className="flex-1 rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-bold text-gray-600 shadow-sm transition-colors hover:bg-gray-50 sm:flex-none"
                 >
-                  Cancelar
+                  {t('common.cancel')}
                 </button>
                 <button
                   onClick={handleExportPdf}
@@ -941,7 +948,7 @@ export default function CalendarPage() {
                   className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-gray-900 to-gray-700 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-gray-900/20 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-gray-900/30 active:translate-y-0 disabled:pointer-events-none disabled:opacity-40 disabled:shadow-none"
                 >
                   {exporting ? <Loader2 size={16} className="animate-spin" /> : <FileDown size={16} />}
-                  {exporting ? 'Generando...' : 'Descargar PDF'}
+                  {exporting ? t('calendarPage.generating') : t('calendarPage.downloadPdf')}
                 </button>
               </div>
             </div>
@@ -963,12 +970,12 @@ export default function CalendarPage() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">{getEventTypeLabel(selectedEvent)}</p>
-                  <h2 className="mt-0.5 break-words text-base font-extrabold leading-tight">{selectedEvent.label}</h2>
+                  <h2 className="mt-0.5 break-words text-base font-extrabold leading-tight">{renderLabel(selectedEvent)}</h2>
                 </div>
                 <button
                   onClick={() => setSelectedEvent(null)}
                   className="-mr-1 -mt-1 rounded-xl p-2 text-gray-400 transition-colors hover:bg-white/10 hover:text-white"
-                  aria-label="Cerrar"
+                  aria-label={t('common.close')}
                 >
                   <X size={19} />
                 </button>
@@ -991,7 +998,7 @@ export default function CalendarPage() {
               {selectedEvent.location && (
                 <div className="flex items-center gap-2.5 text-gray-700">
                   <MapPin size={15} className="shrink-0 text-gray-400" />
-                  <span className="font-semibold">{selectedEvent.location}</span>
+                  <TranslatedText text={selectedEvent.location} as="span" className="font-semibold" />
                 </div>
               )}
               {selectedEvent.competition && (
@@ -1013,14 +1020,14 @@ export default function CalendarPage() {
                 </div>
               )}
               {selectedEvent.objective && (
-                <p className="rounded-xl bg-gray-50 p-3 text-xs font-medium italic text-gray-600">{selectedEvent.objective}</p>
+                <TranslatedText html={selectedEvent.objective} className="rounded-xl bg-gray-50 p-3 text-xs font-medium italic text-gray-600" />
               )}
             </div>
 
             <div className="shrink-0 border-t border-gray-100 bg-gray-50/80 px-5 py-4">
               {selectedEvent.type === 'birthday' ? (
                 <p className="text-center text-xs font-semibold text-gray-500">
-                  Los cumpleaños se calculan desde la ficha del jugador.
+                  {t('calendarPage.birthdayNote')}
                 </p>
               ) : (
                 <div className="flex items-center gap-3">
@@ -1028,13 +1035,13 @@ export default function CalendarPage() {
                     onClick={() => openEditForm(selectedEvent)}
                     className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-blue-500/25 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-blue-500/35 active:translate-y-0"
                   >
-                    <Pencil size={15} /> Editar
+                    <Pencil size={15} /> {t('common.edit')}
                   </button>
                   <button
                     onClick={() => requestDeleteEvent(selectedEvent)}
                     className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-bold text-red-600 shadow-sm transition-all hover:bg-red-600 hover:text-white hover:shadow-lg hover:shadow-red-500/25"
                   >
-                    <Trash2 size={15} /> Eliminar
+                    <Trash2 size={15} /> {t('common.delete')}
                   </button>
                 </div>
               )}
@@ -1057,7 +1064,7 @@ export default function CalendarPage() {
                 onClick={() => setConfirmAction(null)}
                 className="flex-1 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-bold text-gray-600 shadow-sm transition-colors hover:bg-gray-50"
               >
-                Cancelar
+                {t('common.cancel')}
               </button>
               <button
                 onClick={() => { const run = confirmAction.run; setConfirmAction(null); run(); }}
@@ -1110,7 +1117,7 @@ export default function CalendarPage() {
                       </span>
                       <button
                         onClick={() => openCreateForm(`${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`)}
-                        title="Añadir evento este día"
+                        title={t('calendarPage.addEventThisDay')}
                         className="opacity-0 group-hover/day:opacity-100 focus:opacity-100 flex h-6 w-6 items-center justify-center rounded-lg text-gray-400 transition-all hover:bg-emerald-50 hover:text-emerald-600"
                       >
                         <Plus size={14} strokeWidth={2.5} />
@@ -1171,7 +1178,7 @@ export default function CalendarPage() {
                           >
                             <div className="flex items-center gap-1.5 font-bold mb-0.5 text-xs">
                               {getEventIcon(e.type)}
-                              <span className="truncate">{e.label}</span>
+                              <span className="truncate">{renderLabel(e)}</span>
                             </div>
                             {e.time && (
                               <div className="flex items-center gap-1 text-[10px] opacity-80 font-semibold pl-4">
@@ -1204,7 +1211,7 @@ export default function CalendarPage() {
               <div className="flex items-center gap-2 mb-3">
                 <span className={`text-lg font-black ${isToday ? 'text-blue-600' : 'text-gray-900'}`}>{day}</span>
                 <span className="text-sm font-bold text-gray-500 uppercase">{date.toLocaleDateString(i18n.language, { weekday: 'long', month: 'short' })}</span>
-                {isToday && <span className="ml-auto bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Hoy</span>}
+                {isToday && <span className="ml-auto bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">{t('calendarPage.today')}</span>}
               </div>
               <div className="space-y-3">
                 {dayEvents.map((e, idx) => {
@@ -1257,7 +1264,7 @@ export default function CalendarPage() {
                         {getEventIcon(e.type)}
                       </div>
                       <div className="flex flex-col flex-1 min-w-0">
-                        <span className="font-bold text-sm truncate">{e.label}</span>
+                        <span className="font-bold text-sm truncate">{renderLabel(e)}</span>
                         {e.time && (
                           <span className="text-xs font-semibold opacity-80 mt-0.5 flex items-center gap-1">
                             <Clock size={12} /> {e.time}

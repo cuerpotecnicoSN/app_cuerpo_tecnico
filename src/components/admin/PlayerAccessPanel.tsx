@@ -45,7 +45,12 @@ export default function PlayerAccessPanel() {
       supabase.from('players').select('id, first_name, last_name, photo_url, main_position, email, user_id, invited_at').eq('season_id', seasonId).order('last_name'),
       getPlayerAccessStatus().catch(() => [] as PlayerAccessRow[]),
     ]);
-    setRows((data as Row[]) ?? []);
+    const filteredData = ((data as Row[]) ?? []).filter(r => {
+      const pos = (r.main_position || '').toLowerCase();
+      const isStaff = pos.includes('entrenador') || pos.includes('preparador') || pos.includes('analista') || pos.includes('fisioterapeuta') || pos.includes('médico') || pos.includes('medico');
+      return !isStaff;
+    });
+    setRows(filteredData);
     setAccess(Object.fromEntries(acc.map((a) => [a.player_id, a])));
     setLoading(false);
   };

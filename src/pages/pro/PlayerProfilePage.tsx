@@ -102,11 +102,11 @@ export default function PlayerProfilePage() {
   }, [paniniLines, activePlayer, activeDbPlayer]);
 
   if (loading) {
-    return <div className="p-8 text-muted">Cargando perfil desde base de datos...</div>;
+    return <div className="p-8 text-muted">{t('playerProfile.loading')}</div>;
   }
 
   if (!activePlayer) {
-    return <div className="p-8 text-muted">Jugador no encontrado en la base de datos.</div>;
+    return <div className="p-8 text-muted">{t('playerProfile.notFound')}</div>;
   }
 
   const isPlayerBaja = activePlayer?.status === 'Baja';
@@ -201,7 +201,7 @@ export default function PlayerProfilePage() {
                 </span>
                 {playerStats?.total.starts ? (
                   <span className="text-[10px] text-gray-400 font-bold block mt-1">
-                    {playerStats.total.starts} de titular
+                    {t('playerProfile.startsCount', { count: playerStats.total.starts })}
                   </span>
                 ) : null}
               </div>
@@ -212,7 +212,7 @@ export default function PlayerProfilePage() {
                 </span>
                 {playerStats?.matches ? (
                   <span className="text-[10px] text-gray-400 font-bold block mt-1">
-                    ~{Math.round(playerStats.minutes / playerStats.matches)}'/partido
+                    {t('playerProfile.minutesPerMatch', { value: Math.round(playerStats.minutes / playerStats.matches) })}
                   </span>
                 ) : null}
               </div>
@@ -229,7 +229,7 @@ export default function PlayerProfilePage() {
                 </span>
                 {playerStats?.total.key_passes ? (
                   <span className="text-[10px] text-gray-400 font-bold block mt-1">
-                    {playerStats.total.key_passes} pases clave
+                    {t('playerProfile.keyPassesCount', { count: playerStats.total.key_passes })}
                   </span>
                 ) : null}
               </div>
@@ -376,6 +376,21 @@ const INSIGHT_CATEGORY_COLORS: Record<MeetingInsightCategory, string> = {
   'Regularidad': '#eab308',
 };
 
+const INSIGHT_CATEGORY_KEYS: Record<MeetingInsightCategory, string> = {
+  'Actitud y compromiso': 'attitude',
+  'Físico': 'physical',
+  'Técnico': 'technical',
+  'Táctico': 'tactical',
+  'Mental / Confianza': 'mental',
+  'Social / Grupo': 'social',
+  'Regularidad': 'consistency',
+};
+
+const translateInsightCategory = (t: (key: string, fallback: string) => string, cat: string) => {
+  const key = INSIGHT_CATEGORY_KEYS[cat as MeetingInsightCategory];
+  return key ? t('meetingInsightCategories.' + key, cat) : cat;
+};
+
 function sentimentScore(sentiment: 'positive' | 'negative' | 'neutral') {
   if (sentiment === 'positive') return 1;
   if (sentiment === 'negative') return -1;
@@ -414,7 +429,7 @@ function MeetingInsightsChart({ meetings }: { meetings: MeetingDB[] }) {
           <Tooltip />
           <Legend wrapperStyle={{ fontSize: 11 }} />
           {MEETING_INSIGHT_CATEGORIES.map((cat) => (
-            <Line key={cat} type="monotone" dataKey={cat} stroke={INSIGHT_CATEGORY_COLORS[cat]} strokeWidth={2} connectNulls dot={{ r: 3 }} />
+            <Line key={cat} type="monotone" dataKey={cat} name={translateInsightCategory(t, cat)} stroke={INSIGHT_CATEGORY_COLORS[cat]} strokeWidth={2} connectNulls dot={{ r: 3 }} />
           ))}
           <Line type="monotone" dataKey={overallScoreKey} stroke="#0f172a" strokeWidth={2} strokeDasharray="4 3" dot={{ r: 3 }} />
         </LineChart>
@@ -437,6 +452,7 @@ function PlayerMeetingsTab({ playerId }: { playerId: string }) {
   const [coach, setCoach] = useState('');
   const [objective, setObjective] = useState('');
   const [development, setDevelopment] = useState('');
+  const [observations, setObservations] = useState('');
   
   const [positives, setPositives] = useState<string[]>([]);
   const [negatives, setNegatives] = useState<string[]>([]);
@@ -454,6 +470,7 @@ function PlayerMeetingsTab({ playerId }: { playerId: string }) {
     setCoach(m.created_by || '');
     setObjective(m.objective || '');
     setDevelopment(m.development || '');
+    setObservations(m.agreements || '');
     
     setShowForm(true);
   };
@@ -465,6 +482,7 @@ function PlayerMeetingsTab({ playerId }: { playerId: string }) {
     setLocation(''); 
     setObjective(''); 
     setDevelopment('');
+    setObservations('');
     setCoach(''); 
     setPositives([]);
     setNegatives([]);
@@ -478,11 +496,11 @@ function PlayerMeetingsTab({ playerId }: { playerId: string }) {
 
     if (editingId) {
       await updateMeeting(editingId, {
-        date, time, location, objective, development, created_by: coach
+        date, time, location, objective, development, agreements: observations, created_by: coach
       });
     } else {
       const m = await createMeeting({ 
-        type: 'individual', date, time, location, objective, development, created_by: coach
+        type: 'individual', date, time, location, objective, development, agreements: observations, created_by: coach
       });
       await addMeetingPlayer(m.id, playerId);
     }
@@ -582,24 +600,24 @@ function PlayerMeetingsTab({ playerId }: { playerId: string }) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <div className="flex flex-col gap-1.5 h-full">
-              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('playerTabs.mainTopic')}</label>
-              <div className="h-full min-h-[250px]">
+              <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">{t('playerTabs.content', 'Contenido')}</label>
+              <div className="h-full min-h-[220px]">
                 <RichTextEditor
-                  value={objective}
-                  onChange={setObjective}
-                  placeholder={t('playerTabs.meetingReasonPlaceholder') as string}
+                  value={development}
+                  onChange={setDevelopment}
+                  placeholder={t('meetingsTab.contentPlaceholder', 'Escribe o detalla el contenido tratado...') as string}
                   className="h-full"
                 />
               </div>
             </div>
 
             <div className="flex flex-col gap-1.5 h-full">
-              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t('playerTabs.notes')}</label>
-              <div className="h-full min-h-[250px]">
+              <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">{t('playerTabs.observations', 'Observaciones')}</label>
+              <div className="h-full min-h-[220px]">
                 <RichTextEditor
-                  value={development}
-                  onChange={setDevelopment}
-                  placeholder={t('playerTabs.notesPlaceholder') as string}
+                  value={observations}
+                  onChange={setObservations}
+                  placeholder={t('meetingsTab.observationsPlaceholder', 'Escribe las observaciones del cuerpo técnico...') as string}
                   className="h-full"
                 />
               </div>
@@ -741,7 +759,7 @@ function PlayerMeetingsTab({ playerId }: { playerId: string }) {
                   </h4>
                   {m.location && (
                     <div className="flex items-center gap-1 mt-1.5 text-xs text-gray-500">
-                      <MapPin size={12} className="text-rose-500"/> {m.location}
+                      <MapPin size={12} className="text-rose-500"/> <TranslatedText text={m.location} as="span" />
                     </div>
                   )}
                 </div>
@@ -753,22 +771,35 @@ function PlayerMeetingsTab({ playerId }: { playerId: string }) {
                   </div>
                 )}
 
+                {/* Tema o Intervención */}
                 {m.objective && m.objective !== '<p><br></p>' && (
                   <div>
-                    <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">{t('playerTabs.content')}</p>
+                    <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">{t('meetingsTab.interventionTitle', 'Intervención / Tema')}</p>
                     <TranslatedText
                       html={m.objective}
+                      className="text-sm font-semibold text-gray-900 leading-relaxed prose prose-sm max-w-none"
+                    />
+                  </div>
+                )}
+
+                {/* Contenido (Vídeo, Análisis, Tareas) */}
+                {m.development && m.development !== '<p><br></p>' && (
+                  <div className="bg-blue-50/40 rounded-xl p-3.5 border border-blue-100/50 mt-2">
+                    <p className="text-[11px] font-bold text-blue-600 uppercase tracking-wider mb-1">{t('playerTabs.content', 'Contenido')}</p>
+                    <TranslatedText
+                      html={m.development}
                       className="text-sm text-gray-800 leading-relaxed prose prose-sm max-w-none"
                     />
                   </div>
                 )}
 
-                {m.development && m.development !== '<p><br></p>' && (
-                  <div className="bg-blue-50/50 rounded-xl p-3.5 border border-blue-100/50 mt-2">
-                    <p className="text-[11px] font-bold text-blue-600/70 uppercase tracking-wider mb-1">{t('playerTabs.observations')}</p>
+                {/* Observaciones (Autoevaluación, Acuerdos, Feedback) */}
+                {m.agreements && m.agreements !== '<p><br></p>' && (
+                  <div className="bg-emerald-50/40 rounded-xl p-3.5 border border-emerald-100/50 mt-2">
+                    <p className="text-[11px] font-bold text-emerald-700 uppercase tracking-wider mb-1">{t('playerTabs.observations', 'Observaciones')}</p>
                     <TranslatedText
-                      html={m.development}
-                      className="text-sm text-gray-700 leading-relaxed prose prose-sm max-w-none"
+                      html={m.agreements}
+                      className="text-sm text-gray-800 leading-relaxed prose prose-sm max-w-none"
                     />
                   </div>
                 )}
@@ -781,7 +812,7 @@ function PlayerMeetingsTab({ playerId }: { playerId: string }) {
                       </p>
                       <span className="text-[11px] font-bold text-gray-500">{m.ai_insights.overallScore}/10</span>
                     </div>
-                    <p className="text-xs text-gray-600 leading-relaxed mb-2">{m.ai_insights.summary}</p>
+                    <TranslatedText text={m.ai_insights.summary} as="p" className="text-xs text-gray-600 leading-relaxed mb-2" />
                     <div className="flex flex-wrap gap-1.5">
                       {m.ai_insights.items.map((item, idx) => (
                         <span
@@ -795,7 +826,7 @@ function PlayerMeetingsTab({ playerId }: { playerId: string }) {
                               : 'bg-gray-50 text-gray-600 border-gray-100'
                           }`}
                         >
-                          {item.category}
+                          {translateInsightCategory(t, item.category)}
                         </span>
                       ))}
                     </div>
@@ -856,7 +887,7 @@ function PlayerReportsTab({ playerId }: { playerId: string }) {
         {reports.map((r) => (
           <div key={r.id} className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm flex justify-between items-start gap-3">
             <div>
-              <p className="text-sm text-gray-700">{r.summary}</p>
+              <TranslatedText text={r.summary} as="p" className="text-sm text-gray-700" />
               {r.file_url && <a href={r.file_url} target="_blank" rel="noreferrer" className="text-xs text-blue-600 underline">{r.file_url}</a>}
             </div>
             <button onClick={async () => { await deleteSeasonReport(r.id); load(); }} className="text-gray-300 hover:text-red-500">
@@ -937,7 +968,7 @@ function PlayerFeedbackTab({ playerId }: { playerId: string }) {
 
             {/* Timeline Agrupado */}
             <div className="space-y-6">
-              <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">Línea Temporal de Feedback</h4>
+              <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">{t('playerTabs.feedbackTimeline')}</h4>
               {Object.entries(feedbackData.grouped).map(([date, items]) => (
                 <div key={date} className="relative pl-6 border-l-2 border-gray-100 pb-2">
                   <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-blue-100 border-2 border-blue-500"></div>

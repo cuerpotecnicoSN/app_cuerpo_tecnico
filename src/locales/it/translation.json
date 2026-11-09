@@ -44,7 +44,8 @@
     "title": "Titolo",
     "description": "Descrizione",
     "status": "Stato",
-    "back": "Indietro"
+    "back": "Indietro",
+    "clear": "Pulisci"
   },
   "calendarPage": {
     "title": "Calendario",
@@ -92,7 +93,21 @@
     "locationPlaceholder": "Es: Centro sportivo, Stadio...",
     "createEvent": "Crea evento",
     "saveChanges": "Salva modifiche",
-    "saving": "Salvataggio..."
+    "saving": "Salvataggio...",
+    "individualMeeting": "Riunione individuale",
+    "groupDynamics": "Dinamica di gruppo",
+    "errorPdf": "Errore nella generazione del PDF",
+    "errorDelete": "Errore nell'eliminazione dell'evento",
+    "errorUpdate": "Errore nell'aggiornamento dell'evento",
+    "errorCreate": "Errore nella creazione dell'evento",
+    "confirmSaveMessage": "\"{{label}}\" verrà aggiornato con i nuovi dati. Vuoi continuare?",
+    "confirmDeleteTitle": "Eliminare questo evento?",
+    "confirmDeleteMessage": "\"{{label}}\" verrà eliminato definitivamente. Questa azione non può essere annullata.",
+    "confirmDeleteBtn": "Sì, elimina",
+    "tooManyEvents": "Con così tanti eventi il testo sarà molto piccolo. Prova un intervallo più breve.",
+    "generating": "Generazione...",
+    "birthdayNote": "I compleanni sono calcolati dalla scheda del giocatore.",
+    "addEventThisDay": "Aggiungi evento in questo giorno"
   },
   "trainingPage": {
     "title": "Sessioni",
@@ -231,7 +246,12 @@
       "market_value": "Valore di Mercato",
       "rating": "Valutazione",
       "dorsal": "Numero di Maglia"
-    }
+    },
+    "loading": "Caricamento profilo...",
+    "notFound": "Giocatore non trovato.",
+    "startsCount": "{{count}} da titolare",
+    "minutesPerMatch": "~{{value}}'/partita",
+    "keyPassesCount": "{{count}} passaggi chiave"
   },
   "dashboard": {
     "welcome": "Benvenuto nella Dashboard",
@@ -794,7 +814,36 @@
     "selectPlayerDropdown": "-- Giocatore --",
     "selectPlayerPrompt": "Seleziona un giocatore dal menu a discesa per visualizzare il riepilogo.",
     "noFeedbackYet": "Nessun feedback registrato ancora nelle riunioni di questo giocatore.",
-    "detailByDate": "Dettaglio per Data"
+    "detailByDate": "Dettaglio per Data",
+    "errorSave": "Errore durante il salvataggio della riunione",
+    "deletedPlayer": "Giocatore eliminato",
+    "importExcelBtn": "Carica Excel",
+    "importExcelTooltip": "Carica Excel dei colloqui",
+    "interventionTitle": "Intervento / Motivo della riunione",
+    "interventionPlaceholder": "Es: 1ª riunione: presentazione della modalità",
+    "contentLabel": "Contenuto",
+    "contentHint": "Video, analisi, temi trattati",
+    "contentPlaceholder": "Scrivi o descrivi il contenuto trattato...",
+    "observationsLabel": "Osservazioni",
+    "observationsHint": "Autovalutazione, feedback, accordi",
+    "observationsPlaceholder": "Scrivi le osservazioni dello staff tecnico...",
+    "content": "Contenuto",
+    "observations": "Osservazioni",
+    "noNewMeetingsToImport": "Non ci sono nuove riunioni da importare (esistono già tutte).",
+    "importExcelTitle": "Importa registro colloqui (Excel)",
+    "importExcelSubtitle": "Carica le riunioni individuali da ogni scheda giocatore",
+    "dropExcelHere": "Clicca o trascina qui l'Excel dei colloqui",
+    "supportedFormats": "Formati supportati: .xlsx, .xls",
+    "readingExcel": "Lettura e analisi delle schede giocatori...",
+    "importSuccess": "{{count}} riunioni importate con successo!",
+    "totalDetected": "Rilevate",
+    "toImport": "Nuove da importare",
+    "alreadyExisting": "Già esistenti",
+    "unmatchedTabs": "Schede non associate a giocatori della rosa:",
+    "previewSample": "Anteprima delle riunioni da aggiungere",
+    "importingStatus": "Importazione nel database...",
+    "importing": "Importazione...",
+    "confirmImportBtn": "Importa {{count}} riunioni"
   },
   "teamReport": {
     "exportButton": "Esporta PDF",
@@ -1611,5 +1660,14 @@
     "close": "Chiudi",
     "openExternal": "Apri in un’altra scheda",
     "viewHere": "Visualizza qui"
+  },
+  "meetingInsightCategories": {
+    "attitude": "Atteggiamento e impegno",
+    "physical": "Fisico",
+    "technical": "Tecnico",
+    "tactical": "Tattico",
+    "mental": "Mentale / Fiducia",
+    "social": "Sociale / Gruppo",
+    "consistency": "Continuità"
   }
 }

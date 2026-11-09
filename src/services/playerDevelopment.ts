@@ -140,45 +140,9 @@ export async function inviteStaffMember(params: { email: string; full_name?: str
   const role = params.role || 'Entrenador';
   const fullName = params.full_name?.trim() || 'Entrenador';
 
-  // 1. Obtener la temporada activa
-  const { ensureContext } = await import('../lib/dataService');
-  const seasonId = await ensureContext();
-
-  // 2. Buscar si ya existe una ficha de staff/técnico con este email o crear una temporal vinculada a la temporada
-  const { data: existingPlayer } = await supabase
-    .from('players')
-    .select('id, user_id')
-    .eq('email', email)
-    .maybeSingle();
-
-  let playerId = existingPlayer?.id;
-
-  if (!playerId) {
-    // Creamos la entrada en players con rol técnico para que la Edge Function invite-player desplegada lo procese con éxito
-    const { data: newP, error: createErr } = await supabase
-      .from('players')
-      .insert({
-        season_id: seasonId,
-        first_name: fullName.split(' ')[0] || 'Entrenador',
-        last_name: fullName.split(' ').slice(1).join(' ') || 'Staff',
-        football_name: fullName,
-        email: email,
-        main_position: role,
-        category: 'Cuerpo Técnico',
-        medical_status: 'Apto',
-      })
-      .select('id')
-      .single();
-
-    if (createErr || !newP) {
-      throw new Error(`No se pudo registrar la ficha del entrenador: ${createErr?.message}`);
-    }
-    playerId = newP.id;
-  }
-
-  // 3. Llamar a la Edge Function invite-player (que ya está desplegada en producción y acepta player_id)
+  // Llamar a la Edge Function invite-player directamente como staff, sin crear fila en la tabla de jugadores
   const res = await supabase.functions.invoke('invite-player', {
-    body: { player_id: playerId, email: email },
+    body: { email, full_name: fullName, role, is_staff: true },
   });
 
   if (res.error) {
@@ -188,7 +152,7 @@ export async function inviteStaffMember(params: { email: string; full_name?: str
     throw new Error(res.data.error);
   }
 
-  // 4. Asegurar que el perfil de usuario quede con el rol de Entrenador / Staff elegido
+  // Asegurar que el perfil de usuario quede con el rol de Entrenador / Staff elegido
   if (res.data?.user_id) {
     await supabase.from('profiles').upsert({
       id: res.data.user_id,

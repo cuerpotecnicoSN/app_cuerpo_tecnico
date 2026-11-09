@@ -44,7 +44,8 @@
     "title": "Título",
     "description": "Descripción",
     "status": "Estado",
-    "back": "Volver"
+    "back": "Volver",
+    "clear": "Limpiar"
   },
   "calendarPage": {
     "title": "Calendario",
@@ -92,7 +93,21 @@
     "locationPlaceholder": "Ej: Ciudad Deportiva, Estadio...",
     "createEvent": "Crear evento",
     "saveChanges": "Guardar cambios",
-    "saving": "Guardando..."
+    "saving": "Guardando...",
+    "individualMeeting": "Reunión individual",
+    "groupDynamics": "Dinámica de grupo",
+    "errorPdf": "Error al generar el PDF",
+    "errorDelete": "Error al eliminar el evento",
+    "errorUpdate": "Error al actualizar el evento",
+    "errorCreate": "Error al crear el evento",
+    "confirmSaveMessage": "Se actualizará \"{{label}}\" con los nuevos datos. ¿Quieres continuar?",
+    "confirmDeleteTitle": "¿Eliminar este evento?",
+    "confirmDeleteMessage": "\"{{label}}\" se eliminará de forma permanente. Esta acción no se puede deshacer.",
+    "confirmDeleteBtn": "Sí, eliminar",
+    "tooManyEvents": "Con tantos eventos el texto quedará muy pequeño. Prueba con un tramo más corto.",
+    "generating": "Generando...",
+    "birthdayNote": "Los cumpleaños se calculan desde la ficha del jugador.",
+    "addEventThisDay": "Añadir evento este día"
   },
   "trainingPage": {
     "title": "Sesiones",
@@ -231,7 +246,12 @@
       "market_value": "Valor de Mercado",
       "rating": "Valoración",
       "dorsal": "Dorsal"
-    }
+    },
+    "loading": "Cargando perfil...",
+    "notFound": "Jugador no encontrado.",
+    "startsCount": "{{count}} de titular",
+    "minutesPerMatch": "~{{value}}'/partido",
+    "keyPassesCount": "{{count}} pases clave"
   },
   "dashboard": {
     "welcome": "Bienvenido al Dashboard",
@@ -794,7 +814,36 @@
     "selectPlayerDropdown": "-- Jugador --",
     "selectPlayerPrompt": "Selecciona un jugador en el menú desplegable para ver su resumen.",
     "noFeedbackYet": "No hay feedback registrado en las reuniones de este jugador todavía.",
-    "detailByDate": "Detalle por Fecha"
+    "detailByDate": "Detalle por Fecha",
+    "errorSave": "Error al guardar la reunión",
+    "deletedPlayer": "Jugador eliminado",
+    "importExcelBtn": "Subir Excel",
+    "importExcelTooltip": "Subir Excel de coloquios",
+    "interventionTitle": "Intervención / Motivo de la reunión",
+    "interventionPlaceholder": "Ej: 1ª reunión: presentación de la modalidad",
+    "contentLabel": "Contenido",
+    "contentHint": "Vídeos, análisis, temas tratados",
+    "contentPlaceholder": "Escribe o detalla el contenido tratado...",
+    "observationsLabel": "Observaciones",
+    "observationsHint": "Autoevaluación, feedback, acuerdos",
+    "observationsPlaceholder": "Escribe las observaciones del cuerpo técnico...",
+    "content": "Contenido",
+    "observations": "Observaciones",
+    "noNewMeetingsToImport": "No hay reuniones nuevas para importar (todas ya existen).",
+    "importExcelTitle": "Importar registro de coloquios (Excel)",
+    "importExcelSubtitle": "Carga las reuniones individuales de cada pestaña de jugador",
+    "dropExcelHere": "Haz clic o arrastra aquí el Excel de coloquios",
+    "supportedFormats": "Formatos compatibles: .xlsx, .xls",
+    "readingExcel": "Leyendo y analizando pestañas de jugadores...",
+    "importSuccess": "¡{{count}} reuniones importadas correctamente!",
+    "totalDetected": "Detectadas",
+    "toImport": "Nuevas a importar",
+    "alreadyExisting": "Ya existentes",
+    "unmatchedTabs": "Pestañas no asociadas a jugadores de la plantilla:",
+    "previewSample": "Vista previa de reuniones a incorporar",
+    "importingStatus": "Importando a la base de datos...",
+    "importing": "Importando...",
+    "confirmImportBtn": "Importar {{count}} reuniones"
   },
   "teamReport": {
     "exportButton": "Exportar PDF",
@@ -1611,5 +1660,14 @@
     "close": "Cerrar",
     "openExternal": "Abrir en otra pestaña",
     "viewHere": "Ver aquí"
+  },
+  "meetingInsightCategories": {
+    "attitude": "Actitud y compromiso",
+    "physical": "Físico",
+    "technical": "Técnico",
+    "tactical": "Táctico",
+    "mental": "Mental / Confianza",
+    "social": "Social / Grupo",
+    "consistency": "Regularidad"
   }
 }

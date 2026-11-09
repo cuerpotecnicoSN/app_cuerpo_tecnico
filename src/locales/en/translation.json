@@ -44,7 +44,8 @@
     "title": "Title",
     "description": "Description",
     "status": "Status",
-    "back": "Back"
+    "back": "Back",
+    "clear": "Clear"
   },
   "calendarPage": {
     "title": "Calendar",
@@ -92,7 +93,21 @@
     "locationPlaceholder": "E.g. Training ground, Stadium...",
     "createEvent": "Create event",
     "saveChanges": "Save changes",
-    "saving": "Saving..."
+    "saving": "Saving...",
+    "individualMeeting": "Individual meeting",
+    "groupDynamics": "Group dynamics",
+    "errorPdf": "Error generating the PDF",
+    "errorDelete": "Error deleting the event",
+    "errorUpdate": "Error updating the event",
+    "errorCreate": "Error creating the event",
+    "confirmSaveMessage": "\"{{label}}\" will be updated with the new data. Do you want to continue?",
+    "confirmDeleteTitle": "Delete this event?",
+    "confirmDeleteMessage": "\"{{label}}\" will be permanently deleted. This action cannot be undone.",
+    "confirmDeleteBtn": "Yes, delete",
+    "tooManyEvents": "With so many events the text will be very small. Try a shorter range.",
+    "generating": "Generating...",
+    "birthdayNote": "Birthdays are calculated from the player profile.",
+    "addEventThisDay": "Add event on this day"
   },
   "trainingPage": {
     "title": "Sessions",
@@ -231,7 +246,12 @@
       "market_value": "Market Value",
       "rating": "Rating",
       "dorsal": "Squad Number"
-    }
+    },
+    "loading": "Loading profile...",
+    "notFound": "Player not found.",
+    "startsCount": "{{count}} as starter",
+    "minutesPerMatch": "~{{value}}'/match",
+    "keyPassesCount": "{{count}} key passes"
   },
   "dashboard": {
     "welcome": "Welcome to the Dashboard",
@@ -794,7 +814,36 @@
     "selectPlayerDropdown": "-- Player --",
     "selectPlayerPrompt": "Select a player from the dropdown to see their summary.",
     "noFeedbackYet": "No feedback registered in this player's meetings yet.",
-    "detailByDate": "Detail by Date"
+    "detailByDate": "Detail by Date",
+    "errorSave": "Error saving the meeting",
+    "deletedPlayer": "Deleted player",
+    "importExcelBtn": "Upload Excel",
+    "importExcelTooltip": "Upload interviews Excel",
+    "interventionTitle": "Intervention / Meeting reason",
+    "interventionPlaceholder": "E.g.: 1st meeting: presentation of the approach",
+    "contentLabel": "Content",
+    "contentHint": "Videos, analysis, topics covered",
+    "contentPlaceholder": "Write or detail the content covered...",
+    "observationsLabel": "Observations",
+    "observationsHint": "Self-assessment, feedback, agreements",
+    "observationsPlaceholder": "Write the coaching staff observations...",
+    "content": "Content",
+    "observations": "Observations",
+    "noNewMeetingsToImport": "There are no new meetings to import (all already exist).",
+    "importExcelTitle": "Import interviews log (Excel)",
+    "importExcelSubtitle": "Load the individual meetings from each player tab",
+    "dropExcelHere": "Click or drag the interviews Excel here",
+    "supportedFormats": "Supported formats: .xlsx, .xls",
+    "readingExcel": "Reading and analysing player tabs...",
+    "importSuccess": "{{count}} meetings imported successfully!",
+    "totalDetected": "Detected",
+    "toImport": "New to import",
+    "alreadyExisting": "Already existing",
+    "unmatchedTabs": "Tabs not linked to squad players:",
+    "previewSample": "Preview of meetings to add",
+    "importingStatus": "Importing into the database...",
+    "importing": "Importing...",
+    "confirmImportBtn": "Import {{count}} meetings"
   },
   "teamReport": {
     "exportButton": "Export PDF",
@@ -1611,5 +1660,14 @@
     "close": "Close",
     "openExternal": "Open in a new tab",
     "viewHere": "View here"
+  },
+  "meetingInsightCategories": {
+    "attitude": "Attitude & commitment",
+    "physical": "Physical",
+    "technical": "Technical",
+    "tactical": "Tactical",
+    "mental": "Mental / Confidence",
+    "social": "Social / Group",
+    "consistency": "Consistency"
   }
 }

@@ -9,10 +9,11 @@ import { useSupabaseData } from '../../hooks/useSupabaseData';
 import PlayerImportModal from '../../components/pro/PlayerImportModal';
 import { DeletePlayerModal } from '../../components/pro/DeletePlayerModal';
 import { useAuth } from '../../context/AuthContext';
-import { Plus, Users as UsersIcon, Grid, List, Filter, Globe, Search, Download, Edit2, UsersRound, MessageSquareText, Activity } from 'lucide-react';
+import { Plus, Users as UsersIcon, Grid, List, Filter, Globe, Search, Download, Edit2, UsersRound, MessageSquareText, Activity, Loader2 } from 'lucide-react';
 import SubNavTabs from '../../components/common/SubNavTabs';
 import PlayerStatsHub from '../../components/players/stats/PlayerStatsHub';
 import './players-grid.css';
+import { loadSquarePhoto, mapWithConcurrency } from '../../utils/pdfImages';
 
 const getPositionOrder = (pos: string) => {
   const lowerPos = (pos || '').toLowerCase();
@@ -41,8 +42,17 @@ export default function PlayersPage() {
   const thumbStyles = 'age-range-thumb';
 
   // Mapeamos los datos de la base de datos al formato que espera el frontend
+  // Filtramos para excluir miembros del cuerpo técnico que pudieran estar en la tabla
   const players = useMemo<Player[]>(() => {
-    return (dbPlayers || []).map(p => ({
+    return (dbPlayers || [])
+      .filter(p => {
+        const cat = (p.category || '').toLowerCase();
+        const pos = (p.main_position || '').toLowerCase();
+        const isStaff = cat.includes('cuerpo técnico') || cat.includes('staff') ||
+          pos.includes('entrenador') || pos.includes('preparador') || pos.includes('analista') || pos.includes('fisioterapeuta') || pos.includes('médico') || pos.includes('medico');
+        return !isStaff;
+      })
+      .map(p => ({
       id: p.id,
       name: `${p.first_name || ''} ${p.last_name || ''}`.trim(),
       footballName: p.football_name || '',
@@ -139,7 +149,11 @@ export default function PlayersPage() {
     }
   };
 
+  const [exportingPdf, setExportingPdf] = useState(false);
+
   const exportToPDF = async () => {
+    if (exportingPdf) return;
+    setExportingPdf(true);
     try {
       const { jsPDF } = await import('jspdf');
       const doc = new jsPDF();
@@ -180,63 +194,52 @@ export default function PlayersPage() {
       doc.text(`Generado el ${new Date().toLocaleDateString()} | Total Jugadores: ${players.length}`, 55, 32);
 
       // Pre-load player images
+      // Pocas a la vez y con varios orígenes de respaldo (ver utils/pdfImages)
       const playerImages: Record<string, string | null> = {};
-      await Promise.all(players.map(async p => {
-         if (!p.avatar || p.avatar.includes('unsplash.com')) {
-            playerImages[p.id] = null;
-            return;
-         }
-         try {
-            const imgUrl = p.avatar.startsWith('data:') ? p.avatar : `https://corsproxy.io/?${encodeURIComponent(p.avatar)}`;
-            const img = new Image();
-            img.crossOrigin = 'anonymous';
-            const dataUrl = await new Promise<string>((resolve, reject) => {
-               img.onload = () => {
-                  const canvas = document.createElement('canvas');
-                  canvas.width = img.width;
-                  canvas.height = img.height;
-                  const ctx = canvas.getContext('2d');
-                  if (ctx) {
-                     ctx.drawImage(img, 0, 0);
-                     resolve(canvas.toDataURL('image/png'));
-                  } else reject(new Error('No canvas context'));
-               };
-               img.onerror = () => reject(new Error('Image load failed'));
-               img.src = imgUrl;
-            });
-            playerImages[p.id] = dataUrl;
-         } catch (e) {
-            playerImages[p.id] = null;
-         }
-      }));
+      await mapWithConcurrency(players, 4, async p => {
+         playerImages[p.id] = !p.avatar || p.avatar.includes('unsplash.com')
+           ? null
+           : await loadSquarePhoto(p.avatar, { size: 240, removeBackground: true });
+      });
 
       // Ordenamos todos los jugadores por nombre
       const sortedPlayers = [...players].sort((a, b) => a.name.localeCompare(b.name));
 
-      let y = 60;
-      let x = 15;
+      // Toda la plantilla en una hoja: dos columnas y la altura de fila se ajusta
+      // al número de jugadores (con un mínimo legible; si no cabe, se pagina).
+      const TOP = 54;          // justo debajo de la franja roja
+      const BOTTOM = 284;      // por encima del pie de página
+      const MIN_ROW = 9;
+      const rowsNeeded = Math.ceil(sortedPlayers.length / 2);
+      const rowH = Math.min(17, Math.max(MIN_ROW, (BOTTOM - TOP) / Math.max(rowsNeeded, 1)));
+      const rowsPerColumn = Math.floor((BOTTOM - TOP) / rowH);
+      const photo = Math.min(13, rowH - 1);
 
       doc.setTextColor(0, 0, 0);
 
-      sortedPlayers.forEach(p => {
-        if (y > 282) {
-          if (x === 15) { x = 110; y = 60; }
-          else { doc.addPage(); x = 15; y = 60; }
-        }
+      sortedPlayers.forEach((p, i) => {
+        const perPage = rowsPerColumn * 2;
+        const indexInPage = i % perPage;
+        if (i > 0 && indexInPage === 0) doc.addPage();
+        const col = Math.floor(indexInPage / rowsPerColumn);
+        const row = indexInPage % rowsPerColumn;
+        const x = col === 0 ? 15 : 110;
+        const top = TOP + row * rowH;
+        const y = top + photo / 2; // centro vertical de la fila
 
         const base64Img = playerImages[p.id];
         if (base64Img) {
-          doc.addImage(base64Img, 'PNG', x, y - 5, 8, 8);
+          doc.addImage(base64Img, 'JPEG', x, top, photo, photo);
         } else {
           doc.setFillColor(220, 220, 220);
-          doc.rect(x, y - 5, 8, 8, 'F');
+          doc.rect(x, top, photo, photo, 'F');
         }
 
         doc.setTextColor(30, 30, 30);
         doc.setFontSize(10);
         doc.setFont("helvetica", "bold");
         const name = p.name.length > 25 ? p.name.substring(0, 23) + '...' : p.name;
-        doc.text(name, x + 10, y - 1);
+        doc.text(name, x + photo + 3, y - 0.5);
 
         let info = [];
         if (p.position && p.position !== 'Sin definir') info.push(p.position);
@@ -246,9 +249,7 @@ export default function PlayersPage() {
         doc.setTextColor(120, 120, 120);
         doc.setFontSize(8);
         doc.setFont("helvetica", "normal");
-        doc.text(info.join(' - '), x + 10, y + 3);
-
-        y += 13;
+        doc.text(info.join(' - '), x + photo + 3, y + 3.5);
       });
 
       // Pie de página
@@ -264,6 +265,8 @@ export default function PlayersPage() {
     } catch (err) {
       console.error("Error generating PDF:", err);
       alert(t('common.errorPdf', 'Hubo un error al generar el PDF.'));
+    } finally {
+      setExportingPdf(false);
     }
   };
 
@@ -324,11 +327,12 @@ export default function PlayersPage() {
             </button>
 
             <button 
-              onClick={exportToPDF} 
-              className="px-3.5 py-2 bg-white dark:bg-neutral-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-neutral-700 border border-gray-200 dark:border-white/10 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all"
+              onClick={exportToPDF}
+              disabled={exportingPdf}
+              className="disabled:opacity-60 disabled:cursor-wait px-3.5 py-2 bg-white dark:bg-neutral-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-neutral-700 border border-gray-200 dark:border-white/10 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all"
             >
-              <Download size={14} />
-              {t('placeholder.exportPdf', 'Exportar PDF')}
+              {exportingPdf ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+              {exportingPdf ? t('calendarPage.generating') : t('placeholder.exportPdf', 'Exportar PDF')}
             </button>
 
             <button 
