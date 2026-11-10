@@ -1,6 +1,6 @@
 import TranslatedText from '../../components/common/TranslatedText';
 import { useEffect, useState } from 'react';
-import { LogOut, Target, ListChecks, Film, MessageSquareText, BarChart2, Weight, Stethoscope, FileText, Loader2, Globe, ClipboardList } from 'lucide-react';
+import { LogOut, Target, ListChecks, Film, MessageSquareText, BarChart2, Weight, Stethoscope, FileText, Loader2, Globe, ClipboardList, Menu, X } from 'lucide-react';
 import PlayerForms from '../../components/forms/PlayerForms';
 import NotificationBell from '../../components/notifications/NotificationBell';
 import { supabase } from '../../lib/supabase';
@@ -42,6 +42,7 @@ export default function PlayerPortal() {
   const [player, setPlayer] = useState<Record<string, any> | null>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<Tab>('what');
+  const [menuOpen, setMenuOpen] = useState(false);
 
   // Si el idioma actual no es ni 'it' ni 'en', forzar 'it' por defecto para el jugador
   const activeLang: 'it' | 'en' = i18n.language?.startsWith('en') ? 'en' : 'it';
@@ -92,14 +93,15 @@ export default function PlayerPortal() {
     <div className="min-h-screen bg-gray-50">
       <header className="sticky top-0 z-20 bg-[#111114] text-white shadow-md border-b border-white/5">
         <div className="max-w-6xl mx-auto px-3 sm:px-4 h-16 flex items-center justify-between gap-2 sm:gap-3">
-          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
             <img src="/escudo.png" alt="" className="w-8 h-8 sm:w-9 sm:h-9 object-contain shrink-0" />
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1 pr-1">
               <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-[#ff4d6d] leading-none">{t('playerPortal.title')}</p>
-              <p className="font-extrabold text-sm sm:text-base truncate">{name}</p>
+              <p className="font-extrabold text-sm sm:text-base leading-tight break-words sm:truncate">{name}</p>
             </div>
           </div>
-          <div className="flex items-center gap-1 sm:gap-2">
+
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             <NotificationBell
               audience="player"
               dark
@@ -122,9 +124,43 @@ export default function PlayerPortal() {
               <span>{activeLang === 'it' ? 'IT' : 'EN'}</span>
             </button>
 
-            <button onClick={signOut} className="flex items-center gap-1.5 text-xs font-bold text-white/70 hover:text-white px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg hover:bg-white/10 active:scale-95">
-              <LogOut size={15} /> <span className="hidden sm:inline">{t('playerPortal.exit')}</span>
-            </button>
+            {/* Menú de 3 rayas (hamburguesa) en lugar del botón directo de salir */}
+            <div className="relative">
+              <button
+                onClick={() => setMenuOpen((prev) => !prev)}
+                className={`p-2 rounded-lg text-white/80 hover:text-white hover:bg-white/10 active:scale-95 transition-all ${menuOpen ? 'bg-white/15 text-white' : ''}`}
+                aria-label="Menu"
+                aria-expanded={menuOpen}
+              >
+                {menuOpen ? <X size={20} /> : <Menu size={20} />}
+              </button>
+
+              {menuOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-30 bg-black/40 backdrop-blur-xs"
+                    onClick={() => setMenuOpen(false)}
+                  />
+                  <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-[#1a1a1e] border border-white/10 shadow-2xl p-2 z-40 animate-fade-in text-white">
+                    <div className="px-3 py-2 border-b border-white/10 mb-1">
+                      <p className="text-[10px] font-bold text-white/50 uppercase tracking-wider">{t('playerPortal.title')}</p>
+                      <p className="text-xs font-bold truncate text-white">{name}</p>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        setMenuOpen(false);
+                        signOut();
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold text-red-400 hover:text-red-300 hover:bg-red-500/10 active:bg-red-500/20 transition-all text-left"
+                    >
+                      <LogOut size={16} />
+                      <span>{t('playerPortal.exit')}</span>
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
         <nav className="max-w-6xl mx-auto px-2 flex gap-1 overflow-x-auto no-scrollbar scroll-smooth">
