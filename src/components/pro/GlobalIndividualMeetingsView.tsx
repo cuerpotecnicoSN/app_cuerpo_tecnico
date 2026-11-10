@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Users2, MapPin, Search, Trash2, CalendarDays, ChevronRight, BarChart2, List, Upload } from 'lucide-react';
+import { Plus, Users2, MapPin, Search, Trash2, CalendarDays, ChevronRight, BarChart2, List, Upload, FileText, Paperclip, ExternalLink, X, Loader2 } from 'lucide-react';
 import type { MeetingDB, Player } from '../types';
 import TranslatedText from '../common/TranslatedText';
 import { getMeetings, createMeeting, updateMeeting, deleteMeeting, addMeetingPlayer } from '../../services/meetings';
@@ -9,6 +9,7 @@ import RichTextEditor from '../common/RichTextEditor';
 import { extractFeedbackFromHtml } from '../../utils/feedbackExtractor';
 import SubNavTabs from '../common/SubNavTabs';
 import MeetingsExcelImportModal from './MeetingsExcelImportModal';
+import { uploadMeetingDocument, getMeetingAttachment, type MeetingDocumentAttachment } from '../../services/meetingDocs';
 
 interface GlobalIndividualMeetingsViewProps {
   players: Player[];
@@ -40,6 +41,9 @@ export default function GlobalIndividualMeetingsView({ players }: GlobalIndividu
   const [objective, setObjective] = useState('');
   const [development, setDevelopment] = useState('');
   const [observations, setObservations] = useState('');
+  const [attachedDoc, setAttachedDoc] = useState<MeetingDocumentAttachment | null>(null);
+  const [uploadingDoc, setUploadingDoc] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const loadData = async () => {
     try {
@@ -94,6 +98,7 @@ export default function GlobalIndividualMeetingsView({ players }: GlobalIndividu
     setObjective(m.objective || '');
     setDevelopment(m.development || '');
     setObservations(m.agreements || '');
+    setAttachedDoc(getMeetingAttachment(m.next_steps));
     
     setShowForm(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -109,12 +114,30 @@ export default function GlobalIndividualMeetingsView({ players }: GlobalIndividu
     setDevelopment('');
     setObservations('');
     setCoach('');
+    setAttachedDoc(null);
     setShowForm(false);
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingDoc(true);
+    try {
+      const res = await uploadMeetingDocument(file, selectedPlayerId || 'individual');
+      setAttachedDoc({ name: res.name, url: res.url });
+    } catch (err) {
+      console.error(err);
+      alert(t('meetingsTab.uploadError', 'Error subiendo el archivo: ') + (err instanceof Error ? err.message : 'Error'));
+    } finally {
+      setUploadingDoc(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   const handleSave = async () => {
     if (!date || !selectedPlayerId) return;
     try {
+      const nextStepsPayload = attachedDoc ? JSON.stringify(attachedDoc) : undefined;
       if (editingId) {
         await updateMeeting(editingId, {
           date,
@@ -123,9 +146,9 @@ export default function GlobalIndividualMeetingsView({ players }: GlobalIndividu
           objective,
           development,
           agreements: observations,
-          created_by: coach
+          created_by: coach,
+          next_steps: nextStepsPayload,
         });
-        // We assume the player doesn't change during edit, or we would need to update meeting_players
       } else {
         const m = await createMeeting({ 
           type: 'individual', 
@@ -135,7 +158,8 @@ export default function GlobalIndividualMeetingsView({ players }: GlobalIndividu
           objective, 
           development,
           agreements: observations,
-          created_by: coach
+          created_by: coach,
+          next_steps: nextStepsPayload,
         });
         await addMeetingPlayer(m.id, selectedPlayerId);
       }
@@ -508,6 +532,89 @@ export default function GlobalIndividualMeetingsView({ players }: GlobalIndividu
               </div>
             </div>
 
+            {/* Adjuntar documento desde local / Google Drive */}
+            <div className="mb-6 p-4 rounded-2xl bg-gray-50 border border-gray-200/80">
+              <label className="text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center justify-between mb-2">
+                <span className="flex items-center gap-1.5">
+                  <Paperclip size={14} className="text-blue-600" />
+                  {t('meetingsTab.attachedDocument', 'Documento adjunto (PDF, Word, imagen o informe)')}
+                </span>
+                <span className="text-[10px] text-gray-500 font-normal">
+                  {t('meetingsTab.attachedDocumentHint', 'Almacenado seguro en la nube sin ocupar espacio en local')}
+                </span>
+              </label>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                className="hidden"
+                onChange={handleFileUpload}
+                accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.zip"
+              />
+
+              {attachedDoc ? (
+                <div className="flex items-center justify-between gap-3 p-3 bg-white border border-blue-200 rounded-xl shadow-xs">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="p-2 bg-blue-50 text-blue-600 rounded-lg shrink-0">
+                      <FileText size={18} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-gray-900 truncate">{attachedDoc.name}</p>
+                      <a
+                        href={attachedDoc.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[11px] font-semibold text-blue-600 hover:underline flex items-center gap-1 mt-0.5"
+                      >
+                        {t('meetingsTab.openDocument', 'Abrir documento')} <ExternalLink size={11} />
+                      </a>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="px-2.5 py-1 text-xs font-semibold text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                      {t('meetingsTab.replaceFile', 'Cambiar')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAttachedDoc(null)}
+                      className="p-1 text-gray-400 hover:text-red-500 rounded-lg transition-colors"
+                      title={t('common.delete')}
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                  <button
+                    type="button"
+                    disabled={uploadingDoc}
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-gray-300 hover:border-blue-400 hover:bg-blue-50/30 text-gray-700 rounded-xl text-xs font-bold transition-all shadow-2xs active:scale-95 disabled:opacity-50"
+                  >
+                    {uploadingDoc ? (
+                      <>
+                        <Loader2 size={15} className="animate-spin text-blue-600" />
+                        <span>{t('meetingsTab.uploading', 'Subiendo a la nube...')}</span>
+                      </>
+                    ) : (
+                      <>
+                        <Upload size={15} className="text-blue-600" />
+                        <span>{t('meetingsTab.chooseLocalFile', 'Seleccionar documento desde tu PC')}</span>
+                      </>
+                    )}
+                  </button>
+                  <span className="text-[11px] text-gray-500 text-center sm:text-left">
+                    {t('meetingsTab.supportedFormats', 'PDF, Word, Excel, fotos (máx. 50 MB)')}
+                  </span>
+                </div>
+              )}
+            </div>
+
             <div className="flex justify-between items-center gap-3 pt-4 border-t border-gray-100 mt-4">
               {editingId ? (
                 <button 
@@ -645,6 +752,30 @@ export default function GlobalIndividualMeetingsView({ players }: GlobalIndividu
                       )}
                     </div>
                   )}
+
+                  {/* Documento adjunto si existe */}
+                  {(() => {
+                    const doc = getMeetingAttachment(m.next_steps);
+                    if (!doc) return null;
+                    return (
+                      <div className="flex items-center justify-between gap-2 px-3 py-2 bg-blue-50/60 border border-blue-100 rounded-xl text-xs">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Paperclip size={14} className="text-blue-600 shrink-0" />
+                          <span className="font-semibold text-gray-800 truncate">{doc.name}</span>
+                        </div>
+                        <a
+                          href={doc.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-flex items-center gap-1 font-bold text-blue-600 hover:text-blue-800 hover:underline shrink-0"
+                        >
+                          <span>{t('meetingsTab.viewDocument', 'Ver documento')}</span>
+                          <ExternalLink size={12} />
+                        </a>
+                      </div>
+                    );
+                  })()}
 
                 </div>
               );
