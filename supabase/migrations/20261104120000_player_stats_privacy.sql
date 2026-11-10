@@ -173,3 +173,5 @@ REVOKE ALL ON FUNCTION public.my_panini_reports(uuid) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.my_panini_reports(uuid) TO authenticated;
 
 DROP POLICY IF EXISTS player_read ON public.matches;
+
+NOTIFY pgrst, 'reload schema';

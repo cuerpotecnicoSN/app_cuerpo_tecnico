@@ -327,7 +327,7 @@ function ClipsSection({ playerId, isStaff, myId, playerName, run, fmtDate }: {
     if (ok) setForm(null);
   };
 
-  const canEdit = (c: PlayerClip) => isStaff || c.author_id === myId;
+  const canEdit = (_c: PlayerClip) => true; void myId;
   const authorName = (c: PlayerClip) =>
     c.author_id === myId ? t('playerPlan.thread.you')
       : c.author?.role === 'Jugador' ? (playerName || t('playerPlan.player'))
@@ -529,7 +529,7 @@ export default function PlayerDevelopmentPlan({ player, mode, section, onViewSta
     .then((objs) => { setObjectives(objs); return loadComments(objs); })
     .catch(() => setObjectives([]));
   /** El staff edita todo; el jugador solo lo que propuso él */
-  const canEdit = (o: PlayerObjective) => isStaff || !!o.created_by_player;
+  const canEdit = (_o: PlayerObjective) => true;
   const commentsOf = (id: string) => comments.filter((c) => c.objective_id === id);
   const loadFocuses = () => getFocuses(playerId).then(setFocuses).catch(() => setFocuses([]));
   const loadVideos = () => getVideoNotes(playerId).then(setVideos).catch(() => setVideos([]));
@@ -640,19 +640,37 @@ export default function PlayerDevelopmentPlan({ player, mode, section, onViewSta
             }}
           />
           {dorsal ? (
-            <span
+            <div
               aria-hidden
-              className={`${display} absolute right-4 sm:right-8 -top-2 sm:-top-4 text-[5.5rem] sm:text-[12rem] font-black leading-none text-transparent`}
-              style={{ WebkitTextStroke: '2px rgba(255,255,255,.8)' }}
+              className="absolute right-4 sm:right-10 top-1/2 -translate-y-1/2 select-none pointer-events-none flex items-center justify-center"
             >
-              {dorsal}
-            </span>
+              <span
+                className={`${display} text-[6rem] sm:text-[11rem] font-black tracking-tighter leading-none text-white/5 drop-shadow-[0_4px_30px_rgba(0,0,0,0.8)]`}
+                style={{
+                  WebkitTextStroke: '2px rgba(255,255,255,0.45)',
+                  filter: 'drop-shadow(0 0 20px rgba(219,0,48,0.35))',
+                }}
+              >
+                {dorsal}
+              </span>
+            </div>
           ) : null}
 
           <div className="relative p-5 sm:p-8">
             <div className="flex items-center sm:items-end gap-4 sm:gap-6">
-              <div className="w-24 h-28 sm:w-36 sm:h-44 shrink-0 rounded-2xl overflow-hidden bg-white/10 flex items-center justify-center">
-                {player.photo_url ? <img src={player.photo_url} alt={name} className="w-full h-full object-cover" /> : <User size={40} className="text-white/40" />}
+              {/* Foto con fondo blanco limpio y marco moderno */}
+              <div className="w-24 h-28 sm:w-36 sm:h-44 shrink-0 rounded-2xl overflow-hidden bg-white p-1.5 shadow-[0_8px_30px_rgba(0,0,0,0.5),inset_0_1px_2px_rgba(255,255,255,0.9)] border border-white/20 flex items-center justify-center">
+                {player.photo_url ? (
+                  <img
+                    src={player.photo_url}
+                    alt={name}
+                    className="w-full h-full object-contain object-bottom rounded-xl bg-white"
+                  />
+                ) : (
+                  <div className="w-full h-full rounded-xl bg-gray-50 flex items-center justify-center">
+                    <User size={40} className="text-gray-300" />
+                  </div>
+                )}
               </div>
               <div className="min-w-0 pr-10 sm:pr-48">
                 <p className="hidden sm:block text-sm font-medium text-white/70">{t('playerPlan.badge')}</p>
@@ -765,7 +783,7 @@ export default function PlayerDevelopmentPlan({ player, mode, section, onViewSta
           <div className="mt-8 rounded-2xl bg-gray-100 p-5">
             <div className="flex items-center justify-between gap-3 mb-4">
               <h3 className={`${display} text-lg font-black text-black`}>{t('playerPlan.what.focuses')}</h3>
-              {isStaff && !focusForm && <button className={btnGhost} onClick={() => setFocusForm({ context: 'partido', title: '', description: '' })}><Plus size={14} /> {t('playerPlan.addFocus')}</button>}
+              {!focusForm && <button className={btnGhost} onClick={() => setFocusForm({ context: 'partido', title: '', description: '' })}><Plus size={14} /> {t('playerPlan.addFocus')}</button>}
             </div>
             {focusForm && (
               <div className="grid sm:grid-cols-[160px_1fr_auto] gap-2 mb-4">
@@ -794,7 +812,7 @@ export default function PlayerDevelopmentPlan({ player, mode, section, onViewSta
                           <li key={f.id} className={`flex items-start gap-2 text-sm ${f.active ? 'text-gray-900' : 'text-gray-400 line-through'}`}>
                             <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#db0030] shrink-0" />
                             <span className="flex-1">{f.title}</span>
-                            {isStaff && (
+                            {(
                               <span className="flex gap-1 shrink-0">
                                 <button title={t(f.active ? 'playerPlan.archive' : 'playerPlan.reactivate')} className="text-gray-400 hover:text-emerald-600" onClick={() => run(async () => { await updateFocus(f.id, { active: !f.active }); await loadFocuses(); })}><CheckCircle2 size={14} /></button>
                                 <button title={t('playerPlan.delete')} className="text-gray-400 hover:text-red-500" onClick={() => run(async () => { await deleteFocus(f.id); await loadFocuses(); })}><Trash2 size={14} /></button>
@@ -913,7 +931,7 @@ export default function PlayerDevelopmentPlan({ player, mode, section, onViewSta
             <div>
               <div className="flex items-center justify-between gap-3 mb-3">
                 <h3 className="font-bold text-black flex items-center gap-2"><Video size={16} className="text-[#db0030]" /> {t('playerPlan.voice.videoSessions')}</h3>
-                {isStaff && !videoForm && <button className={btnGhost} onClick={() => setVideoForm({ session_date: today, title: '', video_url: '', staff_notes: '' })}><Plus size={14} /> {t('playerPlan.addSession')}</button>}
+                {!videoForm && <button className={btnGhost} onClick={() => setVideoForm({ session_date: today, title: '', video_url: '', staff_notes: '' })}><Plus size={14} /> {t('playerPlan.addSession')}</button>}
               </div>
               {videoForm && (
                 <div className="border border-gray-200 rounded-xl p-3 mb-3 space-y-2 bg-gray-50/60">
@@ -943,7 +961,7 @@ export default function PlayerDevelopmentPlan({ player, mode, section, onViewSta
                         </div>
                         <div className="flex items-center gap-1 shrink-0">
                           {v.video_url && <a href={v.video_url} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-xs font-bold text-[#db0030] hover:underline p-1"><ExternalLink size={14} /> {t('playerPlan.voice.watchVideo')}</a>}
-                          {isStaff && <button className="p-1.5 text-gray-400 hover:text-red-500" aria-label={t('playerPlan.delete')} onClick={() => { if (confirm(t('playerPlan.confirmDeleteSession'))) run(async () => { await deleteVideoNote(v.id); await loadVideos(); }); }}><Trash2 size={15} /></button>}
+                          {<button className="p-1.5 text-gray-400 hover:text-red-500" aria-label={t('playerPlan.delete')} onClick={() => { if (confirm(t('playerPlan.confirmDeleteSession'))) run(async () => { await deleteVideoNote(v.id); await loadVideos(); }); }}><Trash2 size={15} /></button>}
                         </div>
                       </div>
                       {v.staff_notes && <p className="text-sm text-gray-700 mt-2 whitespace-pre-line"><span className="font-semibold text-black">{t('playerPlan.voice.staff')}: </span>{v.staff_notes}</p>}

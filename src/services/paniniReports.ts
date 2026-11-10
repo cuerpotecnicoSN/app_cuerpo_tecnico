@@ -334,6 +334,8 @@ export async function getSeasonPaniniReports(): Promise<SeasonPaniniEntry[]> {
 export async function getMyPaniniReports(): Promise<SeasonPaniniEntry[]> {
   const seasonId = await ensureContext();
   const { data, error } = await supabase.rpc('my_panini_reports', { p_season_id: seasonId });
+  // Sin la migración player_stats_privacy: leer los partidos directamente (la vista ya filtra al jugador)
+  if (error?.code === 'PGRST202') return getSeasonPaniniReports();
   if (error) throw error;
   return ((data ?? []) as { match: MatchDB; report: PaniniMatchReport }[]).map(({ match, report }) => {
     const { isHome, our, rival } = splitTeams(report, match.is_home);
