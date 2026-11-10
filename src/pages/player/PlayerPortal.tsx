@@ -1,6 +1,8 @@
+import TranslatedText from '../../components/common/TranslatedText';
 import { useEffect, useState } from 'react';
-import DOMPurify from 'dompurify';
-import { LogOut, Target, ListChecks, Film, MessageSquareText, CalendarDays, BarChart2, Weight, Stethoscope, FileText, Loader2, Globe } from 'lucide-react';
+import { LogOut, Target, ListChecks, Film, MessageSquareText, CalendarDays, BarChart2, Weight, Stethoscope, FileText, Loader2, Globe, ClipboardList } from 'lucide-react';
+import PlayerForms from '../../components/forms/PlayerForms';
+import NotificationBell from '../../components/notifications/NotificationBell';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { useTranslation } from 'react-i18next';
@@ -12,7 +14,7 @@ import PlayerMatchStatsTab from '../../components/players/stats/PlayerMatchStats
 import PlayerWeightTab from '../../components/pro/PlayerWeightTab';
 import PlayerInjuriesTab from '../../components/pro/PlayerInjuriesTab';
 
-type Tab = PlanSection | 'partidos' | 'peso' | 'lesiones' | 'informes';
+type Tab = PlanSection | 'partidos' | 'peso' | 'lesiones' | 'informes' | 'forms';
 
 const PLAN_SECTIONS: PlanSection[] = ['what', 'how', 'clips', 'voice', 'calendar'];
 const isPlanSection = (tab: Tab): tab is PlanSection => (PLAN_SECTIONS as Tab[]).includes(tab);
@@ -46,7 +48,7 @@ function MeetingsList({ playerId, lang }: { playerId: string; lang: 'it' | 'en' 
               return (
                 <div key={key}>
                   <p className="text-[10px] font-black uppercase tracking-wider text-gray-400 mb-1">{t(`playerPortal.meetingSections.${key}`)}</p>
-                  <div className="text-sm text-gray-700 prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(v) }} />
+                  <TranslatedText html={v} className="text-sm text-gray-700 prose prose-sm max-w-none" />
                 </div>
               );
             })}
@@ -68,7 +70,7 @@ function ReportsList({ playerId }: { playerId: string }) {
     <div className="space-y-3">
       {reports.map((r) => (
         <div key={r.id} className="bg-white border border-gray-100 rounded-2xl shadow-sm p-5">
-          <p className="text-sm text-gray-700 whitespace-pre-line">{r.summary}</p>
+          <TranslatedText text={r.summary} as="p" className="text-sm text-gray-700 whitespace-pre-line" />
           {r.file_url && <a href={r.file_url} target="_blank" rel="noreferrer" className="text-xs font-bold text-[#db0030] underline mt-2 inline-block">{t('playerPortal.viewDocument')}</a>}
         </div>
       ))}
@@ -117,6 +119,7 @@ export default function PlayerPortal() {
   } : undefined;
 
   const tabItems: { id: Tab; icon: typeof Target }[] = [
+    { id: 'forms', icon: ClipboardList },
     { id: 'what', icon: Target },
     { id: 'how', icon: ListChecks },
     { id: 'clips', icon: Film },
@@ -140,6 +143,18 @@ export default function PlayerPortal() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <NotificationBell
+              audience="player"
+              dark
+              onOpen={(n) => {
+                const map: Record<string, Tab> = {
+                  form_assigned: 'forms', objective: 'what', objective_comment: 'what', focus: 'how',
+                  clip: 'clips', clip_comment: 'clips', video_note: 'clips', self_assessment: 'voice',
+                  meeting: 'calendar', report: 'informes',
+                };
+                selectTab(map[n.kind] ?? 'what');
+              }}
+            />
             {/* Selector de idioma sólo IT / EN para el jugador */}
             <button
               onClick={toggleLanguage}
@@ -199,6 +214,7 @@ export default function PlayerPortal() {
             {tab === 'peso' && <PlayerWeightTab playerId={playerId} readOnly />}
             {tab === 'lesiones' && <PlayerInjuriesTab playerId={playerId} readOnly />}
             {tab === 'informes' && <ReportsList playerId={playerId} />}
+            {tab === 'forms' && <PlayerForms playerId={playerId} mode="player" />}
           </>
         )}
       </main>

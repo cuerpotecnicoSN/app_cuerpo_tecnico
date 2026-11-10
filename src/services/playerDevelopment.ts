@@ -135,27 +135,105 @@ export async function deleteUserAccount(params: { userId?: string; playerId?: st
   if (data?.error) throw new Error(data.error);
 }
 
-export async function inviteStaffMember(params: { email: string; full_name?: string; role?: string }): Promise<void> {
+export interface StaffAccessRow {
+  user_id: string;
+  email: string | null;
+  email_confirmed_at: string | null;
+  last_sign_in_at: string | null;
+}
+
+export const getStaffAccessStatus = async () =>
+  unwrap<StaffAccessRow[]>(await supabase.rpc('staff_access_status'));
+
+export const saveStaffEmail = async (userId: string, email: string | null) => {
+  const cleanEmail = email?.trim().toLowerCase() || null;
+  const { error } = await supabase.from('profiles').update({ email: cleanEmail }).eq('id', userId);
+  if (error) throw error;
+};
+
+export async function inviteStaffMember(params: { userId?: string; email: string; full_name?: string; role?: string }): Promise<void> {
   const email = params.email.trim().toLowerCase();
   const role = params.role || 'Entrenador';
   const fullName = params.full_name?.trim() || 'Entrenador';
 
-  // Llamar a la Edge Function invite-player directamente como staff, sin crear fila en la tabla de jugadores
-  const res = await supabase.functions.invoke('invite-player', {
-    body: { email, full_name: fullName, role, is_staff: true },
+  // 1. Intentar llamar a invite-staff
+  let res = await supabase.functions.invoke('invite-staff', {
+    body: { user_id: params.userId, email, full_name: fullName, role },
   });
 
+  // 2. Si invite-staff devuelve error o 404, probar con invite-player
   if (res.error) {
-    throw new Error(await extractErrorMessage(res.error));
-  }
-  if (res.data?.error) {
-    throw new Error(res.data.error);
+    res = await supabase.functions.invoke('invite-player', {
+      body: { email, full_name: fullName, role, is_staff: true },
+    });
   }
 
-  // Asegurar que el perfil de usuario quede con el rol de Entrenador / Staff elegido
-  if (res.data?.user_id) {
+  // 3. Si la versión de invite-player en la nube es la original y requiere player_id:
+  if (res.error || res.data?.error) {
+    const errText = res.data?.error || (await extractErrorMessage(res.error));
+    if (errText.includes('player_id')) {
+      // Usar un registro de vínculo en players con categoría cuerpo técnico para invitar
+      let coachPlayerId: string | null = null;
+      const { data: existingPlayer } = await supabase
+        .from('players')
+        .select('id')
+        .or(`email.eq.${email},user_id.eq.${params.userId || '00000000-0000-0000-0000-000000000000'}`)
+        .limit(1)
+        .maybeSingle();
+
+      if (existingPlayer?.id) {
+        coachPlayerId = existingPlayer.id;
+      } else {
+        // Crear jugador de vínculo para el staff
+        const { ensureContext } = await import('../lib/dataService');
+        const seasonId = await ensureContext();
+        const parts = fullName.split(' ');
+        const firstName = parts[0] || 'Entrenador';
+        const lastName = parts.slice(1).join(' ') || '';
+
+        const { data: created, error: crErr } = await supabase
+          .from('players')
+          .insert({
+            season_id: seasonId,
+            first_name: firstName,
+            last_name: lastName,
+            email: email,
+            main_position: role,
+            category: 'Cuerpo Técnico',
+          })
+          .select('id')
+          .single();
+
+        if (!crErr && created?.id) {
+          coachPlayerId = created.id;
+        }
+      }
+
+      if (coachPlayerId) {
+        // Reintentar con el player_id vinculado
+        const retryRes = await supabase.functions.invoke('invite-player', {
+          body: { player_id: coachPlayerId, email },
+        });
+        if (retryRes.error) {
+          throw new Error(await extractErrorMessage(retryRes.error));
+        }
+        if (retryRes.data?.error) {
+          throw new Error(retryRes.data.error);
+        }
+        res = retryRes;
+      } else {
+        throw new Error(errText);
+      }
+    } else {
+      throw new Error(errText);
+    }
+  }
+
+  // Asegurar que el perfil de usuario quede con el rol y email de Entrenador / Staff elegido
+  const uid = res.data?.user_id || params.userId;
+  if (uid) {
     await supabase.from('profiles').upsert({
-      id: res.data.user_id,
+      id: uid,
       email: email,
       full_name: fullName,
       role: role,

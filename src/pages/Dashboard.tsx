@@ -1,3 +1,4 @@
+import TranslatedText from '../components/common/TranslatedText';
 import React, { useEffect, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
@@ -282,7 +283,7 @@ export default function Dashboard() {
         if (days <= 45) {
           list.push({
             id: pr.id,
-            name: pr.full_name || 'Staff Técnico',
+            name: pr.full_name || t('home.technicalStaff'),
             date: nextB,
             days,
             age: nextB.getFullYear() - b.getFullYear(),
@@ -311,8 +312,8 @@ export default function Dashboard() {
     meetings.forEach((m: any) => {
       acts.push({
         id: `meeting-${m.id}`,
-        type: 'Reunión Individual',
-        title: m.topic || 'Seguimiento de jugador',
+        type: t('home.individualMeeting'),
+        title: m.topic || t('home.playerFollowUp'),
         date: new Date(m.created_at || m.date || Date.now()),
         icon: Users,
         color: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/30',
@@ -322,8 +323,8 @@ export default function Dashboard() {
     dynamics.forEach((d: any) => {
       acts.push({
         id: `dynamic-${d.id}`,
-        type: 'Dinámica de Grupo',
-        title: d.title || 'Sesión colectiva',
+        type: t('home.groupDynamic'),
+        title: d.title || t('home.groupSession'),
         date: new Date(d.created_at || d.date || Date.now()),
         icon: Activity,
         color: 'text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-500/10 border-purple-200 dark:border-purple-500/30',
@@ -333,7 +334,7 @@ export default function Dashboard() {
     matchFocuses.forEach((f: any) => {
       acts.push({
         id: `focus-${f.id}`,
-        type: 'Foco Táctico',
+        type: t('home.tacticalFocus'),
         title: f.title,
         date: new Date(f.created_at || Date.now()),
         icon: Target,
@@ -350,33 +351,33 @@ export default function Dashboard() {
       case 'Preparador Físico':
         return [
           {
-            title: 'Disponibilidad Médica',
+            title: t('home.medicalAvailability'),
             value: `${availabilityPct}%`,
-            subtitle: `${availablePlayers} de ${totalPlayers} aptos`,
+            subtitle: t('home.fitOf',{a:availablePlayers,b:totalPlayers}),
             icon: HeartPulse,
             color: 'emerald',
             link: '/players',
           },
           {
-            title: 'Bajas / En duda',
+            title: t('home.injuredDoubtful'),
             value: `${injuredPlayers.length + doubtfulPlayers.length}`,
-            subtitle: injuredPlayers.length > 0 ? `${injuredPlayers[0]?.first_name || '1'} con parte médico` : 'Sin bajas graves',
+            subtitle: injuredPlayers.length > 0 ? t('home.withMedical',{name:injuredPlayers[0]?.first_name || '1'}) : t('home.noSeriousInjuries'),
             icon: AlertTriangle,
             color: injuredPlayers.length > 0 ? 'red' : 'neutral',
             link: '/players',
           },
           {
-            title: 'Sesiones de Entrenamiento',
+            title: t('home.trainingSessions'),
             value: `${sessions.length}`,
-            subtitle: `${upcomingSessions.length} programadas`,
+            subtitle: t('home.scheduled',{n:upcomingSessions.length}),
             icon: Dumbbell,
             color: 'blue',
             link: '/training',
           },
           {
-            title: 'Días para Competir',
+            title: t('home.daysToCompete'),
             value: daysUntilNextMatch !== null ? `${daysUntilNextMatch}d` : '–',
-            subtitle: nextMatch ? `${nextMatch.is_home ? 'vs' : '@'} ${nextMatch.opponent}` : 'Sin partido',
+            subtitle: nextMatch ? `${nextMatch.is_home ? 'vs' : '@'} ${nextMatch.opponent}` : t('home.noMatch'),
             icon: CalendarDays,
             color: 'gold',
             link: '/calendar',
@@ -385,33 +386,33 @@ export default function Dashboard() {
       case 'Analista':
         return [
           {
-            title: 'Informes Panini',
+            title: t('home.paniniReports'),
             value: `${paniniEntries.length}`,
-            subtitle: 'Partidos analizados',
+            subtitle: t('home.matchesAnalyzed'),
             icon: FileText,
             color: 'blue',
             link: '/team',
           },
           {
-            title: 'xG Medio Favor / Contra',
+            title: t('home.avgXg'),
             value: teamSeasonStats.avgXgf ? `${teamSeasonStats.avgXgf} / ${teamSeasonStats.avgXgc || '0'}` : '–',
-            subtitle: 'Goles esperados por PJ',
+            subtitle: t('home.xgPerMatch'),
             icon: BarChart3,
             color: 'emerald',
             link: '/team',
           },
           {
-            title: 'Posesión Media',
+            title: t('home.avgPossession'),
             value: teamSeasonStats.avgPos || '–',
-            subtitle: 'Control de balón del equipo',
+            subtitle: t('home.ballControl'),
             icon: TrendingUp,
             color: 'purple',
             link: '/team',
           },
           {
-            title: 'Focos Tácticos',
+            title: t('home.tacticalFocuses'),
             value: `${matchFocuses.length}`,
-            subtitle: 'Objetivos en seguimiento',
+            subtitle: t('home.goalsTracked'),
             icon: Target,
             color: 'gold',
             link: '/matches',
@@ -420,7 +421,7 @@ export default function Dashboard() {
       default: // Entrenador
         return [
           {
-            title: 'Balance Temporada',
+            title: t('home.seasonRecord'),
             value: teamSeasonStats.record !== '0-0-0' ? teamSeasonStats.record : `${paniniEntries.length} PJ`,
             subtitle: `${teamSeasonStats.points} pts · ${teamSeasonStats.gf} GF / ${teamSeasonStats.gc} GC`,
             icon: Award,
@@ -428,27 +429,27 @@ export default function Dashboard() {
             link: '/team',
           },
           {
-            title: 'Disponibles',
+            title: t('home.available'),
             value: `${availablePlayers} / ${totalPlayers}`,
-            subtitle: `${availabilityPct}% de la plantilla apta`,
+            subtitle: t('home.squadFitPct',{n:availabilityPct}),
             icon: Users,
             color: 'emerald',
             link: '/players',
           },
           {
-            title: 'Próximo Rival',
+            title: t('home.nextOpponent'),
             value: nextMatch ? nextMatch.opponent : '–',
             subtitle: nextMatch
-              ? `${nextMatch.is_home ? 'En casa' : 'A domicilio'} · ${daysUntilNextMatch !== null ? (daysUntilNextMatch === 0 ? 'Hoy' : `En ${daysUntilNextMatch} días`) : ''}`
-              : 'Calendario libre',
+              ? `${nextMatch.is_home ? t('home.atHome') : t('home.away')} · ${daysUntilNextMatch !== null ? (daysUntilNextMatch === 0 ? t('home.today') : t('home.inDays',{n:daysUntilNextMatch})) : ''}`
+              : t('home.freeCalendar'),
             icon: Target,
             color: 'gold',
             link: nextMatch ? `/matches?matchId=${nextMatch.id}` : '/matches',
           },
           {
-            title: 'Focos Activos',
+            title: t('home.activeFocuses'),
             value: `${matchFocuses.length}`,
-            subtitle: 'Consignas tácticas activas',
+            subtitle: t('home.activeInstructions'),
             icon: Flame,
             color: 'purple',
             link: '/matches',
@@ -496,7 +497,7 @@ export default function Dashboard() {
                 </span>
               </div>
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight uppercase mt-1 drop-shadow-md">
-                Centro de Mando Técnico
+                {t('home.commandCenter')}
               </h1>
             </div>
           </div>
@@ -520,7 +521,7 @@ export default function Dashboard() {
                     {role === 'Entrenador' && <Shield size={15} />}
                     {role === 'Preparador Físico' && <HeartPulse size={15} />}
                     {role === 'Analista' && <BarChart3 size={15} />}
-                    <span>{role}</span>
+                    <span>{t(`home.role.${role}`)}</span>
                   </button>
                 );
               })}
@@ -533,14 +534,14 @@ export default function Dashboard() {
                 className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-white text-xs font-bold transition-all shadow-sm"
               >
                 <Plus size={14} className="text-[#db0030]" />
-                <span>Nuevo Partido</span>
+                <span>{t('home.newMatch')}</span>
               </Link>
               <Link
                 to="/training"
                 className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-white text-xs font-bold transition-all shadow-sm"
               >
                 <Plus size={14} className="text-emerald-400" />
-                <span>Nueva Sesión</span>
+                <span>{t('home.newSession')}</span>
               </Link>
             </div>
           </div>
@@ -608,13 +609,13 @@ export default function Dashboard() {
                   <h3 className="text-lg sm:text-xl font-black text-white uppercase tracking-tight">
                     {nextMatch.opponent}
                   </h3>
-                  <span className="text-xs text-gray-400">Rival de Jornada</span>
+                  <span className="text-xs text-gray-400">{t('home.matchdayOpponent')}</span>
                 </div>
               </div>
             </div>
           ) : (
             <div className="py-6 text-center text-gray-400 text-sm">
-              No hay partidos programados en el calendario próximo.
+              {t('home.noScheduledMatchesSoon')}
             </div>
           )}
 
@@ -647,7 +648,7 @@ export default function Dashboard() {
                 to={`/matches?matchId=${nextMatch.id}`}
                 className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#db0030] hover:bg-red-700 text-white text-xs font-black uppercase tracking-wider transition-all shadow-md"
               >
-                <span>Focos & Scouting</span>
+                <span>{t('home.focusScouting')}</span>
                 <ChevronRight size={15} />
               </Link>
             </div>
@@ -716,10 +717,10 @@ export default function Dashboard() {
                   </div>
                   <div>
                     <h2 className="text-base font-black uppercase tracking-wider text-gray-900 dark:text-white">
-                      Último Partido Disputado
+                      {t('home.lastMatchPlayed')}
                     </h2>
                     <p className="text-xs text-gray-500">
-                      {lastMatch.competition || 'Competición'} ·{' '}
+                      {lastMatch.competition || t('home.competition')} ·{' '}
                       {new Date(lastMatch.date).toLocaleDateString(i18n.language, {
                         day: 'numeric',
                         month: 'short',
@@ -732,7 +733,7 @@ export default function Dashboard() {
                   to="/team"
                   className="text-xs font-bold text-[#db0030] hover:text-red-700 flex items-center gap-1 transition-colors"
                 >
-                  <span>Ver Informe Panini</span>
+                  <span>{t('home.viewPanini')}</span>
                   <ArrowRight size={14} />
                 </Link>
               </div>
@@ -746,7 +747,7 @@ export default function Dashboard() {
                       Milan Futuro
                     </span>
                     <span className="text-[11px] font-bold text-gray-400">
-                      {lastMatch.is_home ? 'Local' : 'Visitante'}
+                      {lastMatch.is_home ? t('home.home') : t('home.awayTeam')}
                     </span>
                   </div>
                 </div>
@@ -759,7 +760,7 @@ export default function Dashboard() {
                       rival={lastMatch.is_home ? lastMatch.result_away : lastMatch.result_home}
                     />
                   ) : (
-                    <span className="text-sm font-black text-gray-400">Finalizado</span>
+                    <span className="text-sm font-black text-gray-400">{t('home.finished')}</span>
                   )}
                 </div>
 
@@ -775,7 +776,7 @@ export default function Dashboard() {
                       {lastMatch.opponent}
                     </span>
                     <span className="text-[11px] font-bold text-gray-400">
-                      {lastMatch.is_home ? 'Visitante' : 'Local'}
+                      {lastMatch.is_home ? t('home.awayTeam') : t('home.home')}
                     </span>
                   </div>
                 </div>
@@ -811,9 +812,9 @@ export default function Dashboard() {
                 </div>
                 <div>
                   <h2 className="text-base font-black uppercase tracking-wider text-gray-900 dark:text-white">
-                    Calendario de Competición
+                    {t('home.competitionCalendar')}
                   </h2>
-                  <p className="text-xs text-gray-500">Próximos partidos oficiales con escudos y fechas</p>
+                  <p className="text-xs text-gray-500">{t('home.upcomingOfficialSub')}</p>
                 </div>
               </div>
 
@@ -821,7 +822,7 @@ export default function Dashboard() {
                 to="/calendar"
                 className="text-xs font-bold text-gray-500 hover:text-gray-900 dark:hover:text-white flex items-center gap-1 transition-colors"
               >
-                <span>Ver Calendario</span>
+                <span>{t('home.viewCalendar')}</span>
                 <ArrowRight size={14} />
               </Link>
             </div>
@@ -865,11 +866,11 @@ export default function Dashboard() {
                                 : 'bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/40'
                             }`}
                           >
-                            {m.is_home ? 'Casa' : 'Fuera'}
+                            {m.is_home ? t('home.homeShort') : t('home.awayShort')}
                           </span>
                         </div>
                         <p className="text-xs text-gray-500 truncate">
-                          {m.competition || 'Competición oficial'}
+                          {m.competition || t('home.officialCompetition')}
                         </p>
                       </div>
                     </div>
@@ -892,7 +893,7 @@ export default function Dashboard() {
                 ))
               ) : (
                 <div className="py-8 text-center text-gray-500 text-sm">
-                  No hay próximos partidos programados.
+                  {t('home.noUpcomingMatches')}
                 </div>
               )}
             </div>
@@ -907,9 +908,9 @@ export default function Dashboard() {
                 </div>
                 <div>
                   <h2 className="text-base font-black uppercase tracking-wider text-gray-900 dark:text-white">
-                    Focos Tácticos de Partido Activos
+                    {t('home.activeMatchFocuses')}
                   </h2>
-                  <p className="text-xs text-gray-500">Consignas y objetivos para el cuerpo técnico</p>
+                  <p className="text-xs text-gray-500">{t('home.focusesSub')}</p>
                 </div>
               </div>
 
@@ -917,7 +918,7 @@ export default function Dashboard() {
                 to="/matches"
                 className="text-xs font-bold text-gray-500 hover:text-gray-900 dark:hover:text-white flex items-center gap-1 transition-colors"
               >
-                <span>Gestionar Focos</span>
+                <span>{t('home.manageFocuses')}</span>
                 <ArrowRight size={14} />
               </Link>
             </div>
@@ -939,17 +940,17 @@ export default function Dashboard() {
                       <div>
                         <div className="flex items-center justify-between gap-2 mb-2">
                           <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase border ${phaseColors[phase] || 'bg-gray-100 text-gray-700'}`}>
-                            {phase}
+                            {t(`home.phase.${phase}`, { defaultValue: phase })}
                           </span>
                           <span className="text-[10px] font-bold text-gray-400 uppercase">
-                            {f.details?.focusType || 'Táctico'}
+                            {f.details?.focusType || t('home.tactical')}
                           </span>
                         </div>
-                        <h4 className="text-sm font-black text-gray-900 dark:text-white leading-snug">{f.title}</h4>
+                        <h4 className="text-sm font-black text-gray-900 dark:text-white leading-snug"><TranslatedText text={f.title} as="span" /></h4>
                       </div>
 
                       <div className="flex items-center justify-between text-[11px] text-gray-500 pt-2 border-t border-gray-200/50 dark:border-white/5">
-                        <span>{f.details?.assignedTo || 'Todo el equipo'}</span>
+                        <span>{f.details?.assignedTo || t('home.wholeTeam')}</span>
                         <CheckCircle2 size={14} className="text-emerald-500" />
                       </div>
                     </div>
@@ -957,7 +958,7 @@ export default function Dashboard() {
                 })
               ) : (
                 <div className="col-span-2 py-6 text-center text-gray-500 text-sm">
-                  No hay focos tácticos creados actualmente.
+                  {t('home.noFocuses')}
                 </div>
               )}
             </div>
@@ -979,9 +980,9 @@ export default function Dashboard() {
                 </div>
                 <div>
                   <h2 className="text-base font-black uppercase tracking-wider text-gray-900 dark:text-white">
-                    Estado de la Plantilla
+                    {t('home.squadStatus')}
                   </h2>
-                  <p className="text-xs text-gray-500">Disponibilidad médica del primer equipo</p>
+                  <p className="text-xs text-gray-500">{t('home.squadSub')}</p>
                 </div>
               </div>
 
@@ -989,14 +990,14 @@ export default function Dashboard() {
                 to="/players"
                 className="text-xs font-bold text-[#db0030] hover:text-red-700 transition-colors"
               >
-                Ver Plantilla
+                {t('home.viewSquad')}
               </Link>
             </div>
 
             {/* Availability progress bar */}
             <div className="space-y-2 mb-5">
               <div className="flex justify-between text-xs font-bold">
-                <span className="text-gray-600 dark:text-gray-300">Aptos para competir</span>
+                <span className="text-gray-600 dark:text-gray-300">{t('home.fitToPlay')}</span>
                 <span className="text-emerald-600 dark:text-emerald-400">{availablePlayers} de {totalPlayers} ({availabilityPct}%)</span>
               </div>
               <div className="w-full h-3 rounded-full bg-gray-100 dark:bg-neutral-800 overflow-hidden flex">
@@ -1025,7 +1026,7 @@ export default function Dashboard() {
             {injuredPlayers.length > 0 || doubtfulPlayers.length > 0 ? (
               <div className="space-y-2 pt-2 border-t border-gray-100 dark:border-white/10">
                 <span className="text-[10.5px] font-black uppercase tracking-wider text-gray-400 block mb-2">
-                  Partes médicos activos
+                  {t('home.activeMedicalReports')}
                 </span>
                 {[...injuredPlayers, ...doubtfulPlayers].slice(0, 3).map((p: any) => (
                   <div
@@ -1047,7 +1048,7 @@ export default function Dashboard() {
                           : 'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/40'
                       }`}
                     >
-                      {p.medical_status}
+                      {t(`home.status.${p.medical_status}`, { defaultValue: p.medical_status })}
                     </span>
                   </div>
                 ))}
@@ -1055,7 +1056,7 @@ export default function Dashboard() {
             ) : (
               <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/30 text-emerald-700 dark:text-emerald-300 text-xs font-bold text-center flex items-center justify-center gap-2">
                 <CheckCircle2 size={16} />
-                <span>Toda la plantilla está actualmente apta sin bajas.</span>
+                <span>{t('home.allFit')}</span>
               </div>
             )}
           </div>
@@ -1069,9 +1070,9 @@ export default function Dashboard() {
                 </div>
                 <div>
                   <h2 className="text-base font-black uppercase tracking-wider text-gray-900 dark:text-white">
-                    Próximas Sesiones
+                    {t('home.upcomingSessions')}
                   </h2>
-                  <p className="text-xs text-gray-500">Planificación de entrenamientos</p>
+                  <p className="text-xs text-gray-500">{t('home.sessionsSub')}</p>
                 </div>
               </div>
 
@@ -1079,7 +1080,7 @@ export default function Dashboard() {
                 to="/training"
                 className="text-xs font-bold text-gray-500 hover:text-gray-900 dark:hover:text-white flex items-center gap-1 transition-colors"
               >
-                <span>Ver Sesiones</span>
+                <span>{t('home.viewSessions')}</span>
                 <ArrowRight size={14} />
               </Link>
             </div>
@@ -1099,10 +1100,10 @@ export default function Dashboard() {
                       </div>
                       <div>
                         <h4 className="text-xs sm:text-sm font-black text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                          {s.title}
+                          <TranslatedText text={s.title} as="span" />
                         </h4>
                         <p className="text-[11px] text-gray-500 truncate max-w-[200px]">
-                          {s.objective || 'Trabajo táctico'}
+                          {s.objective ? <TranslatedText text={s.objective} as="span" /> : t('home.tacticalWork')}
                         </p>
                       </div>
                     </div>
@@ -1117,7 +1118,7 @@ export default function Dashboard() {
                 ))
               ) : (
                 <div className="py-6 text-center text-gray-500 text-sm">
-                  No hay sesiones programadas próximamente.
+                  {t('home.noUpcomingSessions')}
                 </div>
               )}
             </div>
@@ -1132,9 +1133,9 @@ export default function Dashboard() {
                 </div>
                 <div>
                   <h2 className="text-base font-black uppercase tracking-wider text-gray-900 dark:text-white">
-                    Cumpleaños del Mes
+                    {t('home.monthBirthdays')}
                   </h2>
-                  <p className="text-xs text-gray-500">Celebraciones de plantilla y cuerpo técnico</p>
+                  <p className="text-xs text-gray-500">{t('home.birthdaysSub')}</p>
                 </div>
               </div>
 
@@ -1150,7 +1151,7 @@ export default function Dashboard() {
                     <div className="min-w-0 flex-1">
                       <h4 className="text-xs font-black text-gray-900 dark:text-white truncate">{b.name}</h4>
                       <p className="text-[10px] text-purple-600 dark:text-purple-300 font-bold">
-                        {b.days === 0 ? '¡Hoy!' : b.days === 1 ? 'Mañana' : `En ${b.days} días`} · Cumple {b.age}
+                        {b.days === 0 ? t('home.todayExcl') : b.days === 1 ? t('home.tomorrow') : t('home.inDays',{n:b.days})} · {t('home.turns',{n:b.age})}
                       </p>
                     </div>
                   </div>
@@ -1168,9 +1169,9 @@ export default function Dashboard() {
                 </div>
                 <div>
                   <h2 className="text-base font-black uppercase tracking-wider text-gray-900 dark:text-white">
-                    Actividad Reciente
+                    {t('home.recentActivity')}
                   </h2>
-                  <p className="text-xs text-gray-500">Registro de reuniones y dinámicas</p>
+                  <p className="text-xs text-gray-500">{t('home.activitySub')}</p>
                 </div>
               </div>
             </div>
@@ -1195,14 +1196,14 @@ export default function Dashboard() {
                         </span>
                       </div>
                       <h5 className="text-xs font-bold text-gray-800 dark:text-gray-200 truncate mt-0.5">
-                        {act.title}
+                        <TranslatedText text={act.title} as="span" />
                       </h5>
                     </div>
                   </div>
                 ))
               ) : (
                 <div className="py-4 text-center text-gray-400 text-xs">
-                  Sin actividad reciente registrada.
+                  {t('home.noRecentActivity')}
                 </div>
               )}
             </div>

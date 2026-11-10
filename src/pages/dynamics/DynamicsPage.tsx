@@ -1,3 +1,4 @@
+import TranslatedText from '../../components/common/TranslatedText';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Trash2 } from 'lucide-react';
@@ -95,7 +96,7 @@ export default function DynamicsPage() {
               </div>
               <button onClick={async () => { await deleteMeeting(m.id); load(); }} className="text-gray-300 hover:text-red-500"><Trash2 size={16} /></button>
             </div>
-            {m.objective && <p className="text-sm text-gray-600 mt-2">{m.objective}</p>}
+            {m.objective && <TranslatedText text={m.objective} as="p" className="text-sm text-gray-600 mt-2" />}
           </div>
         ))}
       </div>

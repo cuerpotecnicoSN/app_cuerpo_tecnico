@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import NotificationBell from '../components/notifications/NotificationBell';
 import { useTranslation } from 'react-i18next';
 import { ChevronDown, LogOut, Check, ArrowUpRight, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -17,6 +18,7 @@ const MainLayout: React.FC = () => {
   const { t, i18n } = useTranslation();
   const location = useLocation();
   const { profile, signOut, isAdmin } = useAuth();
+  const navigate = useNavigate();
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [langOpen, setLangOpen] = useState(false);
@@ -142,7 +144,8 @@ const MainLayout: React.FC = () => {
         <Link
           to={section.path}
           aria-current={active ? 'page' : undefined}
-          className={`group relative flex items-center gap-2 h-10 pl-2 pr-3 xl:pr-4 rounded-full text-[13px] font-bold tracking-wide transition-all duration-200 ${
+          title={t(section.labelKey)}
+          className={`group relative flex items-center gap-2 h-10 pl-1.5 pr-1.5 min-[1700px]:pl-2 min-[1700px]:pr-3 rounded-full text-[13px] font-bold tracking-wide transition-all duration-200 ${
             active
               ? '!text-white bg-gradient-to-b from-[var(--color-primary,#db0030)] to-[#a80025] shadow-[0_8px_24px_-8px_rgba(219,0,48,0.8),inset_0_1px_0_rgba(255,255,255,0.25)]'
               : `!text-gray-400 hover:!text-white hover:bg-white/[0.07] ${isOpen ? '!text-white bg-white/[0.07]' : ''}`
@@ -153,7 +156,8 @@ const MainLayout: React.FC = () => {
           }`}>
             <Icon size={15} strokeWidth={2.4} />
           </span>
-          <span className="whitespace-nowrap">{t(section.labelKey)}</span>
+          {/* En pantallas medianas solo se ve el texto de la sección activa; el resto, icono con tooltip */}
+          <span className={`whitespace-nowrap ${active ? 'pr-1.5 min-[1700px]:pr-0' : 'hidden min-[1700px]:inline'}`}>{t(section.labelKey)}</span>
           {hasChildren && (
             <ChevronDown
               size={14}
@@ -211,9 +215,9 @@ const MainLayout: React.FC = () => {
               <div className="absolute inset-0 rounded-full bg-[var(--color-primary,#db0030)]/40 blur-lg opacity-0 group-hover:opacity-100 transition-opacity" />
               <img src="/escudo.png" alt="Club Logo" className="relative w-10 h-10 lg:w-11 lg:h-11 object-contain transition-transform duration-300 group-hover:scale-110" />
             </div>
-            <div className="hidden sm:flex lg:hidden 2xl:flex items-center gap-2.5">
-              <div className="h-8 w-px bg-white/10" />
-              <div className="flex flex-col leading-none">
+            <div className="hidden sm:flex items-center gap-2.5">
+              <div className="h-8 w-px bg-white/10 lg:hidden min-[1900px]:block" />
+              <div className="flex flex-col leading-none lg:hidden min-[1900px]:flex">
                 <span className="font-black text-[17px] tracking-tight text-white uppercase">Staff<span className="text-[var(--color-primary,#db0030)]">Control</span></span>
                 <span className="text-[9px] font-bold uppercase tracking-[0.25em] text-gray-500 mt-1">Cuerpo técnico</span>
               </div>
@@ -232,6 +236,15 @@ const MainLayout: React.FC = () => {
 
           {/* Right Section */}
           <div className="flex items-center gap-2 ml-auto lg:ml-0 shrink-0">
+
+            <NotificationBell
+              audience="staff"
+              dark
+              onOpen={(n) => {
+                const view = n.kind.startsWith('form') ? 'formularios' : n.kind === 'meeting' ? 'reuniones' : n.kind === 'report' ? 'informes' : 'plan';
+                if (n.player_id) navigate(`/players/${n.player_id}?view=${view}`);
+              }}
+            />
 
             {/* Language switcher */}
             <div ref={langRef} className="relative">
@@ -300,7 +313,7 @@ const MainLayout: React.FC = () => {
                 </div>
                 <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-black" />
               </div>
-              <div className="hidden xl:flex flex-col items-start leading-tight">
+              <div className="hidden min-[1800px]:flex flex-col items-start leading-tight">
                 <span className="text-[13px] font-bold text-white max-w-[140px] truncate">{displayName}</span>
                 <span className="text-[9.5px] font-black uppercase tracking-[0.15em] text-[var(--color-primary,#db0030)]">{profile?.role || 'Entrenador'}</span>
               </div>

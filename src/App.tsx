@@ -19,6 +19,7 @@ import DynamicsPage from './pages/dynamics/DynamicsPage';
 import TeamPage from './pages/team/TeamPage';
 
 import UserManagement from './pages/admin/UserManagement';
+import FormsPage from './pages/forms/FormsPage';
 
 function App() {
   return (
@@ -45,6 +46,8 @@ function App() {
               <Route path="team" element={<TeamPage />} />
 
               <Route path="dynamics" element={<DynamicsPage />} />
+
+              <Route path="forms" element={<FormsPage />} />
 
               <Route path="admin/users" element={<AuthGuard requireAdmin><UserManagement /></AuthGuard>} />
             </Route>

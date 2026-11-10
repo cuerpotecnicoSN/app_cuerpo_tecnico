@@ -15,7 +15,8 @@ import {
   Trophy,
   Radio,
   FileText,
-  Shield
+  Shield,
+  ClipboardList
 } from 'lucide-react';
 
 export interface NavChild {
@@ -75,5 +76,6 @@ export const navigation: NavSection[] = [
       { labelKey: 'nav.reports', descKey: 'nav.dynamicsDesc', defaultDesc: 'Dinámicas y actas grupales', path: '/dynamics', icon: FileText }
     ]
   },
+  { labelKey: 'nav.forms', path: '/forms', icon: ClipboardList },
 ];
 

@@ -1,3 +1,4 @@
+import TranslatedText from '../../common/TranslatedText';
 import { useEffect, useMemo, useState } from 'react';
 import {
   ArrowUpRight, CalendarClock, ChevronDown, CheckCircle2, ClipboardList, Dumbbell, Edit2, ExternalLink, FileText, Film, Goal, Heart, House,
@@ -220,7 +221,7 @@ function CommentThread({ comments, myId, playerName, onSend, onDelete }: {
                       <button className="text-gray-400 hover:text-red-500" aria-label={t('playerPlan.delete')} onClick={() => { if (confirm(t('playerPlan.thread.confirmDelete'))) onDelete(c.id); }}><Trash2 size={12} /></button>
                     )}
                   </p>
-                  {c.content && <p className="text-sm text-gray-800 whitespace-pre-line break-words">{c.content}</p>}
+                  {c.content && <TranslatedText text={c.content} as="p" className="text-sm text-gray-800 whitespace-pre-line break-words" />}
                   {c.links?.length > 0 && <div className="mt-2"><LinkPreviews links={c.links} compact /></div>}
                 </div>
               </li>
@@ -372,7 +373,7 @@ function ClipsSection({ playerId, isStaff, myId, playerName, run, fmtDate }: {
                     <p className="text-xs text-gray-500 mt-0.5">
                       {t(`playerPlan.clips.contexts.${c.context}`)} · {fmtDate(c.clip_date ?? c.created_at)} · {t('playerPlan.clips.uploadedBy', { name: authorName(c) })}
                     </p>
-                    {c.notes && <p className="text-sm text-gray-700 mt-1.5 whitespace-pre-line">{c.notes}</p>}
+                    {c.notes && <TranslatedText text={c.notes} as="p" className="text-sm text-gray-700 mt-1.5 whitespace-pre-line" />}
                     {href && <div className="mt-3"><MediaPreview url={href} label={c.title} /></div>}
                     <div className="flex flex-wrap gap-2 mt-2.5">
                       <button className={btnGhost} aria-expanded={open} onClick={() => setOpenId(open ? null : c.id)}>
@@ -732,7 +733,7 @@ export default function PlayerDevelopmentPlan({ player, mode, section, onViewSta
                         return (
                           <li key={o.id} className="py-3">
                             <p className="text-[15px] font-semibold text-gray-900 leading-snug">{o.title}</p>
-                            {o.description && <p className="text-sm text-gray-500 mt-0.5">{o.description}</p>}
+                            {o.description && <TranslatedText text={o.description} as="p" className="text-sm text-gray-500 mt-0.5" />}
                             {(o.created_by_player || commentsOf(o.id).length > 0) && (
                               <p className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-500">
                                 {o.created_by_player && <span className="inline-flex items-center gap-1 font-semibold text-[#db0030]"><User size={12} /> {t(isStaff ? 'playerPlan.proposedByPlayer' : 'playerPlan.proposedByYou')}</span>}
@@ -1013,7 +1014,7 @@ export default function PlayerDevelopmentPlan({ player, mode, section, onViewSta
                           </div>
                         </div>
                       ) : (
-                        <p className="text-sm text-gray-800 whitespace-pre-line">{a.content}</p>
+                        <TranslatedText text={a.content} as="p" className="text-sm text-gray-800 whitespace-pre-line" />
                       )}
                     </li>
                   ))}
@@ -1034,7 +1035,7 @@ export default function PlayerDevelopmentPlan({ player, mode, section, onViewSta
                 <>
                   <p className={`${display} text-3xl font-black mt-2 leading-none`}>{fmtDate(nextCheckIn.date)}</p>
                   {(nextCheckIn.time || nextCheckIn.location) && <p className="text-sm mt-2">{[nextCheckIn.time, nextCheckIn.location].filter(Boolean).join(', ')}</p>}
-                  <p className="text-sm mt-1 line-clamp-3">{nextCheckIn.label}</p>
+                  <TranslatedText text={nextCheckIn.label} as="p" className="text-sm mt-1 line-clamp-3" />
                 </>
               ) : (
                 <p className="text-sm mt-2">{t('playerPlan.calendar.noDate')}</p>
@@ -1047,7 +1048,7 @@ export default function PlayerDevelopmentPlan({ player, mode, section, onViewSta
                   <li key={m.id} className="relative pl-6">
                     <span className={`absolute left-0 top-1.5 w-[11px] h-[11px] rounded-full ${m.upcoming ? 'bg-[#db0030]' : 'bg-gray-400'}`} />
                     <p className="text-sm font-semibold text-gray-900">{fmtDate(m.date)}</p>
-                    <p className="text-sm text-gray-500 truncate">{m.label}</p>
+                    <TranslatedText text={m.label} as="p" className="text-sm text-gray-500 truncate" />
                   </li>
                 ))}
               </ol>

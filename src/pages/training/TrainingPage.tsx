@@ -1,3 +1,4 @@
+import TranslatedText from '../../components/common/TranslatedText';
 import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
@@ -322,7 +323,7 @@ function SessionsList({ sessions, onCreate, onOpen, onDelete }: { sessions: Trai
               
               {s.objective && (
                 <div className="mt-4 pt-4 border-t border-gray-100">
-                  <p className="text-base text-gray-500 font-medium line-clamp-2 leading-snug">{s.objective}</p>
+                  <TranslatedText text={s.objective} as="p" className="text-base text-gray-500 font-medium line-clamp-2 leading-snug" />
                 </div>
               )}
 
@@ -1001,7 +1002,7 @@ function SessionEditor({ session, tasks, onBack, onTasksChange }: { session: Tra
                   {session.objective && (
                     <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm w-full">
                       <h4 className="text-xs font-bold text-purple-600 uppercase mb-1.5 flex items-center gap-1">🎯 Objetivo</h4>
-                      <p className="text-xs font-medium text-gray-700 whitespace-pre-wrap leading-relaxed">{session.objective}</p>
+                      <TranslatedText text={session.objective} as="p" className="text-xs font-medium text-gray-700 whitespace-pre-wrap leading-relaxed" />
                     </div>
                   )}
 
@@ -1010,13 +1011,13 @@ function SessionEditor({ session, tasks, onBack, onTasksChange }: { session: Tra
                       {structure && (
                         <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm min-h-[100px]">
                           <h4 className="text-xs font-bold text-indigo-600 uppercase mb-2 flex items-center gap-1">📋 Estructura</h4>
-                          <div className="text-xs font-medium text-gray-700 leading-relaxed rich-text-content" dangerouslySetInnerHTML={{ __html: structure }} />
+                          <TranslatedText html={structure} className="text-xs font-medium text-gray-700 leading-relaxed rich-text-content" />
                         </div>
                       )}
                       {observations && (
                         <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm min-h-[100px]">
                           <h4 className="text-xs font-bold text-amber-600 uppercase mb-2 flex items-center gap-1">✍️ Observaciones</h4>
-                          <div className="text-xs font-medium text-gray-700 leading-relaxed rich-text-content" dangerouslySetInnerHTML={{ __html: observations }} />
+                          <TranslatedText html={observations} className="text-xs font-medium text-gray-700 leading-relaxed rich-text-content" />
                         </div>
                       )}
                     </div>
@@ -1120,10 +1121,7 @@ function SessionEditor({ session, tasks, onBack, onTasksChange }: { session: Tra
                           {i + 1}. {tInfo?.title || 'Tarea'}
                         </h3>
                         {tInfo?.description && (
-                          <div 
-                            className="mt-2 text-xs text-gray-500 line-clamp-4 leading-relaxed rich-text-preview" 
-                            dangerouslySetInnerHTML={{ __html: tInfo.description }}
-                          />
+                          <TranslatedText html={tInfo.description} className="mt-2 text-xs text-gray-500 line-clamp-4 leading-relaxed rich-text-preview" />
                         )}
                       </div>
                       

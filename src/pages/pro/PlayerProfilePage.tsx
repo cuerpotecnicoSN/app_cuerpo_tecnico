@@ -1,7 +1,9 @@
+import PlayerForms from '../../components/forms/PlayerForms';
+import { ClipboardList } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { User, Weight, Stethoscope, ArrowLeft, Edit2, Target, Users2, FileText, Plus, Trash2, CalendarDays, MapPin, BarChart2, Sparkles, Loader2, Activity } from 'lucide-react';
+import { User, Weight, Stethoscope, ArrowLeft, Edit2, Target, Users2, FileText, Plus, Trash2, CalendarDays, MapPin, BarChart2, Sparkles, Loader2, Activity, Download } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import type { Player, MeetingDB, SeasonReport, MeetingInsightCategory } from '../../components/types';
 import { MEETING_INSIGHT_CATEGORIES } from '../../components/types';
@@ -23,8 +25,12 @@ import { aggregatePlayer, normalize } from '../../utils/playerPaniniStats';
 
 import PlayerImportModal from '../../components/pro/PlayerImportModal';
 import { translatePosition } from '../../utils/positionTranslations';
+import { exportFullPlayerPdf } from '../../utils/fullPlayerPdf';
+import { getPlayerWeights, getPlayerInjuries } from '../../services/playerHealth';
+import { getPlayerObjectives } from '../../services/playerObjectives';
+import { getFocuses } from '../../services/playerDevelopment';
 
-type Tab = 'ficha' | 'partidos' | 'peso' | 'lesiones' | 'plan' | 'reuniones' | 'informes' | 'feedback';
+type Tab = 'ficha' | 'partidos' | 'peso' | 'lesiones' | 'plan' | 'reuniones' | 'informes' | 'feedback' | 'formularios';
 
 export default function PlayerProfilePage() {
   const { id } = useParams<{ id: string }>();
@@ -35,7 +41,7 @@ export default function PlayerProfilePage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const rawViewParam = searchParams.get('view');
-  const initialTab = rawViewParam && ['ficha', 'partidos', 'peso', 'lesiones', 'plan', 'reuniones', 'informes', 'evaluations', 'feedback'].includes(rawViewParam)
+  const initialTab = rawViewParam && ['ficha', 'partidos', 'peso', 'lesiones', 'plan', 'reuniones', 'informes', 'evaluations', 'feedback', 'formularios'].includes(rawViewParam)
     ? (rawViewParam === 'evaluations' ? 'informes' : rawViewParam as Tab)
     : 'ficha';
 
@@ -43,7 +49,7 @@ export default function PlayerProfilePage() {
 
   useEffect(() => {
     const param = searchParams.get('view');
-    if (param && ['ficha', 'partidos', 'peso', 'lesiones', 'plan', 'reuniones', 'informes', 'evaluations', 'feedback'].includes(param)) {
+    if (param && ['ficha', 'partidos', 'peso', 'lesiones', 'plan', 'reuniones', 'informes', 'evaluations', 'feedback', 'formularios'].includes(param)) {
       setActiveTab(param === 'evaluations' ? 'informes' : param as Tab);
     }
   }, [searchParams]);
@@ -84,6 +90,7 @@ export default function PlayerProfilePage() {
   const activeDbPlayer = dbPlayers?.find((p: any) => p.id === activePlayer?.id);
 
   const { lines: paniniLines } = usePlayerPaniniLines();
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
 
   const playerStats = useMemo(() => {
     if (!paniniLines || !activePlayer) return null;
@@ -111,6 +118,40 @@ export default function PlayerProfilePage() {
 
   const isPlayerBaja = activePlayer?.status === 'Baja';
 
+  const handleDownloadFullPdf = async () => {
+    if (!activePlayer || downloadingPdf) return;
+    try {
+      setDownloadingPdf(true);
+      const [weights, injuries, objectives, meetings, reports, focuses] = await Promise.all([
+        getPlayerWeights(activePlayer.id).catch(() => []),
+        getPlayerInjuries(activePlayer.id).catch(() => []),
+        getPlayerObjectives(activePlayer.id).catch(() => []),
+        getMeetingsForPlayer(activePlayer.id, 'individual').catch(() => []),
+        getSeasonReports(activePlayer.id).catch(() => []),
+        getFocuses(activePlayer.id).catch(() => []),
+      ]);
+
+      await exportFullPlayerPdf({
+        player: activePlayer,
+        dbPlayer: activeDbPlayer,
+        stats: playerStats,
+        objectives,
+        meetings,
+        injuries,
+        weights,
+        reports,
+        focuses,
+        t,
+        locale: i18n.language,
+      });
+    } catch (err) {
+      console.error('Error generating full player PDF:', err);
+      alert('Error al generar el PDF del jugador');
+    } finally {
+      setDownloadingPdf(false);
+    }
+  };
+
   return (
     <div className="w-full h-full space-y-6">
       {/* Modern Sub-Navigation Tabs Bar */}
@@ -124,11 +165,21 @@ export default function PlayerProfilePage() {
           { id: 'reuniones', label: t('playerTabs.individualMeetings', 'Reuniones'), icon: Users2 },
           { id: 'informes', label: t('playerTabs.pastSeasonReports', 'Informes Pasados'), icon: FileText },
           { id: 'feedback', label: t('playerTabs.feedbackTab', 'Feedback & Métricas'), icon: BarChart2 },
+          { id: 'formularios', label: t('forms.title'), icon: ClipboardList },
         ]}
         activeTab={activeTab}
         onChange={(t) => handleTabChange(t as Tab)}
         rightSlot={
           <div className="flex items-center gap-2.5">
+            <button 
+              onClick={handleDownloadFullPdf}
+              disabled={downloadingPdf}
+              className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-all shadow-xs"
+              title="Descargar Dossier Completo en PDF"
+            >
+              {downloadingPdf ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
+              <span>{downloadingPdf ? t('common.generatingPdf', 'Generando...') : t('playerProfile.downloadPdf', 'Descargar PDF')}</span>
+            </button>
             <button 
               onClick={() => navigate('/players')} 
               className="px-4 py-2.5 bg-white dark:bg-neutral-800 hover:bg-gray-50 dark:hover:bg-neutral-700 border border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-200 rounded-xl text-xs font-bold flex items-center gap-2 transition-all shadow-xs"
@@ -350,6 +401,7 @@ export default function PlayerProfilePage() {
         {activeTab === 'reuniones' && <PlayerMeetingsTab playerId={activePlayer.id} />}
         {activeTab === 'informes' && <PlayerReportsTab playerId={activePlayer.id} />}
         {activeTab === 'feedback' && <PlayerFeedbackTab playerId={activePlayer.id} />}
+        {activeTab === 'formularios' && <PlayerForms playerId={activePlayer.id} mode="staff" />}
       </div>
 
       {showEditModal && (

@@ -1,3 +1,4 @@
+import TranslatedText from '../common/TranslatedText';
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { Play, Pause, Edit2, Trash2, Check, X, Clock, Filter, Flag, ChevronLeft, AlertTriangle, Sliders, MapPinned, Grid3x3, Hash, UserPlus, MessageSquare, ThumbsUp, ThumbsDown, Minus, BarChart3, FileDown, Flame, Radio } from 'lucide-react';
 import type { MatchDB, MatchFocus, MatchDataPoint } from '../types';
@@ -809,7 +810,7 @@ export default function MatchLiveRegistrationView({ match, focuses, dataPoints, 
                     {dp.outcome === 'Success' ? <ThumbsUp size={11} /> : dp.outcome === 'Failure' ? <ThumbsDown size={11} /> : <Minus size={11} />}
                     {dp.outcome === 'Success' ? 'Acierto' : dp.outcome === 'Failure' ? 'Fallo' : 'Neutro'}
                   </button>
-                  {dp.comments && <p className="text-xs text-gray-500 mt-1 font-medium">{dp.comments}</p>}
+                  {dp.comments && <TranslatedText text={dp.comments} as="p" className="text-xs text-gray-500 mt-1 font-medium" />}
                 </div>
                 <div className="flex gap-2">
                   <button onClick={() => setEditingPoint(dp)} className="p-2 text-gray-400 hover:text-blue-700 hover:bg-blue-50 bg-white rounded-lg shadow-sm border border-gray-200 transition-colors" title="Editar registro"><Edit2 size={14} /></button>
