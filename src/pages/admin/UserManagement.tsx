@@ -14,8 +14,6 @@ import {
   CheckCircle2,
   Clock,
   Search,
-  Mail,
-  User as UserIcon,
 } from 'lucide-react';
 import PlayerAccessPanel from '../../components/admin/PlayerAccessPanel';
 import {
@@ -390,7 +388,7 @@ const UserManagement: React.FC = () => {
                           value={draft}
                           onChange={(e) => setDrafts({ ...drafts, [user.id]: e.target.value })}
                         />
-                        {rowMsg?.id === user.id && (
+                        {rowMsg && rowMsg.id === user.id && (
                           <p className={`text-xs mt-1 ${rowMsg.ok ? 'text-emerald-600' : 'text-red-600'}`}>
                             {rowMsg.text}
                           </p>
