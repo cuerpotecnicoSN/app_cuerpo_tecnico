@@ -642,13 +642,15 @@ export default function PlayerDevelopmentPlan({ player, mode, section, onViewSta
           {dorsal ? (
             <div
               aria-hidden
-              className="absolute right-4 sm:right-10 top-1/2 -translate-y-1/2 select-none pointer-events-none flex items-center justify-center"
+              className="absolute right-4 sm:right-12 top-1/2 -translate-y-1/2 select-none pointer-events-none flex items-center justify-center z-0"
             >
               <span
-                className={`${display} text-[6rem] sm:text-[11rem] font-black tracking-tighter leading-none text-white/5 drop-shadow-[0_4px_30px_rgba(0,0,0,0.8)]`}
+                className={`${display} text-[7.5rem] sm:text-[13.5rem] font-black tracking-tighter leading-none select-none`}
                 style={{
-                  WebkitTextStroke: '2px rgba(255,255,255,0.45)',
-                  filter: 'drop-shadow(0 0 20px rgba(219,0,48,0.35))',
+                  color: 'rgba(255, 255, 255, 0.18)',
+                  WebkitTextStroke: '2.5px rgba(255, 255, 255, 0.85)',
+                  textShadow: '0 4px 15px rgba(0, 0, 0, 0.9), 0 0 25px rgba(255, 255, 255, 0.25), 0 0 45px rgba(219, 0, 48, 0.4)',
+                  filter: 'drop-shadow(3px 5px 2px rgba(0,0,0,0.85)) drop-shadow(-1px -1px 0 rgba(255,255,255,0.4))',
                 }}
               >
                 {dorsal}
@@ -656,10 +658,10 @@ export default function PlayerDevelopmentPlan({ player, mode, section, onViewSta
             </div>
           ) : null}
 
-          <div className="relative p-5 sm:p-8">
-            <div className="flex items-center sm:items-end gap-4 sm:gap-6">
-              {/* Foto con fondo blanco limpio y marco moderno */}
-              <div className="w-24 h-28 sm:w-36 sm:h-44 shrink-0 rounded-2xl overflow-hidden bg-white p-1.5 shadow-[0_8px_30px_rgba(0,0,0,0.5),inset_0_1px_2px_rgba(255,255,255,0.9)] border border-white/20 flex items-center justify-center">
+          <div className="relative z-10 p-5 sm:p-8">
+            <div className="flex items-center sm:items-end gap-5 sm:gap-7">
+              {/* Foto más grande con fondo blanco puro y marco de relieve 3D */}
+              <div className="w-28 h-36 sm:w-44 sm:h-56 shrink-0 rounded-2xl overflow-hidden bg-white p-2 shadow-[0_12px_35px_rgba(0,0,0,0.65),0_2px_8px_rgba(0,0,0,0.4),inset_0_1px_3px_rgba(255,255,255,1)] border-2 border-white/40 flex items-center justify-center">
                 {player.photo_url ? (
                   <img
                     src={player.photo_url}
@@ -668,7 +670,7 @@ export default function PlayerDevelopmentPlan({ player, mode, section, onViewSta
                   />
                 ) : (
                   <div className="w-full h-full rounded-xl bg-gray-50 flex items-center justify-center">
-                    <User size={40} className="text-gray-300" />
+                    <User size={48} className="text-gray-300" />
                   </div>
                 )}
               </div>
