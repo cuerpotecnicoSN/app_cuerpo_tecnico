@@ -148,7 +148,7 @@ export default function MeetingsExcelImportModal({
         'riunioni di gruppo', 'gruppo', 'riassunto', 'foglio1', 'sheet1'
       ]);
 
-      workbook.SheetNames.forEach((sheetName) => {
+      workbook.SheetNames.forEach((sheetName: string) => {
         const cleanName = sheetName.trim();
         if (ignoreSheets.has(cleanName.toLowerCase())) return;
 
