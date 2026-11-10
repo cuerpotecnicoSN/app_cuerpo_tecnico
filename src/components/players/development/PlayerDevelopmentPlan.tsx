@@ -660,17 +660,17 @@ export default function PlayerDevelopmentPlan({ player, mode, section, onViewSta
 
           <div className="relative z-10 p-5 sm:p-8">
             <div className="flex items-center sm:items-end gap-5 sm:gap-7">
-              {/* Foto más grande con fondo blanco puro y marco de relieve 3D */}
-              <div className="w-28 h-36 sm:w-44 sm:h-56 shrink-0 rounded-2xl overflow-hidden bg-white p-2 shadow-[0_12px_35px_rgba(0,0,0,0.65),0_2px_8px_rgba(0,0,0,0.4),inset_0_1px_3px_rgba(255,255,255,1)] border-2 border-white/40 flex items-center justify-center">
+              {/* Foto ajustada para llenar el marco sin espacio blanco sobrante */}
+              <div className="w-28 h-36 sm:w-44 sm:h-56 shrink-0 rounded-2xl overflow-hidden bg-gradient-to-b from-neutral-800 to-black shadow-[0_12px_35px_rgba(0,0,0,0.7)] border border-white/20 flex items-center justify-center">
                 {player.photo_url ? (
                   <img
                     src={player.photo_url}
                     alt={name}
-                    className="w-full h-full object-contain object-bottom rounded-xl bg-white"
+                    className="w-full h-full object-cover object-top"
                   />
                 ) : (
-                  <div className="w-full h-full rounded-xl bg-gray-50 flex items-center justify-center">
-                    <User size={48} className="text-gray-300" />
+                  <div className="w-full h-full flex items-center justify-center bg-white/10">
+                    <User size={48} className="text-white/40" />
                   </div>
                 )}
               </div>
