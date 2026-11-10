@@ -67,9 +67,9 @@ DECLARE
 BEGIN
   -- Jugador al que se refiere la fila
   IF TG_TABLE_NAME = 'objective_comments' THEN
-    SELECT o.player_id, to_jsonb(o)->>'title' INTO pid, ttl FROM public.player_objectives o WHERE o.id = NEW.objective_id;
+    SELECT o.player_id, to_jsonb(o)->>'title' INTO pid, ttl FROM public.player_objectives o WHERE o.id = (row_j->>'objective_id')::uuid;
   ELSIF TG_TABLE_NAME = 'clip_comments' THEN
-    SELECT c.player_id, to_jsonb(c)->>'title' INTO pid, ttl FROM public.player_clips c WHERE c.id = NEW.clip_id;
+    SELECT c.player_id, to_jsonb(c)->>'title' INTO pid, ttl FROM public.player_clips c WHERE c.id = (row_j->>'clip_id')::uuid;
   ELSE
     pid := (row_j->>'player_id')::uuid;
     ttl := COALESCE(row_j->>'title', row_j->>'objective', row_j->>'content', row_j->>'description');
@@ -84,12 +84,13 @@ BEGIN
   END IF;
 
   IF TG_TABLE_NAME = 'meeting_players' THEN
-    SELECT COALESCE(m.objective, m.location), m.type INTO ttl, f_status FROM public.meetings m WHERE m.id = NEW.meeting_id;
+    SELECT COALESCE(m.objective, m.location), m.type INTO ttl, f_status FROM public.meetings m WHERE m.id = (row_j->>'meeting_id')::uuid;
   END IF;
 
   -- Comentarios de texto: vista previa del comentario
-  IF TG_TABLE_NAME IN ('objective_comments', 'clip_comments') AND COALESCE(NEW.content, '') <> '' THEN
-    ttl := NEW.content;
+  -- (row_j y no NEW.content: en tablas sin esa columna NEW.content rompe el trigger)
+  IF TG_TABLE_NAME IN ('objective_comments', 'clip_comments') AND COALESCE(row_j->>'content', '') <> '' THEN
+    ttl := row_j->>'content';
   END IF;
 
   -- Notas del jugador en un vídeo: solo cuando cambia su respuesta

@@ -3,13 +3,13 @@ import { useTranslation } from 'react-i18next';
 import type { Player, DevTask, MedicalRecord, SportsStats } from '../../components/types';
 import PlayersManagementView from '../../components/pro/PlayersManagementView';
 import GlobalIndividualMeetingsView from '../../components/pro/GlobalIndividualMeetingsView';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 
 import { useSupabaseData } from '../../hooks/useSupabaseData';
 import PlayerImportModal from '../../components/pro/PlayerImportModal';
 import { DeletePlayerModal } from '../../components/pro/DeletePlayerModal';
 import { useAuth } from '../../context/AuthContext';
-import { Plus, Users as UsersIcon, Grid, List, Filter, Globe, Search, Download, Edit2, UsersRound, MessageSquareText, Activity, Loader2 } from 'lucide-react';
+import { Plus, Users as UsersIcon, Grid, List, Filter, Globe, Search, Download, Edit2, UsersRound, MessageSquareText, Activity, Loader2, Target, ChevronRight } from 'lucide-react';
 import SubNavTabs from '../../components/common/SubNavTabs';
 import PlayerStatsHub from '../../components/players/stats/PlayerStatsHub';
 import './players-grid.css';
@@ -278,7 +278,7 @@ export default function PlayersPage() {
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight uppercase">
-              {currentView === 'meetings' ? t('nav.meetings', 'Reuniones Individuales') : currentView === 'stats' ? t('playerStats.hub.title') : t('players.title', 'Jugadores')}
+              {currentView === 'meetings' ? t('nav.meetings', 'Reuniones Individuales') : currentView === 'plans' ? t('nav.individualPlan', 'Plan individual') : currentView === 'stats' ? t('playerStats.hub.title') : t('players.title', 'Jugadores')}
             </h1>
             {loading ? (
               <span className="text-xs text-gray-400 font-bold animate-pulse">{t('players.management.loadingData', 'Cargando datos...')}</span>
@@ -371,6 +371,11 @@ export default function PlayersPage() {
             id: 'meetings',
             label: t('nav.meetings', 'Reuniones Individuales'),
             icon: MessageSquareText,
+          },
+          {
+            id: 'plans',
+            label: t('nav.individualPlan', 'Plan individual'),
+            icon: Target,
           },
           {
             id: 'stats',
@@ -608,6 +613,25 @@ export default function PlayersPage() {
 
       {currentView === 'meetings' && (
         <GlobalIndividualMeetingsView players={players} />
+      )}
+
+      {currentView === 'plans' && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+          {players.map((p) => (
+            <Link
+              key={p.id}
+              to={`/players/${p.id}?view=plan`}
+              className="group flex items-center gap-3 p-3 rounded-2xl bg-white dark:bg-neutral-900 border border-gray-200/80 dark:border-white/10 hover:border-[#db0030] hover:shadow-md transition-all"
+            >
+              <img src={p.avatar} alt="" className="w-12 h-12 rounded-xl object-cover object-top bg-gray-100 shrink-0" />
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-black text-gray-900 dark:text-white truncate">{p.name}</span>
+                <span className="block text-[11px] text-gray-500 truncate">{p.position}</span>
+              </span>
+              <ChevronRight size={16} className="text-gray-300 group-hover:text-[#db0030] shrink-0" />
+            </Link>
+          ))}
+        </div>
       )}
 
       {currentView === 'stats' && (

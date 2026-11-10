@@ -13,7 +13,7 @@
     "players": "Jugadores",
     "roster": "Plantilla",
     "rosterDesc": "Fichas, estados y plantilla",
-    "individualPlan": "Plan Individual",
+    "individualPlan": "Plan individual",
     "meetings": "Reuniones Individuales",
     "meetingsDesc": "Seguimiento 1 a 1 y acuerdos",
     "playerStats": "Estadísticas",
@@ -28,7 +28,8 @@
     "matchInfo": "Info partido",
     "matchFocuses": "Focos partidos",
     "matchData": "Live registro datos",
-    "forms": "Formularios"
+    "forms": "Formularios",
+    "individualPlanDesc": "Plan de desarrollo de cada jugador"
   },
   "common": {
     "save": "Guardar",
@@ -1720,6 +1721,13 @@
       "open": "Ver vídeo",
       "comments": "Comentarios",
       "confirmDelete": "¿Borrar este vídeo/documento y sus comentarios?"
+    },
+    "chat": {
+      "title": "Chat con el cuerpo técnico",
+      "empty": "Aún no hay mensajes. Escribe el primero.",
+      "placeholder": "Escribe un mensaje…",
+      "send": "Enviar",
+      "confirmDelete": "¿Borrar este mensaje?"
     }
   },
   "playerPortal": {
@@ -1732,7 +1740,27 @@
     "group": "Grupal",
     "individual": "Individual",
     "followUp": "Seguimiento",
+    "hub": "Menú Principal",
+    "spaceContent": "Contenido",
+    "spaceContentDesc": "Consulta todo lo redactado por el jugador y el entrenador",
+    "spaceFill": "A completar",
+    "spaceFillDesc": "Espacio exclusivo para redactar y añadir cosas nuevas",
+    "viewContent": "Ver contenido",
+    "addNewEntry": "Añadir nuevo",
+    "onlyOwnCanEdit": "Solo puedes editar y borrar lo que has añadido tú",
+    "spaceResults": "Mis Resultados",
+    "spaceResultsDesc": "Consulta tus estadísticas de partido, estado médico e informes",
+    "backToHub": "Volver al Menú",
+    "openCard": "Entrar y rellenar",
+    "viewCard": "Ver resultados",
+    "pendingCount": "{{count}} pendientes",
+    "allDone": "Todo listo ✓",
+    "activeObjectives": "Objetivos activos",
+    "completedObjectives": "Metas logradas",
+    "noActiveObjectives": "No hay objetivos activos en esta área",
+    "touchToAdd": "+ Toca para añadir",
     "tabs": {
+      "hub": "Inicio",
       "what": "Objetivos y focos",
       "how": "Acción y criterios",
       "voice": "Feedback y reflexión",
@@ -1879,7 +1907,8 @@
       "objective_comment": "{{name}} ha comentado un objetivo",
       "clip": "{{name}} ha subido un clip",
       "clip_comment": "{{name}} ha comentado un clip",
-      "video_note_updated": "{{name}} ha respondido a una nota de vídeo"
+      "video_note_updated": "{{name}} ha respondido a una nota de vídeo",
+      "message": "{{name}} te ha escrito un mensaje"
     },
     "player": {
       "form_assigned": "Tienes un formulario nuevo para rellenar",
@@ -1891,7 +1920,132 @@
       "focus": "Tienes un foco nuevo",
       "report": "Tienes un informe nuevo",
       "meeting": "Tienes una reunión nueva",
-      "self_assessment": "Nueva autoevaluación"
+      "self_assessment": "Nueva autoevaluación",
+      "message": "El cuerpo técnico te ha escrito"
+    }
+  },
+  "devSections": {
+    "all": "Todas las Secciones",
+    "addRow": "Añadir Registro",
+    "newEntryTitle": "Nueva fila en",
+    "category": "Categoría",
+    "entryTitle": "Título / Asunto",
+    "entryPlaceholder": "Ej: Mejora de pase con zurda, Intensidad en duelos...",
+    "matchName": "Partido / Rival",
+    "matchPlaceholder": "Ej: vs Inter de Milán",
+    "matchDate": "Fecha del Partido",
+    "deadline": "Fecha Límite / Meta",
+    "description": "Detalles, jugadas o comentarios iniciales",
+    "descriptionPlaceholder": "Describe las conclusiones, jugadas a revisar o tareas concretas...",
+    "links": "Enlaces / Vídeos de soporte (opcional)",
+    "linkLabelPlaceholder": "Nombre del vídeo o documento",
+    "empty": "No hay registros en esta sección. Pulsa en \"Añadir Registro\" para comenzar.",
+    "player": "Jugador",
+    "coach": "Entrenador / Staff",
+    "completed": "Completado",
+    "markCompleted": "Completar",
+    "commentsAndFeedback": "Incisos y Comentarios",
+    "noCommentsYet": "Aún no hay comentarios ni incisos sobre este punto.",
+    "coachCommentPlaceholder": "Añadir inciso del entrenador (saldrá destacado en color del entrenador)...",
+    "playerCommentPlaceholder": "Añadir comentario o aclaración del jugador...",
+    "objectives": {
+      "title": "Definir Objetivos",
+      "futbol": "Fútbol",
+      "fisico": "Físico",
+      "personal": "Personal"
+    },
+    "personalTraits": {
+      "title": "Características Personales",
+      "game": "En el juego",
+      "personal": "A nivel personal"
+    },
+    "focuses": {
+      "title": "Focos",
+      "training": "Entrenamiento",
+      "match": "Partido",
+      "offPitch": "Fuera del campo"
+    },
+    "competitionAnalysis": {
+      "title": "Análisis Competición",
+      "matchPlays": "Partido y Jugadas",
+      "tactical": "Análisis Táctico"
+    },
+    "actionPlan": {
+      "title": "Plan de Acción",
+      "tasks": "Tareas a realizar",
+      "habits": "Hábitos y Rutinas"
+    }
+  },
+  "modernSections": {
+    "cardsTitle": "Áreas de Desarrollo",
+    "cardsSubtitle": "Selecciona una categoría para rellenar o ver el historial",
+    "entriesTitle": "Historial y Comentarios",
+    "entriesSubtitle": "Todo lo redactado con seguimiento, incisos del míster y fechas",
+    "allRecords": "Todos los registros",
+    "filterBy": "Filtrar por",
+    "newEntry": "Añadir",
+    "backToCards": "Volver a categorías",
+    "filled": "registros",
+    "emptyCategory": "Aún no hay nada aquí. ¡Pulsa el botón de arriba para escribir el primero!",
+    "modal": {
+      "newIn": "Nuevo registro en",
+      "titleLabel": "Título o concepto clave",
+      "titlePlaceholder": "Ej: Salida de balón bajo presión, Comunicación...",
+      "subcatLabel": "Aspecto",
+      "descLabel": "Reflexiones, jugadas o detalles",
+      "descPlaceholder": "Escribe tus impresiones o lo acordado...",
+      "matchLabel": "Partido / Rival (opcional)",
+      "matchPlaceholder": "Ej: vs Juventus",
+      "dateLabel": "Fecha",
+      "deadlineLabel": "Fecha límite / Objetivo",
+      "linksLabel": "Vídeo o enlace de jugada",
+      "addLink": "Añadir enlace",
+      "cancel": "Cancelar",
+      "save": "Guardar registro"
+    },
+    "sections": {
+      "objectives": {
+        "title": "Definir Objetivos",
+        "desc": "Fútbol, Físico y Personal",
+        "cats": {
+          "futbol": "Fútbol",
+          "fisico": "Físico",
+          "personal": "Personal"
+        }
+      },
+      "personal_traits": {
+        "title": "Características Personales",
+        "desc": "En el juego y A nivel personal",
+        "cats": {
+          "en_el_juego": "En el juego",
+          "a_nivel_personal": "A nivel personal"
+        }
+      },
+      "focuses": {
+        "title": "Focos",
+        "desc": "Entreno, Partido y Fuera del campo",
+        "cats": {
+          "entrenamiento": "Entrenamiento",
+          "partido": "Partido",
+          "fuera_del_campo": "Fuera del campo"
+        }
+      },
+      "competition_analysis": {
+        "title": "Análisis Competición",
+        "desc": "Partidos, jugadas y vídeo",
+        "cats": {
+          "partido_jugadas": "Jugadas y Acciones",
+          "analisis_tactico": "Análisis Táctico"
+        }
+      },
+      "action_plan": {
+        "title": "Plan de Acción",
+        "desc": "Tareas a realizar y hábitos",
+        "cats": {
+          "tareas": "Tareas a realizar",
+          "habitos": "Hábitos y Rutinas"
+        }
+      }
     }
   }
 }

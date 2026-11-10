@@ -34,8 +34,12 @@ function AssignModal({ form, players, assigned, responded, onClose, onSaved }: {
     setSaving(true);
     try {
       await setAssignments(form.id, [...sel]);
-      if (publish && form.status === 'draft') await saveForm({ id: form.id, status: 'published' });
+      // Borrador: solo si se marca "publicar". Cerrado: se reabre para que puedan responder.
+      if ((publish && form.status === 'draft') || (form.status === 'closed' && sel.size)) await saveForm({ id: form.id, status: 'published' });
       onSaved();
+    } catch (e) {
+      console.error('Assign error:', e);
+      alert((e as { message?: string })?.message || String(e));
     } finally {
       setSaving(false);
     }
