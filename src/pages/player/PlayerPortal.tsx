@@ -90,16 +90,16 @@ export default function PlayerPortal() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="sticky top-0 z-20 bg-[#111114] text-white shadow-md">
-        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <img src="/escudo.png" alt="" className="w-9 h-9 object-contain" />
+      <header className="sticky top-0 z-20 bg-[#111114] text-white shadow-md border-b border-white/5">
+        <div className="max-w-6xl mx-auto px-3 sm:px-4 h-16 flex items-center justify-between gap-2 sm:gap-3">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <img src="/escudo.png" alt="" className="w-8 h-8 sm:w-9 sm:h-9 object-contain shrink-0" />
             <div className="min-w-0">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#ff4d6d] leading-none">{t('playerPortal.title')}</p>
-              <p className="font-extrabold truncate">{name}</p>
+              <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-[#ff4d6d] leading-none">{t('playerPortal.title')}</p>
+              <p className="font-extrabold text-sm sm:text-base truncate">{name}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
             <NotificationBell
               audience="player"
               dark
@@ -115,19 +115,19 @@ export default function PlayerPortal() {
             {/* Selector de idioma sólo IT / EN para el jugador */}
             <button
               onClick={toggleLanguage}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-black uppercase tracking-wider text-white transition-all"
+              className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-black uppercase tracking-wider text-white transition-all active:scale-95"
               title="Cambia lingua / Switch language"
             >
-              <Globe size={14} className="text-[#ff4d6d]" />
-              <span>{activeLang === 'it' ? '🇮🇹 IT' : '🇬🇧 EN'}</span>
+              <Globe size={13} className="text-[#ff4d6d]" />
+              <span>{activeLang === 'it' ? 'IT' : 'EN'}</span>
             </button>
 
-            <button onClick={signOut} className="flex items-center gap-2 text-xs font-bold text-white/70 hover:text-white px-3 py-2 rounded-lg hover:bg-white/10">
-              <LogOut size={16} /> <span className="hidden sm:inline">{t('playerPortal.exit')}</span>
+            <button onClick={signOut} className="flex items-center gap-1.5 text-xs font-bold text-white/70 hover:text-white px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg hover:bg-white/10 active:scale-95">
+              <LogOut size={15} /> <span className="hidden sm:inline">{t('playerPortal.exit')}</span>
             </button>
           </div>
         </div>
-        <nav className="max-w-6xl mx-auto px-2 flex gap-1 overflow-x-auto">
+        <nav className="max-w-6xl mx-auto px-2 flex gap-1 overflow-x-auto no-scrollbar scroll-smooth">
           {tabItems.map(({ id, icon: Icon }) => (
             <button
               key={id}
@@ -136,7 +136,7 @@ export default function PlayerPortal() {
                 e.currentTarget.scrollIntoView({ block: 'nearest', inline: 'center' });
               }}
               aria-current={tab === id ? 'page' : undefined}
-              className={`shrink-0 flex items-center gap-1.5 px-3 py-2.5 text-xs font-bold border-b-2 transition-colors ${tab === id ? 'border-[#db0030] text-white' : 'border-transparent text-white/50 hover:text-white/80'}`}
+              className={`shrink-0 flex items-center gap-1.5 px-3 py-2 text-xs font-bold border-b-2 transition-colors whitespace-nowrap ${tab === id ? 'border-[#db0030] text-white' : 'border-transparent text-white/50 hover:text-white/80'}`}
             >
               <Icon size={14} /> {t(`playerPortal.tabs.${id}`)}
             </button>
@@ -144,7 +144,7 @@ export default function PlayerPortal() {
         </nav>
       </header>
 
-      <main className="max-w-6xl mx-auto px-4 py-6">
+      <main className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
         {loading ? (
           <div className="flex justify-center py-20"><Loader2 className="animate-spin text-gray-400" /></div>
         ) : !player || !playerId ? (

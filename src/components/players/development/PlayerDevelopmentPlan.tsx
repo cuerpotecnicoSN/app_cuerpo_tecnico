@@ -628,13 +628,13 @@ export default function PlayerDevelopmentPlan({ player, mode, section, onViewSta
 
       {/* ===================== CABECERA ===================== */}
       {show('what') && (
-        <section className="relative overflow-hidden rounded-[28px] bg-black text-white">
+        <section className="relative overflow-hidden rounded-[24px] sm:rounded-[28px] bg-black text-white shadow-xl">
           {/* Las franjas rossoneras y el dorsal son la identidad de la ficha */}
           <div
             aria-hidden
-            className="absolute inset-y-0 right-0 w-2/3"
+            className="absolute inset-y-0 right-0 w-3/4 sm:w-2/3 pointer-events-none"
             style={{
-              background: 'repeating-linear-gradient(90deg, #db0030 0 46px, #000 46px 92px)',
+              background: 'repeating-linear-gradient(90deg, #db0030 0 36px, #000 36px 72px)',
               maskImage: 'linear-gradient(to left, rgba(0,0,0,.95), transparent)',
               WebkitMaskImage: 'linear-gradient(to left, rgba(0,0,0,.95), transparent)',
             }}
@@ -642,13 +642,13 @@ export default function PlayerDevelopmentPlan({ player, mode, section, onViewSta
           {dorsal ? (
             <div
               aria-hidden
-              className="absolute right-4 sm:right-12 top-1/2 -translate-y-1/2 select-none pointer-events-none flex items-center justify-center z-0"
+              className="absolute right-2 sm:right-12 top-1/2 -translate-y-1/2 select-none pointer-events-none flex items-center justify-center z-0 opacity-40 sm:opacity-100"
             >
               <span
-                className={`${display} text-[7.5rem] sm:text-[13.5rem] font-black tracking-tighter leading-none select-none`}
+                className={`${display} text-[6rem] sm:text-[13.5rem] font-black tracking-tighter leading-none select-none`}
                 style={{
                   color: 'rgba(255, 255, 255, 0.18)',
-                  WebkitTextStroke: '2.5px rgba(255, 255, 255, 0.85)',
+                  WebkitTextStroke: '2px rgba(255, 255, 255, 0.85)',
                   textShadow: '0 4px 15px rgba(0, 0, 0, 0.9), 0 0 25px rgba(255, 255, 255, 0.25), 0 0 45px rgba(219, 0, 48, 0.4)',
                   filter: 'drop-shadow(3px 5px 2px rgba(0,0,0,0.85)) drop-shadow(-1px -1px 0 rgba(255,255,255,0.4))',
                 }}
@@ -658,10 +658,10 @@ export default function PlayerDevelopmentPlan({ player, mode, section, onViewSta
             </div>
           ) : null}
 
-          <div className="relative z-10 p-5 sm:p-8">
-            <div className="flex items-center sm:items-end gap-5 sm:gap-7">
+          <div className="relative z-10 p-4 sm:p-8">
+            <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4 sm:gap-7 text-center sm:text-left">
               {/* Foto ajustada para llenar el marco con fondo blanco */}
-              <div className="w-28 h-36 sm:w-44 sm:h-56 shrink-0 rounded-2xl overflow-hidden bg-white shadow-[0_12px_35px_rgba(0,0,0,0.7)] border-2 border-white/60 flex items-center justify-center">
+              <div className="w-32 h-40 sm:w-44 sm:h-56 shrink-0 rounded-2xl overflow-hidden bg-white shadow-[0_12px_35px_rgba(0,0,0,0.7)] border-2 border-white/60 flex items-center justify-center">
                 {player.photo_url ? (
                   <img
                     src={player.photo_url}
@@ -674,12 +674,12 @@ export default function PlayerDevelopmentPlan({ player, mode, section, onViewSta
                   </div>
                 )}
               </div>
-              <div className="min-w-0 pr-10 sm:pr-48">
-                <p className="hidden sm:block text-sm font-medium text-white/70">{t('playerPlan.badge')}</p>
-                <h1 className={`${display} text-3xl sm:text-5xl font-black tracking-tight leading-[1.02] break-words`}>{name || t('playerPlan.player')}</h1>
-                <dl className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm">
-                  <div className="font-semibold">{player.main_position ? translatePosition(player.main_position, i18n.language) : t('playerPlan.noPosition')}</div>
-                  {player.category && <div className="font-semibold">{player.category}</div>}
+              <div className="min-w-0 w-full sm:w-auto sm:pr-48">
+                <p className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-white/60">{t('playerPlan.badge')}</p>
+                <h1 className={`${display} text-2xl sm:text-5xl font-black tracking-tight leading-tight mt-0.5 sm:mt-1 break-words`}>{name || t('playerPlan.player')}</h1>
+                <dl className="mt-2.5 sm:mt-3 flex flex-wrap items-center justify-center sm:justify-start gap-x-4 sm:gap-x-5 gap-y-1.5 text-xs sm:text-sm">
+                  <div className="font-semibold bg-white/10 sm:bg-transparent px-2.5 py-0.5 sm:p-0 rounded-full">{player.main_position ? translatePosition(player.main_position, i18n.language) : t('playerPlan.noPosition')}</div>
+                  {player.category && <div className="font-semibold bg-white/10 sm:bg-transparent px-2.5 py-0.5 sm:p-0 rounded-full">{player.category}</div>}
                   <div className="flex items-center gap-1.5">
                     <dt className="text-white/70">{t('playerPlan.tutor')}</dt>
                     <dd className="font-semibold">
@@ -705,23 +705,23 @@ export default function PlayerDevelopmentPlan({ player, mode, section, onViewSta
               </div>
             </div>
 
-            <div className="mt-6 pt-4 border-t border-white/25 flex flex-wrap items-end justify-between gap-x-8 gap-y-3">
-              <dl className="flex flex-wrap gap-x-8 sm:gap-x-12 gap-y-3">
+            <div className="mt-5 sm:mt-6 pt-4 border-t border-white/20 flex flex-col sm:flex-row items-center sm:items-end justify-between gap-4">
+              <dl className="w-full sm:w-auto grid grid-cols-4 sm:flex sm:flex-wrap gap-2 sm:gap-x-12 text-center sm:text-left">
                 {[
                   { l: t('playerPlan.matches'), v: stats?.matches ?? 0 },
                   { l: t('playerPlan.minutes'), v: `${stats?.minutes ?? 0}'` },
                   ...heroStats,
                 ].map((k) => (
-                  <div key={k.l}>
-                    <dd className={`${display} text-3xl font-black tabular-nums leading-none`}>{k.v}</dd>
-                    <dt className="text-xs text-white/70 mt-1">{k.l}</dt>
+                  <div key={k.l} className="bg-white/5 sm:bg-transparent rounded-xl py-2 px-1 sm:p-0">
+                    <dd className={`${display} text-2xl sm:text-3xl font-black tabular-nums leading-none`}>{k.v}</dd>
+                    <dt className="text-[11px] sm:text-xs text-white/70 mt-1 truncate">{k.l}</dt>
                   </div>
                 ))}
               </dl>
               {onViewStats && (
                 <button
                   onClick={onViewStats}
-                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white text-black text-xs font-bold hover:bg-white/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                  className="w-full sm:w-auto justify-center flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white text-black text-xs font-bold hover:bg-white/90 active:scale-95 transition-all shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                 >
                   {t('playerPlan.viewStats')} <ArrowUpRight size={14} />
                 </button>
