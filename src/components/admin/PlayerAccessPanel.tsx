@@ -79,7 +79,7 @@ export default function PlayerAccessPanel() {
       if (!confirm(`¿Borrar el email y eliminar el usuario y acceso de ${r.first_name ?? 'este jugador'}?`)) return;
       setBusy(r.id); setMsg(null);
       try {
-        await deleteUserAccount({ playerId: r.id, userId: r.user_id || undefined });
+        await deleteUserAccount({ playerId: r.id, userId: r.user_id || undefined, email: r.email || undefined });
         await supabase.from('players').update({ email: null, user_id: null, invited_at: null }).eq('id', r.id);
         const { [r.id]: _omit, ...rest } = drafts; void _omit; setDrafts(rest);
         setMsg({ id: r.id, ok: true, text: 'Cuenta y acceso eliminados' });
@@ -97,10 +97,19 @@ export default function PlayerAccessPanel() {
     setBusy(r.id); setMsg(null);
     try {
       if (kind === 'save') {
+        const oldEmail = r.email?.trim().toLowerCase();
+        // Si se cambia o se borra el email anterior, limpiar credenciales previas de auth
+        if (oldEmail && oldEmail !== email) {
+          try {
+            await deleteUserAccount({ playerId: r.id, userId: r.user_id || undefined, email: oldEmail });
+          } catch (_e) {
+            // ignore if not found in auth
+          }
+        }
         await savePlayerEmail(r.id, email || null);
         if (!email) {
           // Si guardó en blanco, eliminar cuenta de usuario también
-          await deleteUserAccount({ playerId: r.id, userId: r.user_id || undefined });
+          await deleteUserAccount({ playerId: r.id, userId: r.user_id || undefined, email: oldEmail });
           await supabase.from('players').update({ user_id: null, invited_at: null }).eq('id', r.id);
         }
         setMsg({ id: r.id, ok: true, text: email ? 'Email guardado' : 'Email borrado' });

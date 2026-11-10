@@ -125,9 +125,9 @@ export async function invitePlayer(playerId: string, email: string): Promise<voi
   if (data?.error) throw new Error(data.error);
 }
 
-export async function deleteUserAccount(params: { userId?: string; playerId?: string }): Promise<void> {
+export async function deleteUserAccount(params: { userId?: string; playerId?: string; email?: string }): Promise<void> {
   const { data, error } = await supabase.functions.invoke('delete-user', {
-    body: { user_id: params.userId, player_id: params.playerId },
+    body: { user_id: params.userId, player_id: params.playerId, email: params.email },
   });
   if (error) {
     throw new Error(await extractErrorMessage(error));

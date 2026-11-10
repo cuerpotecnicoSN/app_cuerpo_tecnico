@@ -29,17 +29,17 @@ export const DeletePlayerModal: React.FC<DeletePlayerModalProps> = ({
       // 1. Si tenía cuenta de usuario vinculada o email, eliminarla de Auth y de perfiles
       const { data: playerData } = await supabase
         .from('players')
-        .select('user_id')
+        .select('user_id, email')
         .eq('id', player.id)
         .single();
 
-      if (playerData?.user_id) {
+      if (playerData?.user_id || playerData?.email) {
         try {
-          await deleteUserAccount({ userId: playerData.user_id, playerId: player.id });
+          await deleteUserAccount({ userId: playerData.user_id, playerId: player.id, email: playerData.email || undefined });
         } catch (authDelErr) {
           console.warn('No se pudo borrar el usuario de Auth por Edge Function:', authDelErr);
           // Fallback a nivel de DB por si acaso
-          await supabase.from('profiles').delete().eq('id', playerData.user_id);
+          if (playerData.user_id) await supabase.from('profiles').delete().eq('id', playerData.user_id);
         }
       }
 

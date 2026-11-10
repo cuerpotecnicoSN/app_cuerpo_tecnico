@@ -1,4 +1,4 @@
-// Edge Function: elimina un usuario de Auth y su perfil/vinculaciones.
+// Edge Function: elimina un usuario de Auth y su perfil/vinculaciones por user_id, player_id o email.
 // Solo la puede llamar un administrador. Usa la service key.
 //
 // Deploy: npx supabase functions deploy delete-user
@@ -30,15 +30,27 @@ Deno.serve(async (req) => {
   const isAdmin = callerProfile && (['Admin', 'Administrador'].includes(callerProfile.role) || callerProfile.email === 'cuerpotecnico.sn@gmail.com');
   if (!isAdmin) return json({ error: 'Solo un administrador puede eliminar usuarios' }, 403);
 
-  // 2. Parámetros: user_id y/o player_id
-  let body: { user_id?: string; player_id?: string };
+  // 2. Parámetros: user_id, player_id y/o email
+  let body: { user_id?: string; player_id?: string; email?: string };
   try { body = await req.json(); } catch { return json({ error: 'JSON inválido' }, 400); }
 
   let targetUserId = body.user_id;
+  const targetEmail = body.email?.trim().toLowerCase();
 
   if (!targetUserId && body.player_id) {
     const { data: player } = await admin.from('players').select('user_id').eq('id', body.player_id).single();
     targetUserId = player?.user_id;
+  }
+
+  // Si aún no tenemos user_id pero tenemos un email, buscarlo en auth.users
+  if (!targetUserId && targetEmail) {
+    try {
+      const { data: userList } = await admin.auth.admin.listUsers();
+      const match = userList?.users?.find(u => u.email?.toLowerCase() === targetEmail);
+      if (match) targetUserId = match.id;
+    } catch (e) {
+      console.warn('Error buscando usuario por email:', e);
+    }
   }
 
   // 3. Si hay usuario de Auth asociado
@@ -51,7 +63,7 @@ Deno.serve(async (req) => {
     // Desvincular de players si procede
     await admin.from('players').update({ user_id: null, email: null, invited_at: null }).eq('user_id', targetUserId);
 
-    // Borrar de auth.users (borrará en cascada o podemos borrar su profile)
+    // Borrar de auth.users (elimina credenciales y libera el email)
     const { error: delAuthErr } = await admin.auth.admin.deleteUser(targetUserId);
     if (delAuthErr) {
       console.warn('Error al borrar auth.user:', delAuthErr);
@@ -66,6 +78,11 @@ Deno.serve(async (req) => {
     await admin.from('players').update({ user_id: null, email: null, invited_at: null }).eq('id', body.player_id);
   }
 
+  // Si se pasó un email y quedó en players o profiles huérfano, limpiarlo
+  if (targetEmail) {
+    await admin.from('players').update({ user_id: null, email: null, invited_at: null }).eq('email', targetEmail);
+    await admin.from('profiles').delete().eq('email', targetEmail);
+  }
+
   return json({ ok: true, deleted_user_id: targetUserId ?? null });
 });
-

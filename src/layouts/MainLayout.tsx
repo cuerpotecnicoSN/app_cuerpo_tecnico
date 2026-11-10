@@ -209,20 +209,41 @@ const MainLayout: React.FC = () => {
         <div className="absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-[var(--color-primary,#db0030)]/70 via-white/10 to-transparent" />
 
         <div className="relative flex items-center gap-4 px-4 lg:px-6 h-[60px] lg:h-[68px]">
-          {/* Logo */}
-          <Link to="/" className="group flex items-center gap-3 shrink-0">
-            <div className="relative">
-              <div className="absolute inset-0 rounded-full bg-[var(--color-primary,#db0030)]/40 blur-lg opacity-0 group-hover:opacity-100 transition-opacity" />
-              <img src="/escudo.png" alt="Club Logo" className="relative w-10 h-10 lg:w-11 lg:h-11 object-contain transition-transform duration-300 group-hover:scale-110" />
-            </div>
-            <div className="hidden sm:flex items-center gap-2.5">
-              <div className="h-8 w-px bg-white/10 lg:hidden min-[1900px]:block" />
-              <div className="flex flex-col leading-none lg:hidden min-[1900px]:flex">
-                <span className="font-black text-[17px] tracking-tight text-white uppercase">Staff<span className="text-[var(--color-primary,#db0030)]">Control</span></span>
-                <span className="text-[9px] font-bold uppercase tracking-[0.25em] text-gray-500 mt-1">Cuerpo técnico</span>
+          {/* Brand & Logos */}
+          <Link to="/" className="group flex items-center shrink-0">
+            <div className="relative flex items-center gap-2.5 p-1.5 pl-3 pr-3.5 rounded-2xl bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-900 border border-white/20 shadow-[0_4px_25px_rgba(0,0,0,0.8),0_0_15px_rgba(255,255,255,0.06),inset_0_1px_1px_rgba(255,255,255,0.2)] transition-all duration-300 group-hover:border-[var(--color-primary,#db0030)]/60 group-hover:shadow-[0_4px_30px_rgba(219,0,48,0.25)]">
+              {/* Soft ambient back-light */}
+              <div className="absolute -inset-0.5 rounded-2xl bg-gradient-to-r from-[var(--color-primary,#db0030)]/40 via-red-500/20 to-white/10 opacity-30 group-hover:opacity-80 blur-md transition-opacity duration-500 pointer-events-none" />
+
+              {/* Club Crest con base luminosa para resaltar el escudo oscuro */}
+              <div className="relative flex items-center justify-center w-10 h-10 lg:w-11 lg:h-11 rounded-xl bg-white/10 p-1 border border-white/20 shadow-[0_2px_12px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.25)] backdrop-blur-md transition-all duration-300 group-hover:scale-105 group-hover:bg-white/15">
+                <img
+                  src="/escudo.png"
+                  alt="Club Logo"
+                  className="w-full h-full object-contain filter drop-shadow-[0_2px_6px_rgba(0,0,0,0.7)]"
+                />
               </div>
-              <div className="bg-white p-1 rounded-xl ml-1 shadow-[0_4px_14px_-4px_rgba(255,255,255,0.25)]">
-                <img src="/icono.png" alt="Icono" className="w-9 h-9 object-contain" />
+
+              {/* Separador de luz */}
+              <div className="relative h-6 w-[1.5px] bg-gradient-to-b from-transparent via-white/40 to-transparent" />
+
+              {/* SN-CT Badge Icon */}
+              <div className="relative w-9 h-9 lg:w-10 lg:h-10 rounded-xl bg-white p-1 shadow-[0_2px_14px_rgba(255,255,255,0.18),0_2px_8px_rgba(0,0,0,0.6)] flex items-center justify-center overflow-hidden transition-all duration-300 group-hover:scale-105 group-hover:shadow-[0_4px_20px_rgba(255,255,255,0.3)]">
+                <img
+                  src="/icono.png"
+                  alt="StaffControl"
+                  className="w-full h-full object-contain"
+                />
+              </div>
+
+              {/* Brand Text para pantallas grandes */}
+              <div className="hidden min-[1920px]:flex flex-col ml-1 pr-1 leading-none">
+                <span className="font-black text-sm tracking-tight text-white uppercase drop-shadow-sm">
+                  Staff<span className="text-[var(--color-primary,#db0030)]">Control</span>
+                </span>
+                <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-gray-300 mt-0.5">
+                  Cuerpo técnico
+                </span>
               </div>
             </div>
           </Link>

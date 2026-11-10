@@ -160,7 +160,7 @@ const UserManagement: React.FC = () => {
       setBusyUser(user.id);
       setRowMsg(null);
       try {
-        await deleteUserAccount({ userId: user.id });
+        await deleteUserAccount({ userId: user.id, email: user.email || undefined });
         const { [user.id]: _omit, ...rest } = drafts;
         void _omit;
         setDrafts(rest);
