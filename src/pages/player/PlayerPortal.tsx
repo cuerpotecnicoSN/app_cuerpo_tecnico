@@ -124,60 +124,70 @@ export default function PlayerPortal() {
               <span>{activeLang === 'it' ? 'IT' : 'EN'}</span>
             </button>
 
-            {/* Menú de 3 rayas (hamburguesa) en lugar del botón directo de salir */}
+            {/* Menú de 3 rayas (hamburguesa) con todas las páginas y salir */}
             <div className="relative">
               <button
                 onClick={() => setMenuOpen((prev) => !prev)}
-                className={`p-2 rounded-lg text-white/80 hover:text-white hover:bg-white/10 active:scale-95 transition-all ${menuOpen ? 'bg-white/15 text-white' : ''}`}
+                className={`p-2 rounded-xl text-white/80 hover:text-white hover:bg-white/10 active:scale-95 transition-all flex items-center gap-1.5 ${menuOpen ? 'bg-white/15 text-white' : ''}`}
                 aria-label="Menu"
                 aria-expanded={menuOpen}
               >
-                {menuOpen ? <X size={20} /> : <Menu size={20} />}
+                {menuOpen ? <X size={22} /> : <Menu size={22} />}
               </button>
 
               {menuOpen && (
                 <>
                   <div
-                    className="fixed inset-0 z-30 bg-black/40 backdrop-blur-xs"
+                    className="fixed inset-0 z-30 bg-black/60 backdrop-blur-xs"
                     onClick={() => setMenuOpen(false)}
                   />
-                  <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-[#1a1a1e] border border-white/10 shadow-2xl p-2 z-40 animate-fade-in text-white">
-                    <div className="px-3 py-2 border-b border-white/10 mb-1">
-                      <p className="text-[10px] font-bold text-white/50 uppercase tracking-wider">{t('playerPortal.title')}</p>
-                      <p className="text-xs font-bold truncate text-white">{name}</p>
+                  <div className="absolute right-0 mt-2 w-64 max-h-[85vh] overflow-y-auto rounded-2xl bg-[#18181c] border border-white/10 shadow-2xl p-2 z-40 animate-fade-in text-white divide-y divide-white/10">
+                    <div className="px-3 py-2.5">
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#ff4d6d]">{t('playerPortal.title')}</p>
+                      <p className="text-sm font-extrabold truncate text-white mt-0.5">{name}</p>
                     </div>
 
-                    <button
-                      onClick={() => {
-                        setMenuOpen(false);
-                        signOut();
-                      }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold text-red-400 hover:text-red-300 hover:bg-red-500/10 active:bg-red-500/20 transition-all text-left"
-                    >
-                      <LogOut size={16} />
-                      <span>{t('playerPortal.exit')}</span>
-                    </button>
+                    <div className="py-1.5 space-y-0.5">
+                      {tabItems.map(({ id, icon: Icon }) => {
+                        const active = tab === id;
+                        return (
+                          <button
+                            key={id}
+                            onClick={() => {
+                              selectTab(id);
+                              setMenuOpen(false);
+                            }}
+                            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all text-left ${
+                              active
+                                ? 'bg-[#db0030] text-white shadow-md font-extrabold'
+                                : 'text-white/75 hover:text-white hover:bg-white/10 active:bg-white/15'
+                            }`}
+                          >
+                            <Icon size={16} className={active ? 'text-white' : 'text-[#ff4d6d]'} />
+                            <span className="truncate">{t(`playerPortal.tabs.${id}`)}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <div className="pt-1.5">
+                      <button
+                        onClick={() => {
+                          setMenuOpen(false);
+                          signOut();
+                        }}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-red-400 hover:text-red-300 hover:bg-red-500/10 active:bg-red-500/20 transition-all text-left"
+                      >
+                        <LogOut size={16} />
+                        <span>{t('playerPortal.exit')}</span>
+                      </button>
+                    </div>
                   </div>
                 </>
               )}
             </div>
           </div>
         </div>
-        <nav className="max-w-6xl mx-auto px-2 flex gap-1 overflow-x-auto no-scrollbar scroll-smooth">
-          {tabItems.map(({ id, icon: Icon }) => (
-            <button
-              key={id}
-              onClick={(e) => {
-                selectTab(id);
-                e.currentTarget.scrollIntoView({ block: 'nearest', inline: 'center' });
-              }}
-              aria-current={tab === id ? 'page' : undefined}
-              className={`shrink-0 flex items-center gap-1.5 px-3 py-2 text-xs font-bold border-b-2 transition-colors whitespace-nowrap ${tab === id ? 'border-[#db0030] text-white' : 'border-transparent text-white/50 hover:text-white/80'}`}
-            >
-              <Icon size={14} /> {t(`playerPortal.tabs.${id}`)}
-            </button>
-          ))}
-        </nav>
       </header>
 
       <main className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
