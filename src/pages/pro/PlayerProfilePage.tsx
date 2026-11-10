@@ -15,6 +15,7 @@ import { getSeasonReports, createSeasonReport, deleteSeasonReport } from '../../
 import PlayerDevelopmentPlan from '../../components/players/development/PlayerDevelopmentPlan';
 import { getMeetingsForPlayer, createMeeting, deleteMeeting, addMeetingPlayer, updateMeeting } from '../../services/meetings';
 import { uploadMeetingDocument, getMeetingAttachment, type MeetingDocumentAttachment } from '../../services/meetingDocs';
+import MediaPreview from '../../components/common/MediaPreview';
 import { Paperclip, ExternalLink, X as XIcon } from 'lucide-react';
 import { getFlagEmoji } from '../../components/pro/PlayersManagementView';
 import RichTextEditor from '../../components/common/RichTextEditor';
@@ -788,43 +789,47 @@ function PlayerMeetingsTab({ playerId }: { playerId: string }) {
               id="player-meeting-file-input"
               className="hidden"
               onChange={handleFileUpload}
-              accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.zip"
+              accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.gif,.webp,.mp4,.webm,.mov,.zip"
             />
 
             {attachedDoc ? (
-              <div className="flex items-center justify-between gap-3 p-3 bg-white border border-blue-200 rounded-xl shadow-xs">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="p-2 bg-blue-50 text-blue-600 rounded-lg shrink-0">
-                    <FileText size={18} />
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-3 p-3 bg-white border border-blue-200 rounded-xl shadow-xs">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="p-2 bg-blue-50 text-blue-600 rounded-lg shrink-0">
+                      <FileText size={18} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-gray-900 truncate">{attachedDoc.name}</p>
+                      <a
+                        href={attachedDoc.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[11px] font-semibold text-blue-600 hover:underline flex items-center gap-1 mt-0.5"
+                      >
+                        {t('meetingsTab.openDocument', 'Abrir documento')} <ExternalLink size={11} />
+                      </a>
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-gray-900 truncate">{attachedDoc.name}</p>
-                    <a
-                      href={attachedDoc.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-[11px] font-semibold text-blue-600 hover:underline flex items-center gap-1 mt-0.5"
+                  <div className="flex items-center gap-1 shrink-0">
+                    <label
+                      htmlFor="player-meeting-file-input"
+                      className="px-2.5 py-1 text-xs font-semibold text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
                     >
-                      {t('meetingsTab.openDocument', 'Abrir documento')} <ExternalLink size={11} />
-                    </a>
+                      {t('meetingsTab.replaceFile', 'Cambiar')}
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setAttachedDoc(null)}
+                      className="p-1 text-gray-400 hover:text-red-500 rounded-lg transition-colors"
+                      title={t('common.delete')}
+                    >
+                      <XIcon size={16} />
+                    </button>
                   </div>
                 </div>
-                <div className="flex items-center gap-1 shrink-0">
-                  <label
-                    htmlFor="player-meeting-file-input"
-                    className="px-2.5 py-1 text-xs font-semibold text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
-                  >
-                    {t('meetingsTab.replaceFile', 'Cambiar')}
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => setAttachedDoc(null)}
-                    className="p-1 text-gray-400 hover:text-red-500 rounded-lg transition-colors"
-                    title={t('common.delete')}
-                  >
-                    <XIcon size={16} />
-                  </button>
-                </div>
+                {/* Previsualización en el formulario */}
+                <MediaPreview url={attachedDoc.url} label={attachedDoc.name} compact />
               </div>
             ) : (
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
@@ -961,26 +966,13 @@ function PlayerMeetingsTab({ playerId }: { playerId: string }) {
                   </div>
                 )}
 
-                {/* Documento adjunto si existe */}
+                {/* Documento adjunto si existe (previsualización inline para fotos/vídeos o enlace para documentos) */}
                 {(() => {
                   const doc = getMeetingAttachment(m.next_steps);
                   if (!doc) return null;
                   return (
-                    <div className="flex items-center justify-between gap-2 px-3 py-2 bg-blue-50/60 border border-blue-100 rounded-xl text-xs mt-2">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <Paperclip size={14} className="text-blue-600 shrink-0" />
-                        <span className="font-semibold text-gray-800 truncate">{doc.name}</span>
-                      </div>
-                      <a
-                        href={doc.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        className="inline-flex items-center gap-1 font-bold text-blue-600 hover:text-blue-800 hover:underline shrink-0"
-                      >
-                        <span>{t('meetingsTab.viewDocument', 'Ver documento')}</span>
-                        <ExternalLink size={12} />
-                      </a>
+                    <div className="mt-2" onClick={(e) => e.stopPropagation()}>
+                      <MediaPreview url={doc.url} label={doc.name} compact />
                     </div>
                   );
                 })()}
