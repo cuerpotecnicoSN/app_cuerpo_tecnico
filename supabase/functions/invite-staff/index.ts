@@ -103,7 +103,12 @@ Deno.serve(async (req) => {
         return json({ ok: true, user_id: targetUserId, message: 'Invitación reenviada' });
       }
 
-      return json({ ok: true, user_id: targetUserId, message: 'El usuario ya está activo; perfil actualizado (no se envía email)' });
+      // Ya ha iniciado sesión alguna vez: reenviar acceso como email de restablecer contraseña
+      const { error: recErr } = await admin.auth.resetPasswordForEmail(email, {
+        redirectTo: `${siteUrl}/set-password`,
+      });
+      if (recErr) return json({ error: `No se pudo enviar el email: ${recErr.message}` }, 400);
+      return json({ ok: true, user_id: targetUserId, message: 'Usuario ya activo: email para crear/restablecer contraseña enviado' });
     }
   }
 
@@ -115,7 +120,11 @@ Deno.serve(async (req) => {
       if (existing.last_sign_in_at) {
         // Si ya está activo, sólo actualizamos su rol en profile si difiere
         await admin.from('profiles').update({ role, full_name: fullName || undefined, email }).eq('id', existing.id);
-        return json({ ok: true, user_id: existing.id, message: 'El usuario ya estaba activo; se ha actualizado su perfil.' });
+        const { error: recErr } = await admin.auth.resetPasswordForEmail(email, {
+          redirectTo: `${siteUrl}/set-password`,
+        });
+        if (recErr) return json({ error: `No se pudo enviar el email: ${recErr.message}` }, 400);
+        return json({ ok: true, user_id: existing.id, message: 'Usuario ya activo: email para crear/restablecer contraseña enviado' });
       }
       // Si no ha iniciado sesión, eliminamos para que reciba la invitación limpia
       await admin.auth.admin.deleteUser(existing.id);

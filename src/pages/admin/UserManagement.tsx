@@ -93,7 +93,6 @@ const UserManagement: React.FC = () => {
   const statusOf = (user: any): StaffStatus => {
     const acc = access[user.id];
     if (acc?.last_sign_in_at) return 'activo';
-    if (acc?.email_confirmed_at) return 'activo';
     // Si tiene cuenta en auth pero sin login
     if (acc) return 'invitado';
     // Si no vino en el rpc de auth pero tiene email en profiles
