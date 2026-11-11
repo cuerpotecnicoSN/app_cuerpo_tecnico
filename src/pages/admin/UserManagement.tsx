@@ -431,7 +431,7 @@ const UserManagement: React.FC = () => {
                                 : 'badge-neutral'
                             }`}
                           >
-                            {t('staff.roles.' + user.role, user.role || t('admin.users.roles.coach'))}
+                            {String(t(`staff.roles.${user.role}`, user.role || t('admin.users.roles.coach')))}
                           </span>
                         )}
                       </td>

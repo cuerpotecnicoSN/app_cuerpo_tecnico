@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import {
   Shield, Camera, Upload, Trash2, Edit2, Plus, Search,
-  Check, X, Mail, User, ShieldCheck, Activity, Award
+  Check, X, Mail, User
 } from 'lucide-react';
 
 export interface StaffProfile {
@@ -26,7 +26,7 @@ const ROLES = [
 ];
 
 export default function StaffManagementView() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { profile: currentProfile } = useAuth();
   const [staff, setStaff] = useState<StaffProfile[]>([]);
   const [loading, setLoading] = useState(true);
