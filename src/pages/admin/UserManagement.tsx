@@ -220,13 +220,13 @@ const UserManagement: React.FC = () => {
           return;
         }
 
-        await inviteStaffMember({
+        const serverMsg = await inviteStaffMember({
           userId: user.id,
           email: draftEmail,
           full_name: user.full_name || undefined,
           role: user.role || 'Entrenador',
         });
-        setRowMsg({ id: user.id, ok: true, text: `Invitación enviada a ${draftEmail}` });
+        setRowMsg({ id: user.id, ok: true, text: serverMsg ? `${serverMsg} (${draftEmail})` : `Invitación enviada a ${draftEmail}` });
       }
 
       const { [user.id]: _omit, ...rest } = drafts;

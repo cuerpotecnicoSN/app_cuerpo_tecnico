@@ -76,23 +76,34 @@ Deno.serve(async (req) => {
         role: role || undefined
       }).eq('id', targetUserId);
 
-      // Si no ha iniciado sesión todavía, enviar invitación
+      // Si no ha iniciado sesión todavía, enviar invitación.
+      // inviteUserByEmail falla ("already been registered") si el usuario ya está confirmado
+      // (p. ej. tras cambiar el email con email_confirm: true). supabase-js devuelve el error,
+      // no lo lanza, así que antes se ignoraba y se respondía ok sin enviar nada.
+      // En ese caso enviamos un email de recuperación, que lleva al mismo /set-password.
       if (!userTarget.user.last_sign_in_at) {
-        try {
-          await admin.auth.admin.inviteUserByEmail(email, {
+        const { error: invErr } = await admin.auth.admin.inviteUserByEmail(email, {
+          redirectTo: `${siteUrl}/set-password`,
+          data: {
+            full_name: fullName || 'Entrenador',
+            club_name: clubName,
+            logo_url: `${siteUrl}/escudo.png`,
+          },
+        });
+        if (invErr) {
+          console.warn('inviteUserByEmail falló, enviando recuperación:', invErr.message);
+          const { error: recErr } = await admin.auth.resetPasswordForEmail(email, {
             redirectTo: `${siteUrl}/set-password`,
-            data: {
-              full_name: fullName || 'Entrenador',
-              club_name: clubName,
-              logo_url: `${siteUrl}/escudo.png`,
-            },
           });
-        } catch (_err) {
-          // ignorar si ya existe
+          if (recErr) {
+            return json({ error: `No se pudo enviar el email: ${recErr.message || invErr.message}` }, 400);
+          }
+          return json({ ok: true, user_id: targetUserId, message: 'Email de acceso (restablecer contraseña) enviado' });
         }
+        return json({ ok: true, user_id: targetUserId, message: 'Invitación reenviada' });
       }
 
-      return json({ ok: true, user_id: targetUserId, message: 'Usuario actualizado correctamente' });
+      return json({ ok: true, user_id: targetUserId, message: 'El usuario ya está activo; perfil actualizado (no se envía email)' });
     }
   }
 

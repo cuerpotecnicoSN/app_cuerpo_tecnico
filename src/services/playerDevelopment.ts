@@ -151,7 +151,7 @@ export const saveStaffEmail = async (userId: string, email: string | null) => {
   if (error) throw error;
 };
 
-export async function inviteStaffMember(params: { userId?: string; email: string; full_name?: string; role?: string }): Promise<void> {
+export async function inviteStaffMember(params: { userId?: string; email: string; full_name?: string; role?: string }): Promise<string | undefined> {
   const email = params.email.trim().toLowerCase();
   const role = params.role || 'Entrenador';
   const fullName = params.full_name?.trim() || 'Entrenador';
@@ -239,4 +239,5 @@ export async function inviteStaffMember(params: { userId?: string; email: string
       role: role,
     });
   }
+  return res.data?.message as string | undefined;
 }
