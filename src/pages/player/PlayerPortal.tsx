@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { LogOut, Target, Loader2, Globe, Menu, X, ArrowLeft, Flame, ChevronRight, User, Sparkles, Layers, BarChart2 } from 'lucide-react';
+import { LogOut, Target, Loader2, Globe, Menu, X, ArrowLeft, Flame, ChevronRight, User, Sparkles, Layers, BarChart2, ClipboardList } from 'lucide-react';
+import PlayerForms from '../../components/forms/PlayerForms';
 import NotificationBell from '../../components/notifications/NotificationBell';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
@@ -11,8 +12,9 @@ import type { DevItem, DevItemComment, DevSectionType } from '../../services/pla
 import { getDevItems, getDevItemComments } from '../../services/playerDevelopmentSections';
 import PlayerDevelopmentSectionsList, { DEV_SECTIONS_CONFIG } from '../../components/players/development/PlayerDevelopmentSectionsList';
 import PlayerMatchStatsTab from '../../components/players/stats/PlayerMatchStatsTab';
+import MilanJerseyDorsal from '../../components/common/MilanJerseyDorsal';
 
-type Tab = 'hub' | 'partidos';
+type Tab = 'hub' | 'partidos' | 'forms';
 
 export default function PlayerPortal() {
   const { playerId, profile, user, signOut } = useAuth();
@@ -131,7 +133,7 @@ export default function PlayerPortal() {
             <NotificationBell
               audience="player"
               dark
-              onOpen={() => selectTab('hub')}
+              onOpen={(n) => selectTab(n.kind === 'form_assigned' ? 'forms' : 'hub')}
             />
             {/* Selector de idioma sólo IT / EN para el jugador */}
             <button
@@ -188,6 +190,19 @@ export default function PlayerPortal() {
                       >
                         <BarChart2 size={16} className={tab === 'partidos' ? 'text-white' : 'text-[#ff4d6d]'} />
                         <span className="truncate">{activeLang === 'it' ? 'Statistiche Panini & Partite' : 'Panini & Match Stats'}</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          selectTab('forms');
+                          setMenuOpen(false);
+                        }}
+                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all text-left ${
+                          tab === 'forms' ? 'bg-[#db0030] text-white shadow-md font-extrabold' : 'text-white/75 hover:text-white hover:bg-white/10'
+                        }`}
+                      >
+                        <ClipboardList size={16} className={tab === 'forms' ? 'text-white' : 'text-[#ff4d6d]'} />
+                        <span className="truncate">{t('playerPortal.tabs.forms')}</span>
                       </button>
 
                       <div className="pt-2 pb-1 border-t border-white/10 mt-1">
@@ -261,19 +276,10 @@ export default function PlayerPortal() {
                   />
                   {dorsal ? (
                     <div
-                      aria-hidden
-                      className="absolute right-2 sm:right-10 top-1/2 -translate-y-1/2 select-none pointer-events-none flex items-center justify-center z-0 opacity-40 sm:opacity-90"
+                      aria-hidden="true"
+                      className="absolute right-2 sm:right-10 top-1/2 -translate-y-1/2 select-none pointer-events-none flex items-center justify-center z-0 opacity-40 sm:opacity-95"
                     >
-                      <span
-                        className="font-black text-[5.5rem] sm:text-[11rem] tracking-tighter leading-none select-none"
-                        style={{
-                          color: 'rgba(255, 255, 255, 0.16)',
-                          WebkitTextStroke: '2px rgba(255, 255, 255, 0.85)',
-                          textShadow: '0 4px 15px rgba(0,0,0,0.9), 0 0 25px rgba(255,255,255,0.2), 0 0 40px rgba(219,0,48,0.4)',
-                        }}
-                      >
-                        {dorsal}
-                      </span>
+                      <MilanJerseyDorsal dorsal={dorsal} size="hero" />
                     </div>
                   ) : null}
 
@@ -390,18 +396,35 @@ export default function PlayerPortal() {
                   playerDbInfo={playerForStats}
                 />
               </div>
+            ) : tab === 'forms' ? (
+              <div className="space-y-4 animate-fade-in">
+                <div className="flex items-center justify-between pb-2 border-b border-gray-200">
+                  <button
+                    onClick={() => selectTab('hub')}
+                    className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white border border-gray-200 hover:border-black text-xs font-bold text-gray-700 hover:text-black active:scale-95 transition-all shadow-xs"
+                  >
+                    <ArrowLeft size={16} />
+                    <span>{activeLang === 'it' ? 'Torna al Menù' : 'Back to Menu'}</span>
+                  </button>
+                  <span className="px-3 py-1 rounded-full bg-black text-white text-xs font-black uppercase tracking-wider">
+                    {t('playerPortal.tabs.forms')}
+                  </span>
+                </div>
+                <PlayerForms playerId={playerId} mode="player" />
+              </div>
             ) : null}
           </>
         )}
       </main>
 
       {/* BARRA DE NAVEGACIÓN INFERIOR (MÓVIL) */}
-      <nav className="sm:hidden fixed bottom-0 inset-x-0 z-30 bg-[#111114]/95 backdrop-blur-md border-t border-white/10 px-1 pt-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))] grid grid-cols-4 shadow-2xl">
+      <nav className="sm:hidden fixed bottom-0 inset-x-0 z-30 bg-[#111114]/95 backdrop-blur-md border-t border-white/10 px-1 pt-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))] grid grid-cols-5 shadow-2xl">
         {([
           { key: 'all', icon: Layers, label: activeLang === 'it' ? 'Piano' : 'Plan', active: tab === 'hub' && selectedDevSection === 'all', go: () => openDevSection('all') },
           { key: 'objectives', icon: Target, label: activeLang === 'it' ? 'Obiettivi' : 'Goals', active: tab === 'hub' && selectedDevSection === 'objectives', go: () => openDevSection('objectives') },
           { key: 'focuses', icon: Flame, label: 'Focus', active: tab === 'hub' && selectedDevSection === 'focuses', go: () => openDevSection('focuses') },
           { key: 'stats', icon: BarChart2, label: activeLang === 'it' ? 'Statistiche' : 'Stats', active: tab === 'partidos', go: () => selectTab('partidos') },
+          { key: 'forms', icon: ClipboardList, label: t('playerPortal.tabs.forms'), active: tab === 'forms', go: () => selectTab('forms') },
         ] as const).map(({ key, icon: Icon, label, active, go }) => (
           <button key={key} onClick={go} className={`flex flex-col items-center gap-0.5 py-1 rounded-xl transition-colors ${active ? 'text-[#ff4d6d]' : 'text-white/60'}`}>
             <span className={`w-10 h-7 rounded-full flex items-center justify-center transition-colors ${active ? 'bg-[#db0030]/20' : ''}`}><Icon size={19} /></span>

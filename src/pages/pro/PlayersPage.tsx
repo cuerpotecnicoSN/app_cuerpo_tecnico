@@ -9,9 +9,10 @@ import { useSupabaseData } from '../../hooks/useSupabaseData';
 import PlayerImportModal from '../../components/pro/PlayerImportModal';
 import { DeletePlayerModal } from '../../components/pro/DeletePlayerModal';
 import { useAuth } from '../../context/AuthContext';
-import { Plus, Users as UsersIcon, Grid, List, Filter, Globe, Search, Download, Edit2, UsersRound, MessageSquareText, Activity, Loader2, Target, ChevronRight } from 'lucide-react';
+import { Plus, Users as UsersIcon, Grid, List, Filter, Globe, Search, Download, Edit2, UsersRound, MessageSquareText, Activity, Loader2, Target, ChevronRight, Shield } from 'lucide-react';
 import SubNavTabs from '../../components/common/SubNavTabs';
 import PlayerStatsHub from '../../components/players/stats/PlayerStatsHub';
+import StaffManagementView from '../../components/pro/StaffManagementView';
 import './players-grid.css';
 import { loadSquarePhoto, mapWithConcurrency } from '../../utils/pdfImages';
 
@@ -278,18 +279,18 @@ export default function PlayersPage() {
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight uppercase">
-              {currentView === 'meetings' ? t('nav.meetings', 'Reuniones Individuales') : currentView === 'plans' ? t('nav.individualPlan', 'Plan individual') : currentView === 'stats' ? t('playerStats.hub.title') : t('players.title', 'Jugadores')}
+              {currentView === 'staff' ? t('nav.staff', 'Cuerpo Técnico') : currentView === 'meetings' ? t('nav.meetings', 'Reuniones Individuales') : currentView === 'plans' ? t('nav.individualPlan', 'Plan individual') : currentView === 'stats' ? t('playerStats.hub.title') : t('players.title', 'Jugadores')}
             </h1>
             {loading ? (
               <span className="text-xs text-gray-400 font-bold animate-pulse">{t('players.management.loadingData', 'Cargando datos...')}</span>
             ) : (
               <span className="px-3 py-1 bg-red-50 dark:bg-red-950/40 text-[var(--color-primary,#db0030)] text-xs font-black uppercase tracking-wider rounded-full border border-red-200/60 dark:border-red-800/40">
-                {players.length} jugadores
+                {players.length} {t('players.playersCount', 'jugadores')}
               </span>
             )}
           </div>
           <p className="text-xs text-gray-500 font-medium mt-1">
-            Gestión integral de plantilla, fichas técnicas, objetivos de desarrollo y seguimiento individual
+            {t('players.managementSubtitle', 'Gestión integral de plantilla, fichas técnicas, objetivos de desarrollo y seguimiento individual')}
           </p>
         </div>
 
@@ -344,7 +345,7 @@ export default function PlayersPage() {
               }`}
             >
               <Edit2 size={14} />
-              {isEditMode ? 'Salir de Edición' : 'Editar plantilla'}
+              {isEditMode ? t('players.exitEdit', 'Salir de Edición') : t('players.editRoster', 'Editar plantilla')}
             </button>
 
             <button 
@@ -381,6 +382,11 @@ export default function PlayersPage() {
             id: 'stats',
             label: t('playerStats.hubTab'),
             icon: Activity,
+          },
+          {
+            id: 'staff',
+            label: t('nav.staff', 'Cuerpo Técnico'),
+            icon: Shield,
           },
         ]}
         activeTab={currentView}
@@ -636,6 +642,10 @@ export default function PlayersPage() {
 
       {currentView === 'stats' && (
         <PlayerStatsHub players={players.map((p) => ({ id: p.id, name: p.name, avatar: p.avatar }))} />
+      )}
+
+      {currentView === 'staff' && (
+        <StaffManagementView />
       )}
     </div>
   );

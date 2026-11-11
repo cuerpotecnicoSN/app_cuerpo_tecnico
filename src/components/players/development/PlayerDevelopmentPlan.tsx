@@ -6,6 +6,7 @@ import { useAuth } from '../../../context/AuthContext';
 import { usePlayerSeasonStats } from '../../../hooks/usePlayerSeasonStats';
 import { translatePosition } from '../../../utils/positionTranslations';
 import PlayerDevelopmentSectionsList from './PlayerDevelopmentSectionsList';
+import MilanJerseyDorsal from '../../common/MilanJerseyDorsal';
 
 import {
   getDevItems,
@@ -115,20 +116,10 @@ export default function PlayerDevelopmentPlan({ player, mode, section, hideHero,
           />
           {dorsal ? (
             <div
-              aria-hidden
+              aria-hidden="true"
               className="absolute right-2 sm:right-12 top-1/2 -translate-y-1/2 select-none pointer-events-none flex items-center justify-center z-0 opacity-40 sm:opacity-100"
             >
-              <span
-                className={`${display} text-[6rem] sm:text-[13.5rem] font-black tracking-tighter leading-none select-none`}
-                style={{
-                  color: 'rgba(255, 255, 255, 0.18)',
-                  WebkitTextStroke: '2px rgba(255, 255, 255, 0.85)',
-                  textShadow: '0 4px 15px rgba(0, 0, 0, 0.9), 0 0 25px rgba(255, 255, 255, 0.25), 0 0 45px rgba(219, 0, 48, 0.4)',
-                  filter: 'drop-shadow(3px 5px 2px rgba(0,0,0,0.85)) drop-shadow(-1px -1px 0 rgba(255,255,255,0.4))',
-                }}
-              >
-                {dorsal}
-              </span>
+              <MilanJerseyDorsal dorsal={dorsal} size="hero" />
             </div>
           ) : null}
 

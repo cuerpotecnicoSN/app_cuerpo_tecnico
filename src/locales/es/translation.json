@@ -29,7 +29,9 @@
     "matchFocuses": "Focos partidos",
     "matchData": "Live registro datos",
     "forms": "Formularios",
-    "individualPlanDesc": "Plan de desarrollo de cada jugador"
+    "individualPlanDesc": "Plan de desarrollo de cada jugador",
+    "staff": "Cuerpo Técnico",
+    "staffDesc": "Entrenadores y especialistas"
   },
   "common": {
     "save": "Guardar",
@@ -421,7 +423,11 @@
       "notFound": "Jugador no encontrado en la base de datos.",
       "confirmDelete": "¿Seguro que quieres eliminar a {{name}}? Esta acción no se puede deshacer.",
       "deleteError": "Error al eliminar el jugador: {{message}}"
-    }
+    },
+    "playersCount": "jugadores",
+    "managementSubtitle": "Gestión integral de plantilla, fichas técnicas, objetivos de desarrollo y seguimiento individual",
+    "exitEdit": "Salir de Edición",
+    "editRoster": "Editar plantilla"
   },
   "meetings": {
     "newMeeting": "Nueva Reunión",
@@ -633,15 +639,32 @@
     }
   },
   "staff": {
-    "breadcrumb": "Equipo Técnico",
-    "title": "Entrenadores",
-    "description": "Se muestran automáticamente todas las personas que se registran en la app.",
-    "loading": "Cargando cuerpo técnico...",
-    "loadError": "Error cargando el cuerpo técnico",
-    "emptyTitle": "Todavía no hay entrenadores registrados",
-    "emptyDescription": "En cuanto alguien cree una cuenta desde la pantalla de inicio de sesión, aparecerá aquí automáticamente.",
-    "noName": "Sin nombre",
-    "defaultRole": "Entrenador"
+    "title": "Cuerpo Técnico",
+    "subtitle": "Equipo de entrenadores, analistas, preparadores físicos y cuerpo médico del club",
+    "membersCount": "miembros",
+    "searchPlaceholder": "Buscar miembro por nombre, rol o email...",
+    "allRoles": "Todos los roles",
+    "addMember": "Añadir Miembro",
+    "editStaff": "Editar Miembro del Staff",
+    "newStaff": "Añadir Miembro del Staff",
+    "changePhoto": "Cambiar foto",
+    "uploadPhoto": "Subir imagen",
+    "photoHint": "Formatos JPG o PNG. Se recortará automáticamente centrada.",
+    "fullName": "Nombre completo",
+    "fullNamePlaceholder": "Ej: Roberto Robles",
+    "role": "Rol / Cargo",
+    "email": "Correo electrónico",
+    "avatar": "Foto de perfil",
+    "confirmDelete": "¿Estás seguro de eliminar a este miembro del cuerpo técnico?",
+    "empty": "No se encontraron miembros del cuerpo técnico",
+    "roles": {
+      "Entrenador": "Entrenador",
+      "Analista": "Analista",
+      "Preparador físico": "Preparador físico",
+      "Admin": "Admin",
+      "Fisioterapeuta": "Fisioterapeuta",
+      "Médico": "Médico"
+    }
   },
   "placeholder": {
     "promptNewItem": "Nombre para el nuevo elemento de \"{{title}}\":",

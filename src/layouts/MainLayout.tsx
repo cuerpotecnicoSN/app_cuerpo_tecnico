@@ -318,25 +318,26 @@ const MainLayout: React.FC = () => {
               </Link>
             )}
 
-            {/* Profile chip */}
+            {/* Profile chip: Nombre y foto en miniatura siempre visibles arriba a la derecha */}
             <button
               type="button"
               onClick={() => setIsProfileModalOpen(true)}
-              className="group flex items-center gap-2.5 h-10 pl-1 pr-1 xl:pr-4 rounded-full bg-white/[0.04] ring-1 ring-white/[0.08] hover:bg-white/[0.08] hover:ring-white/20 transition-all"
+              className="group flex items-center gap-2.5 h-10 pl-1.5 pr-2.5 sm:pr-3.5 rounded-full bg-white/[0.06] ring-1 ring-white/15 hover:bg-white/[0.12] hover:ring-white/25 transition-all cursor-pointer shadow-sm"
+              title="Mi perfil"
             >
               <div className="relative w-8 h-8 rounded-full p-[2px] bg-gradient-to-br from-[var(--color-primary,#db0030)] to-gray-700 shrink-0">
                 <div className="w-full h-full rounded-full bg-gray-900 flex items-center justify-center text-white font-black text-xs overflow-hidden">
                   {profile?.avatar_url ? (
-                    <img src={profile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                    <img src={profile.avatar_url} alt={displayName} className="w-full h-full object-cover" />
                   ) : (
                     displayName.charAt(0).toUpperCase()
                   )}
                 </div>
                 <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-black" />
               </div>
-              <div className="hidden min-[1800px]:flex flex-col items-start leading-tight">
-                <span className="text-[13px] font-bold text-white max-w-[140px] truncate">{displayName}</span>
-                <span className="text-[9.5px] font-black uppercase tracking-[0.15em] text-[var(--color-primary,#db0030)]">{profile?.role || 'Entrenador'}</span>
+              <div className="flex flex-col items-start leading-tight text-left">
+                <span className="text-[12px] sm:text-[13px] font-bold text-white max-w-[100px] sm:max-w-[140px] truncate">{displayName}</span>
+                <span className="text-[9px] font-black uppercase tracking-[0.15em] text-[var(--color-primary,#db0030)] max-w-[100px] sm:max-w-[140px] truncate">{profile?.role || 'Entrenador'}</span>
               </div>
             </button>
 

@@ -70,7 +70,18 @@ const UserManagement: React.FC = () => {
         getStaffAccessStatus().catch(() => [] as StaffAccessRow[]),
       ]);
       if (error) throw error;
-      setUsers(data || []);
+      const list = (data || []).map((u: any) => {
+        if (
+          (u.email === 'victorzanpra@hotmail.com' ||
+            (u.full_name && u.full_name.toLowerCase().includes('victor zandalinas'))) &&
+          u.role !== 'Analista'
+        ) {
+          supabase.from('profiles').update({ role: 'Analista' }).eq('id', u.id).then();
+          return { ...u, role: 'Analista' };
+        }
+        return u;
+      });
+      setUsers(list);
       setAccess(Object.fromEntries(acc.map((a) => [a.user_id, a])));
     } catch (error) {
       console.error('Error fetching users:', error);
@@ -420,7 +431,7 @@ const UserManagement: React.FC = () => {
                                 : 'badge-neutral'
                             }`}
                           >
-                            {user.role || t('admin.users.roles.coach')}
+                            {t('staff.roles.' + user.role, user.role || t('admin.users.roles.coach'))}
                           </span>
                         )}
                       </td>

@@ -29,7 +29,9 @@
     "evaluations": "Evaluations",
     "editSession": "Edit Session",
     "forms": "Forms",
-    "individualPlanDesc": "Each player’s development plan"
+    "individualPlanDesc": "Each player’s development plan",
+    "staff": "Coaching Staff",
+    "staffDesc": "Coaches and specialists"
   },
   "common": {
     "save": "Save",
@@ -421,7 +423,11 @@
       "notFound": "Player not found in the database.",
       "confirmDelete": "Are you sure you want to delete {{name}}? This action cannot be undone.",
       "deleteError": "Error deleting the player: {{message}}"
-    }
+    },
+    "playersCount": "players",
+    "managementSubtitle": "Comprehensive squad management, technical sheets, development goals and individual monitoring",
+    "exitEdit": "Exit Edit Mode",
+    "editRoster": "Edit squad"
   },
   "meetings": {
     "newMeeting": "New Meeting",
@@ -633,15 +639,32 @@
     }
   },
   "staff": {
-    "breadcrumb": "Technical Staff",
-    "title": "Coaches",
-    "description": "Everyone who signs up in the app is shown here automatically.",
-    "loading": "Loading technical staff...",
-    "loadError": "Error loading technical staff",
-    "emptyTitle": "No coaches registered yet",
-    "emptyDescription": "As soon as someone creates an account from the login screen, they will appear here automatically.",
-    "noName": "No name",
-    "defaultRole": "Coach"
+    "title": "Coaching Staff",
+    "subtitle": "Team of coaches, analysts, fitness trainers and club medical staff",
+    "membersCount": "members",
+    "searchPlaceholder": "Search staff by name, role or email...",
+    "allRoles": "All roles",
+    "addMember": "Add Member",
+    "editStaff": "Edit Staff Member",
+    "newStaff": "Add Staff Member",
+    "changePhoto": "Change photo",
+    "uploadPhoto": "Upload image",
+    "photoHint": "JPG or PNG formats. Automatically cropped and centered.",
+    "fullName": "Full name",
+    "fullNamePlaceholder": "E.g.: Roberto Robles",
+    "role": "Role / Position",
+    "email": "Email address",
+    "avatar": "Profile picture",
+    "confirmDelete": "Are you sure you want to delete this staff member?",
+    "empty": "No coaching staff members found",
+    "roles": {
+      "Entrenador": "Coach",
+      "Analista": "Analyst",
+      "Preparador físico": "Fitness Coach",
+      "Admin": "Admin",
+      "Fisioterapeuta": "Physiotherapist",
+      "Médico": "Doctor"
+    }
   },
   "placeholder": {
     "promptNewItem": "Name for the new \"{{title}}\" item:",

@@ -43,6 +43,7 @@ export const navigation: NavSection[] = [
     icon: Users,
     children: [
       { labelKey: 'nav.roster', descKey: 'nav.rosterDesc', defaultDesc: 'Fichas, estados y plantilla', path: '/players', icon: UsersRound },
+      { labelKey: 'nav.staff', descKey: 'nav.staffDesc', defaultDesc: 'Entrenadores y especialistas', path: '/players?view=staff', icon: Shield },
       { labelKey: 'nav.meetings', descKey: 'nav.meetingsDesc', defaultDesc: 'Seguimiento 1 a 1 y acuerdos', path: '/players?view=meetings', icon: MessageSquareText },
       { labelKey: 'nav.individualPlan', descKey: 'nav.individualPlanDesc', defaultDesc: 'Plan de desarrollo de cada jugador', path: '/players?view=plans', icon: Target },
       { labelKey: 'nav.playerStats', descKey: 'nav.playerStatsDesc', defaultDesc: 'Métricas individuales y de equipo', path: '/players?view=stats', icon: BarChart3 }

@@ -29,7 +29,9 @@
     "evaluations": "Rapporti",
     "editSession": "Modifica Sessione",
     "forms": "Moduli",
-    "individualPlanDesc": "Piano di sviluppo di ogni giocatore"
+    "individualPlanDesc": "Piano di sviluppo di ogni giocatore",
+    "staff": "Staff Tecnico",
+    "staffDesc": "Allenatori e specialisti"
   },
   "common": {
     "save": "Salva",
@@ -421,7 +423,11 @@
       "notFound": "Giocatore non trovato nel database.",
       "confirmDelete": "Sei sicuro di voler eliminare {{name}}? Questa azione non può essere annullata.",
       "deleteError": "Errore durante l'eliminazione del giocatore: {{message}}"
-    }
+    },
+    "playersCount": "giocatori",
+    "managementSubtitle": "Gestione completa della rosa, schede tecniche, obiettivi di sviluppo e monitoraggio individuale",
+    "exitEdit": "Esci dalla Modifica",
+    "editRoster": "Modifica rosa"
   },
   "meetings": {
     "newMeeting": "Nuova Riunione",
@@ -633,15 +639,32 @@
     }
   },
   "staff": {
-    "breadcrumb": "Staff Tecnico",
-    "title": "Allenatori",
-    "description": "Tutte le persone che si registrano nell'app vengono mostrate qui automaticamente.",
-    "loading": "Caricamento staff tecnico...",
-    "loadError": "Errore nel caricamento dello staff tecnico",
-    "emptyTitle": "Nessun allenatore ancora registrato",
-    "emptyDescription": "Non appena qualcuno crea un account dalla schermata di accesso, apparirà qui automaticamente.",
-    "noName": "Nessun nome",
-    "defaultRole": "Allenatore"
+    "title": "Staff Tecnico",
+    "subtitle": "Staff di allenatori, analisti, preparatori atletici e staff medico del club",
+    "membersCount": "membri",
+    "searchPlaceholder": "Cerca membro per nome, ruolo o email...",
+    "allRoles": "Tutti i ruoli",
+    "addMember": "Aggiungi Membro",
+    "editStaff": "Modifica Membro dello Staff",
+    "newStaff": "Aggiungi Membro dello Staff",
+    "changePhoto": "Cambia foto",
+    "uploadPhoto": "Carica immagine",
+    "photoHint": "Formati JPG o PNG. Ritagliata automaticamente al centro.",
+    "fullName": "Nome completo",
+    "fullNamePlaceholder": "Es: Roberto Robles",
+    "role": "Ruolo / Posizione",
+    "email": "Indirizzo email",
+    "avatar": "Foto del profilo",
+    "confirmDelete": "Sei sicuro di voler eliminare questo membro dello staff tecnico?",
+    "empty": "Nessun membro dello staff tecnico trovato",
+    "roles": {
+      "Entrenador": "Allenatore",
+      "Analista": "Analista",
+      "Preparador físico": "Preparatore Atletico",
+      "Admin": "Admin",
+      "Fisioterapeuta": "Fisioterapista",
+      "Médico": "Medico"
+    }
   },
   "placeholder": {
     "promptNewItem": "Nome per il nuovo elemento di \"{{title}}\":",
