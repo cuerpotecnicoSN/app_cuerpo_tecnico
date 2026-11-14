@@ -2070,5 +2070,15 @@
         }
       }
     }
+  },
+  "googleFormSync": {
+    "button": "Sincronizza Google Form",
+    "syncing": "Sincronizzazione...",
+    "done": "{{imported}} nuovi record importati ({{rows}} risposte lette)",
+    "skipped": "{{count}} erano già importati",
+    "unmatchedTitle": "Risposte non assegnate",
+    "unmatchedHint": "Non è stato possibile capire di quale giocatore si tratta (nome poco simile o più giocatori simili). Correggi il nome nello Sheet o nella scheda del giocatore e sincronizza di nuovo.",
+    "fuzzyTitle": "Assegnati per somiglianza del nome",
+    "suggestion": "{{name}}?"
   }
 }

@@ -13,6 +13,7 @@ import { Plus, Users as UsersIcon, Grid, List, Filter, Globe, Search, Download, 
 import SubNavTabs from '../../components/common/SubNavTabs';
 import PlayerStatsHub from '../../components/players/stats/PlayerStatsHub';
 import StaffManagementView from '../../components/pro/StaffManagementView';
+import GoogleFormSyncButton from '../../components/pro/GoogleFormSyncButton';
 import './players-grid.css';
 import { loadSquarePhoto, mapWithConcurrency } from '../../utils/pdfImages';
 
@@ -357,6 +358,8 @@ export default function PlayersPage() {
             </button>
           </div>
         )}
+
+        {currentView === 'plans' && <GoogleFormSyncButton />}
       </div>
 
       {/* Modern Sub-Navigation Tabs Bar */}

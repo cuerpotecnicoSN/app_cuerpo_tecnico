@@ -2070,5 +2070,15 @@
         }
       }
     }
+  },
+  "googleFormSync": {
+    "button": "Sync Google Form",
+    "syncing": "Syncing...",
+    "done": "{{imported}} new records imported ({{rows}} responses read)",
+    "skipped": "{{count}} were already imported",
+    "unmatchedTitle": "Unassigned responses",
+    "unmatchedHint": "Couldn't tell which player this is (name not similar enough or several similar players). Fix the name in the Sheet or in the player's profile and sync again.",
+    "fuzzyTitle": "Assigned by name similarity",
+    "suggestion": "{{name}}?"
   }
 }
