@@ -24,7 +24,8 @@ import TranslatedText from '../../components/common/TranslatedText';
 import SubNavTabs from '../../components/common/SubNavTabs';
 import PlayerMatchStatsTab from '../../components/players/stats/PlayerMatchStatsTab';
 import { usePlayerPaniniLines } from '../../hooks/usePlayerPaniniLines';
-import { aggregatePlayer, normalize } from '../../utils/playerPaniniStats';
+import { aggregatePlayer, filterByCompetition, normalize, type CompetitionFilter } from '../../utils/playerPaniniStats';
+import { isLeagueMatch } from '../../utils/teamPaniniMetrics';
 
 import PlayerImportModal from '../../components/pro/PlayerImportModal';
 import { translatePosition } from '../../utils/positionTranslations';
@@ -94,11 +95,11 @@ export default function PlayerProfilePage() {
 
   const { lines: paniniLines } = usePlayerPaniniLines();
   const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [competition, setCompetition] = useState<CompetitionFilter>('all');
 
-  const playerStats = useMemo(() => {
-    if (!paniniLines || !activePlayer) return null;
-    const byId = paniniLines.filter((l) => l.playerId === activePlayer.id);
-    let matched = byId;
+  const playerLines = useMemo(() => {
+    if (!paniniLines || !activePlayer) return [];
+    let matched = paniniLines.filter((l) => l.playerId === activePlayer.id);
     if (!matched.length && activeDbPlayer?.dorsal) {
       const byDorsal = paniniLines.filter((l) => l.dorsal === activeDbPlayer.dorsal);
       if (byDorsal.length) matched = byDorsal;
@@ -107,9 +108,20 @@ export default function PlayerProfilePage() {
       const tokens = normalize(activePlayer.name).split(' ').filter((t) => t.length > 2);
       matched = paniniLines.filter((l) => !l.playerId && tokens.length > 0 && tokens.every((t) => normalize(l.stats?.nombre ?? l.name).includes(t)));
     }
-    if (!matched.length) return null;
-    return aggregatePlayer(matched);
+    return matched;
   }, [paniniLines, activePlayer, activeDbPlayer]);
+
+  const hasCup = useMemo(() => playerLines.some((l) => !isLeagueMatch(l.entry)), [playerLines]);
+  const hasLeague = useMemo(() => playerLines.some((l) => isLeagueMatch(l.entry)), [playerLines]);
+
+  const filteredPlayerLines = useMemo(() => {
+    return filterByCompetition(playerLines, competition);
+  }, [playerLines, competition]);
+
+  const playerStats = useMemo(() => {
+    if (!filteredPlayerLines.length) return null;
+    return aggregatePlayer(filteredPlayerLines);
+  }, [filteredPlayerLines]);
 
   if (loading) {
     return <div className="p-8 text-muted">{t('playerProfile.loading')}</div>;
@@ -245,7 +257,41 @@ export default function PlayerProfilePage() {
 
           {/* Right: Data (Mini stats) */}
           <div className="flex-1 flex flex-col justify-center w-full pt-2">
-            <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2 text-center md:text-left">{t('playerProfile.performanceSummary')}</h3>
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-4 border-b border-gray-100 pb-2">
+              <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider text-center md:text-left mb-0">
+                {t('playerProfile.performanceSummary')}
+              </h3>
+
+              {/* Selector de competición */}
+              <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-xl text-xs">
+                {(['all', 'league', 'cup'] as const).map((comp) => {
+                  if (comp === 'cup' && !hasCup) return null;
+                  if (comp === 'league' && !hasLeague) return null;
+                  const label =
+                    comp === 'all'
+                      ? t('playerStats.competition.all', 'Todas')
+                      : comp === 'league'
+                      ? t('playerStats.competition.league', 'Liga')
+                      : t('playerStats.competition.cup', 'Copa');
+
+                  const isSelected = competition === comp;
+                  return (
+                    <button
+                      key={comp}
+                      type="button"
+                      onClick={() => setCompetition(comp)}
+                      className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
+                        isSelected
+                          ? 'bg-white text-gray-900 shadow-xs'
+                          : 'text-gray-500 hover:text-gray-900'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
             {/* Mini stats */}
             <div className="flex flex-wrap gap-4 sm:gap-6 justify-center md:justify-start">
               <div className="text-center md:text-left bg-white border border-gray-100 shadow-sm p-4 rounded-xl min-w-[110px]">
@@ -312,6 +358,8 @@ export default function PlayerProfilePage() {
                   key === 'team_id' ||
                   key === 'career_clubs' ||
                   key === 'history' ||
+                  key === 'weight_kg' ||
+                  key === 'weight' ||
                   typeof value === 'object'
                 ) return null;
 
